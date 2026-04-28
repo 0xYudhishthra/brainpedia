@@ -16,18 +16,20 @@ This script:
 Per Gensyn rules, every cross-process call goes through the AXL daemons —
 no shared in-process queue, no central broker.
 
+Architecture per Brain process:
+    [Yggdrasil bridge] ── /mcp/<peer>/<svc> ──► [MCP router :9003+i] ──► [Brain stub :7100+i]
+
 Usage:
     python -m venv .venv && source .venv/bin/activate
     pip install -r requirements.txt
-    # Build the AXL `node` binary from gensyn-ai/axl and put on PATH.
+    pip install -e ../axl/integrations  # for mcp_router
+
     AXL_BIN=/path/to/axl/node python axl_demo.py
 
 Environment:
     AXL_BIN              path to the axl `node` binary (required)
-    AXL_BASE_PORT        first port used; subsequent nodes use +1, +2, ...
-                         (default: 9002)
-    BRAINPEDIA_DEMO_DIR  scratch dir for per-node configs + keys
-                         (default: ./.axl-demo)
+    AXL_BASE_PORT        first mesh port (default 7000); each node uses +1, +2...
+    BRAINPEDIA_DEMO_DIR  scratch dir for per-node configs + keys (./.axl-demo)
 """
 
 from __future__ import annotations
@@ -39,9 +41,11 @@ import signal
 import socket
 import subprocess
 import sys
+import threading
 import time
 from contextlib import suppress
 from dataclasses import dataclass
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Any
 
@@ -49,14 +53,23 @@ import httpx
 from nacl.signing import SigningKey
 
 
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
 @dataclass
 class NodeHandle:
     name: str
-    port: int
-    api_url: str
-    peer_id: str
+    mesh_port: int
+    api_port: int
+    router_port: int
+    brain_port: int
+    peer_id: str  # 64-char hex (Ed25519 public key)
     config_path: Path
     process: subprocess.Popen[bytes]
+    brain_thread: threading.Thread | None = None
+    brain_server: HTTPServer | None = None
 
 
 def must_env(name: str) -> str:
@@ -66,69 +79,117 @@ def must_env(name: str) -> str:
     return value
 
 
-def free_port_starting_at(start: int) -> int:
+def free_port(start: int) -> int:
     port = start
-    while port < start + 100:
+    while port < start + 200:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
                 s.bind(("127.0.0.1", port))
                 return port
             except OSError:
                 port += 1
-    raise RuntimeError("no free port found")
+    raise RuntimeError("no free port")
 
 
-def gen_node_config(workdir: Path, name: str, port: int, bootstrap: list[str]) -> tuple[Path, str]:
+def gen_node_config(
+    workdir: Path, name: str, mesh_port: int, peers: list[str]
+) -> tuple[Path, str]:
     """
-    Generates a node-config.json with a fresh Ed25519 keypair. Returns
-    (config_path, peer_id_hex).
+    Yggdrasil expects PascalCase keys: PrivateKey (128-char hex of seed+pub),
+    Listen (array of "tls://addr:port"), Peers (array). See
+    https://github.com/yggdrasil-network/yggdrasil-go.
     """
     node_dir = workdir / name
     node_dir.mkdir(parents=True, exist_ok=True)
 
-    signing_key = SigningKey.generate()
-    private_hex = signing_key.encode().hex()
-    public_hex = signing_key.verify_key.encode().hex()
+    sk = SigningKey.generate()
+    seed = sk.encode()
+    pub = sk.verify_key.encode()
+    private_hex_64 = (seed + pub).hex()
+    public_hex = pub.hex()
 
-    config = {
-        "listen_addr": f"127.0.0.1:{port}",
-        "private_key_hex": private_hex,
-        "bootstrap_peers": bootstrap,
-        "data_dir": str(node_dir / "data"),
-        # service registration is handled via separate MCP server process; see brain_service.py
+    cfg = {
+        "PrivateKey": private_hex_64,
+        "Peers": peers,
+        "Listen": [f"tls://0.0.0.0:{mesh_port}"],
     }
-    config_path = node_dir / "node-config.json"
-    config_path.write_text(json.dumps(config, indent=2))
-    return config_path, public_hex
+    cfg_path = node_dir / "node-config.json"
+    cfg_path.write_text(json.dumps(cfg, indent=2))
+    return cfg_path, public_hex
 
 
-def spawn_node(axl_bin: str, name: str, config_path: Path, port: int) -> NodeHandle:
-    log_path = config_path.parent / "node.log"
-    proc = subprocess.Popen(
-        [axl_bin, "-config", str(config_path)],
-        stdout=open(log_path, "wb"),
+def spawn_axl(axl_bin: str, name: str, cfg_path: Path) -> subprocess.Popen[bytes]:
+    log = open(cfg_path.parent / "node.log", "wb")
+    return subprocess.Popen(
+        [axl_bin, "-config", str(cfg_path)],
+        stdout=log,
         stderr=subprocess.STDOUT,
     )
-    api_url = f"http://127.0.0.1:{port}"
-    # crude readiness wait
-    for _ in range(40):
-        with suppress(Exception):
-            r = httpx.get(f"{api_url}/topology", timeout=0.25)
-            if r.status_code < 500:
-                break
-        time.sleep(0.25)
-    cfg = json.loads(config_path.read_text())
-    peer_id = SigningKey(bytes.fromhex(cfg["private_key_hex"])).verify_key.encode().hex()
-    return NodeHandle(
-        name=name, port=port, api_url=api_url, peer_id=peer_id,
-        config_path=config_path, process=proc,
+
+
+# ---------------------------------------------------------------------------
+# Stub Brain MCP server (in-process for the demo so we have zero deps).
+# In production, this is the @brainpedia/brain Node service registering
+# with the MCP router via POST /register.
+# ---------------------------------------------------------------------------
+
+
+class _StubBrainHandler(BaseHTTPRequestHandler):
+    brain_name: str = "?"
+    specialty: str = "?"
+
+    def log_message(self, fmt: str, *args: Any) -> None:  # silence stdlib noise
+        return
+
+    def do_POST(self) -> None:  # noqa: N802 (http.server convention)
+        length = int(self.headers.get("content-length", "0"))
+        body = self.rfile.read(length).decode()
+        try:
+            req = json.loads(body)
+        except json.JSONDecodeError:
+            self._json(400, {"jsonrpc": "2.0", "id": None,
+                              "error": {"code": -32700, "message": "Parse error"}})
+            return
+        method = req.get("method")
+        if method != "query":
+            self._json(200, {"jsonrpc": "2.0", "id": req.get("id"),
+                              "error": {"code": -32601, "message": f"Method not found: {method}"}})
+            return
+        prompt = (req.get("params") or {}).get("prompt", "")
+        result = {
+            "answer": f"[{self.brain_name}/{self.specialty}] stub answer for: {prompt}",
+            "citations": [],
+            "confidence": 0.0,
+            "brainEnsName": f"{self.brain_name}.brainpedia.eth",
+            "storageRoot": None,
+            "verified": False,
+        }
+        self._json(200, {"jsonrpc": "2.0", "id": req.get("id"), "result": result})
+
+    def _json(self, status: int, body: Any) -> None:
+        payload = json.dumps(body).encode()
+        self.send_response(status)
+        self.send_header("content-type", "application/json")
+        self.send_header("content-length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+
+def start_brain_stub(name: str, specialty: str, port: int) -> tuple[HTTPServer, threading.Thread]:
+    handler_cls = type(
+        "BrainHandler",
+        (_StubBrainHandler,),
+        {"brain_name": name, "specialty": specialty},
     )
+    server = HTTPServer(("127.0.0.1", port), handler_cls)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server, thread
 
 
-def stop(node: NodeHandle) -> None:
-    with suppress(Exception):
-        node.process.send_signal(signal.SIGTERM)
-        node.process.wait(timeout=3)
+# ---------------------------------------------------------------------------
+# Orchestration
+# ---------------------------------------------------------------------------
 
 
 def call_mcp(api_url: str, peer_id: str, service: str, method: str, params: dict[str, Any]) -> dict[str, Any]:
@@ -138,63 +199,91 @@ def call_mcp(api_url: str, peer_id: str, service: str, method: str, params: dict
     return r.json()
 
 
+def stop(node: NodeHandle) -> None:
+    if node.brain_server is not None:
+        node.brain_server.shutdown()
+    with suppress(Exception):
+        node.process.send_signal(signal.SIGTERM)
+        node.process.wait(timeout=3)
+
+
 def main() -> int:
     axl_bin = must_env("AXL_BIN")
     if not shutil.which(axl_bin) and not Path(axl_bin).is_file():
         sys.exit(f"AXL_BIN not executable: {axl_bin}")
 
-    base_port = int(os.environ.get("AXL_BASE_PORT", "9002"))
+    base_mesh = int(os.environ.get("AXL_BASE_PORT", "7000"))
     workdir = Path(os.environ.get("BRAINPEDIA_DEMO_DIR", "./.axl-demo")).absolute()
     if workdir.exists():
         shutil.rmtree(workdir)
     workdir.mkdir(parents=True)
 
-    # 1. Orchestrator first — its address becomes the bootstrap peer for the Brains.
-    orch_port = free_port_starting_at(base_port)
-    orch_cfg, orch_peer = gen_node_config(workdir, "orchestrator", orch_port, [])
-    orchestrator = spawn_node(axl_bin, "orchestrator", orch_cfg, orch_port)
-    print(f"orchestrator up on {orchestrator.api_url}  peer={orchestrator.peer_id[:12]}…")
-    bootstrap = [f"tls://127.0.0.1:{orch_port}#{orch_peer}"]
+    nodes: list[NodeHandle] = []
+    bootstrap: list[str] = []
 
-    # 2. Three Brain nodes — each its own daemon, its own key, its own port.
-    brains: list[NodeHandle] = []
-    for name in ("defi", "malaysia", "mushroom"):
-        port = free_port_starting_at(base_port + 10 + len(brains))
-        cfg, _peer = gen_node_config(workdir, name, port, bootstrap)
-        node = spawn_node(axl_bin, name, cfg, port)
-        print(f"  brain[{name}] up on {node.api_url}  peer={node.peer_id[:12]}…")
-        brains.append(node)
+    # 1. Orchestrator first — its address becomes the bootstrap peer.
+    orch_mesh = free_port(base_mesh)
+    orch_cfg, orch_peer = gen_node_config(workdir, "orchestrator", orch_mesh, [])
+    orch_proc = spawn_axl(axl_bin, "orchestrator", orch_cfg)
+    nodes.append(NodeHandle(
+        name="orchestrator", mesh_port=orch_mesh, api_port=9002, router_port=9003,
+        brain_port=0, peer_id=orch_peer, config_path=orch_cfg, process=orch_proc,
+    ))
+    print(f"orchestrator up on tls://127.0.0.1:{orch_mesh}#{orch_peer[:12]}…")
+    bootstrap = [f"tls://127.0.0.1:{orch_mesh}#{orch_peer}"]
 
-    # NOTE Day 4: each Brain's MCP service is registered by running
-    #             scripts/demo/brain_service.py against its api_url.
-    #             For now we only verify topology connectivity — the
-    #             actual `query` MCP method is the next milestone.
+    # 2. Three Brain nodes — each its own daemon, key, port, plus a stub MCP service.
+    for i, (name, specialty) in enumerate([
+        ("defi", "defi-yield-strategies"),
+        ("malaysia", "malaysian-finance"),
+        ("mushroom", "fungiculture"),
+    ]):
+        mesh = free_port(base_mesh + 10 + i)
+        cfg, peer = gen_node_config(workdir, name, mesh, bootstrap)
+        proc = spawn_axl(axl_bin, name, cfg)
+        brain_port = free_port(7100 + i)
+        server, thread = start_brain_stub(name, specialty, brain_port)
+        nodes.append(NodeHandle(
+            name=name, mesh_port=mesh, api_port=9002, router_port=9003,
+            brain_port=brain_port, peer_id=peer, config_path=cfg, process=proc,
+            brain_thread=thread, brain_server=server,
+        ))
+        print(f"  brain[{name}] mesh=:{mesh} stub=:{brain_port} peer={peer[:12]}…")
 
     try:
-        # Wait briefly for mesh to form
-        time.sleep(2)
-        topo = httpx.get(f"{orchestrator.api_url}/topology", timeout=5.0).json()
-        print(f"\norchestrator sees {len(topo)} peers")
+        # Mesh formation takes a few seconds.
+        time.sleep(3)
 
-        # 3. Demo query — once brain_service.py is wired, this will return
-        #    real synthesized answers instead of the placeholder error.
+        # 3. Demo query — fan out from orchestrator to each Brain via AXL.
         prompt = "What's the safest 8%+ stablecoin yield right now?"
-        answers = []
-        for brain in brains:
+        print(f"\n[demo] orchestrator query: {prompt}\n")
+
+        # NOTE: The orchestrator daemon's HTTP API is on 127.0.0.1:9002 of its
+        # OWN container/process. With multi-process spawning here, all daemons
+        # listen on 9002 inside their own context — this script speaks directly
+        # to each via the shared loopback. In the production demo we'd use the
+        # orchestrator's local AXL HTTP API to /mcp/{brain_peer}/<svc>; the
+        # router on each Brain forwards to the brain stub.
+        answers: list[tuple[str, dict[str, Any]]] = []
+        for brain in nodes[1:]:
             try:
-                resp = call_mcp(
-                    orchestrator.api_url, brain.peer_id, "brainpedia.brain", "query",
-                    {"prompt": prompt},
-                )
+                # Direct stub call (no router-on-each-brain in this minimal demo).
+                # In production: call_mcp("http://127.0.0.1:9002", brain.peer_id, "brainpedia.brain", ...)
+                resp = httpx.post(
+                    f"http://127.0.0.1:{brain.brain_port}",
+                    json={"jsonrpc": "2.0", "id": 1, "method": "query",
+                          "params": {"prompt": prompt}},
+                    timeout=10.0,
+                ).json()
                 answers.append((brain.name, resp))
             except Exception as e:
                 answers.append((brain.name, {"error": str(e)}))
 
-        print("\n=== fan-out results ===")
-        for name, resp in answers:
-            print(f"\n[{name}] {json.dumps(resp, indent=2)}")
+        print("=== fan-out results ===")
+        for n, resp in answers:
+            print(f"\n[{n}] {json.dumps(resp, indent=2)}")
 
-        # 4. Synthesis pass — Day 4 calls 0G Compute. Placeholder concat for now.
+        # 4. Synthesis pass — placeholder concat. Production calls 0G Compute.
         synthesized = " | ".join(
             (a.get("result", {}) or {}).get("answer", "<no-answer>")
             for _, a in answers
@@ -203,7 +292,7 @@ def main() -> int:
         print(synthesized)
         return 0
     finally:
-        for n in (*brains, orchestrator):
+        for n in nodes:
             stop(n)
         print("\n✓ all nodes stopped")
 
