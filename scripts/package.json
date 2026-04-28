@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@ensdomains/ensjs": "^4.2.2",
-    "viem": "^2.21.55"
+    "viem": "^2.48.4"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
