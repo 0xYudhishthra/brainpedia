@@ -4,3 +4,4 @@ broadcast/
 lib/
 !lib/.gitkeep
 .env
+.env.deploy
