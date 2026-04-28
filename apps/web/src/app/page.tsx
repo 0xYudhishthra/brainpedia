@@ -77,7 +77,7 @@ bun install && bun run --filter=@brainpedia/mcp-server build
         <h2 className="text-sm uppercase tracking-wider text-[var(--muted)]">Browse Brains</h2>
         <p className="text-sm text-[var(--muted)]">
           Each Brain has a public page at{' '}
-          <code className="font-mono">brainpedia.xyz/&lt;name&gt;</code>. Try{' '}
+          <code className="font-mono">brainpedia.up.railway.app/&lt;name&gt;</code>. Try{' '}
           <Link className="underline underline-offset-4" href="/yudhi">
             /yudhi
           </Link>

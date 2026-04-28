@@ -4,7 +4,7 @@ Targets:
 
 | What | Where | Why |
 |---|---|---|
-| `apps/web` (Next.js) | **Railway** service `brainpedia-web` | Public site at brainpedia.xyz |
+| `apps/web` (Next.js) | **Railway** service `brainpedia-web` | Public site at brainpedia.up.railway.app |
 | AXL bootstrap node | **Railway** service `axl-bootstrap` (Dockerfile build) | Demo Brains need a stable bootstrap peer |
 | `apps/mcp-server` | **Not deployed** — runs locally on user machines via Claude Desktop | stdio MCP, no remote process needed |
 | Contracts | 0G Galileo testnet (chain id 16602) via `forge script` | One-time deploy from local CLI |
@@ -50,7 +50,7 @@ The repo is private, so the [Railway GitHub app](https://github.com/apps/railway
 `brainpedia-web`:
 
 ```
-NEXT_PUBLIC_APP_URL          = https://brainpedia.xyz
+NEXT_PUBLIC_APP_URL          = https://brainpedia.up.railway.app
 NEXT_PUBLIC_ZG_RPC_URL       = https://evmrpc-testnet.0g.ai
 NEXT_PUBLIC_ZG_CHAIN_ID      = 16602
 NEXT_PUBLIC_ZG_EXPLORER_URL  = https://chainscan-galileo.0g.ai
@@ -107,12 +107,6 @@ or build it from a small entrypoint script that templates the config.
 The resulting public peer id is what gets put into every demo Brain's
 `bootstrap_peers` list (`AXL_BOOTSTRAP_PEERS=tls://<host>:9002#<public_hex>`).
 
-## Custom domain
+## Domain
 
-```bash
-railway domain --service brainpedia-web brainpedia.xyz
-```
-
-DNS — `brainpedia.xyz` is GoDaddy-managed; add a CNAME pointing the
-`@` (root) record at the Railway-provided target. Use forwarding for
-the apex if Railway issues a non-apex CNAME.
+The canonical URL is the Railway-provided `brainpedia.up.railway.app`. No custom domain is in use.

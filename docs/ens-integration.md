@@ -68,5 +68,5 @@ Contracts:
 - [x] Functional demo, no hard-coded values — every ENS value flows through env + the grep recipe above proves no addresses inline
 - [x] Obvious how ENS improves agent identity/discoverability — `<topic>.discover.brainpedia.eth` shortcuts + per-Brain `brain.*` text records make Brains queryable by capability, not 0x address
 - [x] Creative angle: subnames-as-access-tokens — `agent<hash>.client.brainpedia.eth` issued by AccessTokenRegistrar with on-chain TTL, no off-chain auth service
-- [x] Live demo: https://brainpedia-web-production.up.railway.app/yudhi reads all 8 brain.* records on every render
+- [x] Live demo: https://brainpedia.up.railway.app/yudhi reads all 8 brain.* records on every render
 - [ ] Video

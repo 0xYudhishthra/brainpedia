@@ -219,7 +219,7 @@ const ensWallet = createWalletClient({ account, chain, transport: http(ensRpcUrl
 console.log(`\n4. writing brain.* text records to ${values.label}.${ens.parentName}`);
 const records = {
   description: `${values.specialty} — ${SAMPLE_ARTICLES.length} articles compiled from research notes`,
-  url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://brainpedia-web-production.up.railway.app'}/${values.label}`,
+  url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://brainpedia.up.railway.app'}/${values.label}`,
   inft: `${inftAddress}:${tokenId}`,
   storageRoot: snapshot.rootHash,
   axlPeerId:
@@ -241,6 +241,6 @@ console.log(`   tx: ${result.txHash}`);
 console.log(`\n✓ ${values.label}.${ens.parentName} now points at the real Brain`);
 console.log(`  iNFT:         ${inftAddress}:${tokenId}`);
 console.log(`  storage root: ${snapshot.rootHash}`);
-console.log(`  view: https://brainpedia-web-production.up.railway.app/${values.label}`);
+console.log(`  view: https://brainpedia.up.railway.app/${values.label}`);
 
 void parseEther; // keep import (used elsewhere as needed)

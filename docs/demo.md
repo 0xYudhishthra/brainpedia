@@ -8,7 +8,7 @@ Confirmed working (verifiable by anyone, anytime):
 
 | Check | URL |
 |---|---|
-| Brain page renders live ENS records | https://brainpedia-web-production.up.railway.app/yudhi |
+| Brain page renders live ENS records | https://brainpedia.up.railway.app/yudhi |
 | `brainpedia.eth` exists on Sepolia | https://app.ens.domains/brainpedia.eth?chain=sepolia |
 | `yudhi.brainpedia.eth` resolves | https://app.ens.domains/yudhi.brainpedia.eth?chain=sepolia |
 | `Brain.sol` tokenId 1 deployed | https://chainscan-galileo.0g.ai/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6 |
@@ -41,10 +41,10 @@ Caption overlay: *"All on testnet. Real merkle root, real iNFT, real ENS subname
 
 ### Scene 3 — The Brain page (1:15–1:45)
 
-> Voiceover: *"Every Brain has a public page at brainpedia.xyz/{name}."*
+> Voiceover: *"Every Brain has a public page at brainpedia.up.railway.app/{name}."*
 
 Visuals:
-1. Browser → brainpedia.xyz/yudhi (or the railway URL until DNS lands).
+1. Browser → https://brainpedia.up.railway.app/yudhi.
 2. Page renders the 8 text records read live from ENS Sepolia.
 3. Hover over `brain.inft` → tooltip: "0x928940c1…:1 — click to view on chainscan-galileo.0g.ai".
 4. Hover over `brain.storage_root` → "0xa1418d3a…".
@@ -77,7 +77,7 @@ Visuals:
 Visuals:
 - Earnings dashboard showing per-Brain queries-served + 0G earned.
 - Cut to product framing: *"Demand-side: agents pay for compiled expertise. Supply-side: humans monetize their wikis as iNFTs."*
-- End card: *"brainpedia.xyz · github.com/0xYudhishthra/brainpedia"*
+- End card: *"brainpedia.up.railway.app · github.com/0xYudhishthra/brainpedia"*
 
 ## Things to highlight per track
 
@@ -107,7 +107,7 @@ Visuals:
 railway logs --service axl-bootstrap --deployment
 
 # Terminal 2: tail Brain page in browser
-open https://brainpedia-web-production.up.railway.app/yudhi
+open https://brainpedia.up.railway.app/yudhi
 
 # Terminal 3: live ENS resolution (proves no hardcoded values)
 bun run --cwd /tmp/zg-test resolve-yudhi.ts   # or use ensjs CLI

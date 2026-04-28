@@ -58,7 +58,7 @@ cast call 0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6 "currentStorageRoot(uint256
 - [x] iNFT contract address on 0G testnet 16602 — `0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6`
 - [x] GitHub repo with README
 - [ ] Demo video < 3 mins
-- [x] Live demo: https://brainpedia-web-production.up.railway.app
+- [x] Live demo: https://brainpedia.up.railway.app
 - [x] Architecture diagram → [architecture.md](architecture.md)
 - [x] Swarm coordination explanation → above
 - [x] Link to minted iNFT — [tokenId 1 mint tx](https://chainscan-galileo.0g.ai/tx/0x5ab3363ac12352b2c74e5da318c0cf4e2a1dcb463e4e97bc5cb6445ad1d4e509)

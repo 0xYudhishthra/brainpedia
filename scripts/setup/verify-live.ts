@@ -12,7 +12,7 @@ import { getTextRecord } from '@ensdomains/ensjs/public';
 
 const ZG_RPC = 'https://evmrpc-testnet.0g.ai';
 const SEPOLIA_RPC = 'https://ethereum-sepolia.publicnode.com';
-const WEB_URL = 'https://brainpedia-web-production.up.railway.app';
+const WEB_URL = 'https://brainpedia.up.railway.app';
 
 const BRAIN = '0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6' as Address;
 const SUBNAME_REGISTRAR = '0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6' as Address;

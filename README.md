@@ -4,8 +4,8 @@
 
 **Hackathon:** ETHGlobal Open Agents · **Tracks:** 0G · ENS · Gensyn AXL
 
-- **Live web**: https://brainpedia-web-production.up.railway.app · `brainpedia.xyz` (DNS pending)
-- **Sample Brain**: https://brainpedia-web-production.up.railway.app/yudhi (resolves live from ENS Sepolia)
+- **Live web**: https://brainpedia.up.railway.app
+- **Sample Brain**: https://brainpedia.up.railway.app/yudhi (resolves live from ENS Sepolia)
 
 ---
 
@@ -21,7 +21,7 @@ When a query needs multiple specialties, an orchestrator fans out to multiple Br
 
 | Layer | What | Where |
 |---|---|---|
-| **Web app** | Public site + D3 force-directed network viz + dynamic Brain pages | https://brainpedia-web-production.up.railway.app |
+| **Web app** | Public site + D3 force-directed network viz + dynamic Brain pages | https://brainpedia.up.railway.app |
 | **AXL bootstrap node** | Yggdrasil daemon, pinned peer ID `cb4cc722…3b8` | Railway — mesh `:7000` |
 | **0G iNFT** `Brain.sol` (ERC-7857) | tokenId 1 minted, 0.001 OG/query | [0G Galileo `0x928940c1…3Ef6`](https://chainscan-galileo.0g.ai/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6) |
 | **ENS subname registrar** | Issues `<name>.brainpedia.eth` for Brain owners | [Sepolia `0x928940c1…3Ef6`](https://sepolia.etherscan.io/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6) |

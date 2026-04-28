@@ -10,7 +10,7 @@ The full Brainpedia stack is **live**. Anyone can run:
 bun install && bun run --cwd scripts verify-live
 ```
 
-…and see all 11 read-only checks pass. The same checks render at https://brainpedia-web-production.up.railway.app/status on every page load.
+…and see all 11 read-only checks pass. The same checks render at https://brainpedia.up.railway.app/status on every page load.
 
 ## Live state
 
@@ -61,10 +61,9 @@ Deployer for all three: `0x0a9a3BB8E921c7983ea2C75f13B8F502d349dE64`.
 
 ### Web
 
-* https://brainpedia-web-production.up.railway.app — homepage with D3 force-directed network viz
-* https://brainpedia-web-production.up.railway.app/yudhi — sample Brain page (live ENS resolution + article list + animated query demo)
-* https://brainpedia-web-production.up.railway.app/status — 7 read-only system health checks
-* `brainpedia.xyz` + `www.brainpedia.xyz` registered on Railway, pending GoDaddy DNS update
+* https://brainpedia.up.railway.app — homepage with D3 force-directed network viz
+* https://brainpedia.up.railway.app/yudhi — sample Brain page (live ENS resolution + article list + animated query demo)
+* https://brainpedia.up.railway.app/status — 7 read-only system health checks
 
 ## Code
 
@@ -77,7 +76,6 @@ Deployer for all three: `0x0a9a3BB8E921c7983ea2C75f13B8F502d349dE64`.
 | Task | Owner | Status |
 |---|---|---|
 | Faucet 0G wallet to ≥ 3 OG (unlocks live 0G Compute) | User | Pending |
-| GoDaddy DNS: `www.brainpedia.xyz` CNAME → `ay9pzq4x.up.railway.app` | User | Pending |
 | Run MCP tools end-to-end via Claude Desktop | User | Pending |
 | Demo video | User | Pending |
 
