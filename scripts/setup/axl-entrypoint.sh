@@ -1,31 +1,36 @@
 #!/bin/sh
-# axl-entrypoint — templates the AXL node config from env at runtime so the
-# Ed25519 private key never lives in the image. Then exec the daemon.
+# axl-entrypoint — templates the Yggdrasil-format AXL node config from env at
+# runtime so the Ed25519 private key never lives in the image. Then exec the
+# daemon. AXL inherits Yggdrasil's config schema (capitalised keys).
 set -eu
 
-CFG_DIR="$(dirname "${AXL_NODE_CONFIG_PATH:-/etc/axl/node-config.json}")"
-mkdir -p "$CFG_DIR"
+CFG_PATH="${AXL_NODE_CONFIG_PATH:-/etc/axl/node-config.json}"
+mkdir -p "$(dirname "$CFG_PATH")"
 
 if [ -z "${AXL_PRIVATE_KEY_HEX:-}" ]; then
     echo "axl-entrypoint: AXL_PRIVATE_KEY_HEX not set" >&2
     exit 1
 fi
 
-LISTEN="${AXL_API_LISTEN:-0.0.0.0:9002}"
-BOOTSTRAP_JSON="${AXL_BOOTSTRAP_PEERS_JSON:-[]}"
-DATA_DIR="${AXL_DATA_DIR:-/var/lib/axl}"
-mkdir -p "$DATA_DIR"
+# Yggdrasil expects a 128-char hex (32-byte seed + 32-byte public key).
+KEY_LEN=$(printf '%s' "$AXL_PRIVATE_KEY_HEX" | wc -c)
+if [ "$KEY_LEN" -ne 128 ]; then
+    echo "axl-entrypoint: AXL_PRIVATE_KEY_HEX must be 128 hex chars (got $KEY_LEN)" >&2
+    exit 1
+fi
 
-cat > "${AXL_NODE_CONFIG_PATH:-/etc/axl/node-config.json}" <<EOF
+# Mesh listen URL — what other AXL daemons connect to.
+LISTEN="${AXL_MESH_LISTEN:-tls://0.0.0.0:7000}"
+PEERS_JSON="${AXL_PEERS_JSON:-[]}"
+
+cat > "$CFG_PATH" <<EOF
 {
-  "listen_addr": "${LISTEN}",
-  "private_key_hex": "${AXL_PRIVATE_KEY_HEX}",
-  "bootstrap_peers": ${BOOTSTRAP_JSON},
-  "data_dir": "${DATA_DIR}"
+  "PrivateKey": "${AXL_PRIVATE_KEY_HEX}",
+  "Peers": ${PEERS_JSON},
+  "Listen": ["${LISTEN}"]
 }
 EOF
 
-# Don't print the private key
-echo "axl-entrypoint: config written ($(wc -c < "${AXL_NODE_CONFIG_PATH:-/etc/axl/node-config.json}") bytes); listen=${LISTEN}; public_key=${AXL_PUBLIC_KEY_HEX:-unset}"
+echo "axl-entrypoint: config written ($(wc -c < "$CFG_PATH") bytes); listen=${LISTEN}; public_key=${AXL_PUBLIC_KEY_HEX:-unset}"
 
-exec /usr/local/bin/axl -config "${AXL_NODE_CONFIG_PATH:-/etc/axl/node-config.json}"
+exec /usr/local/bin/axl -config "$CFG_PATH"
