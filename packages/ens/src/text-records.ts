@@ -2,6 +2,7 @@ import type { Address } from 'viem';
 import { getTextRecord } from '@ensdomains/ensjs/public';
 import { BRAIN_TEXT_KEYS, type BrainTextRecords, type ResolvedBrain } from './types.js';
 import type { EnsClients } from './client.js';
+import { subnameRegistrarAbi } from './abi.js';
 
 const STANDARD_KEYS = ['description', 'avatar', 'url'] as const;
 
@@ -79,13 +80,50 @@ export async function resolveBrain(
 }
 
 /**
- * Write all Brain text records in a single batched multicall.
- * Day 3 wires this against the Public Resolver's `multicall(setText[])`.
+ * Write all Brain text records in a single batched call to our
+ * SubnameRegistrar.setTextRecords. Caller must own the subname (the
+ * registrar enforces this); the wallet account must match `ownerOfLabel`.
  */
 export async function writeBrainRecords(
-  _clients: EnsClients,
-  _ensName: string,
-  _records: BrainTextRecords,
+  clients: EnsClients,
+  label: string,
+  records: BrainTextRecords,
 ): Promise<{ txHash: `0x${string}` }> {
-  throw new Error('writeBrainRecords: not yet implemented (Day 3)');
+  const { keys, values } = brainRecordsToArrays(records);
+  if (keys.length === 0) throw new Error('writeBrainRecords: no records to write');
+  if (!clients.walletClient?.account) {
+    throw new Error('writeBrainRecords: walletClient with account is required');
+  }
+
+  const txHash = await clients.walletClient.writeContract({
+    address: clients.config.subnameRegistrarAddress,
+    abi: subnameRegistrarAbi,
+    functionName: 'setTextRecords',
+    args: [label, keys, values],
+    account: clients.walletClient.account,
+    chain: clients.walletClient.chain ?? null,
+  });
+  await clients.publicClient.waitForTransactionReceipt({ hash: txHash });
+  return { txHash };
+}
+
+function brainRecordsToArrays(records: BrainTextRecords): { keys: string[]; values: string[] } {
+  const keys: string[] = [];
+  const values: string[] = [];
+  const push = (k: string, v: string | undefined) => {
+    if (v !== undefined && v.length > 0) {
+      keys.push(k);
+      values.push(v);
+    }
+  };
+  push('description', records.description);
+  push('avatar', records.avatar);
+  push('url', records.url);
+  push(BRAIN_TEXT_KEYS.inft, records.inft);
+  push(BRAIN_TEXT_KEYS.storageRoot, records.storageRoot);
+  push(BRAIN_TEXT_KEYS.axlPeerId, records.axlPeerId);
+  push(BRAIN_TEXT_KEYS.specialty, records.specialty);
+  push(BRAIN_TEXT_KEYS.priceQuery, records.priceQuery);
+  push(BRAIN_TEXT_KEYS.computeUrl, records.computeUrl);
+  return { keys, values };
 }

@@ -1,17 +1,17 @@
-import { keccak256, toHex, type Address } from 'viem';
+import { keccak256, namehash, toHex, type Address, type Hash, type WalletClient } from 'viem';
 import type { EnsClients } from './client.js';
+import { accessTokenRegistrarAbi } from './abi.js';
 
 /**
  * Subnames-as-access-tokens (the "Most Creative Use of ENS" angle).
  *
  * When an agent pays to query a Brain, the AccessTokenRegistrar issues
- * a one-time-use subname under `client.<parentName>`:
+ * a TTL-bounded subname under `client.<parentName>`:
  *
  *     agent7af2.client.brainpedia.eth → resolves to the authorized session
  *
- * The subname expires (or is burned) after TTL or first use. The Brain
- * checks resolution at query time as a capability — no separate API key
- * system. The registrar enforces TTL on chain.
+ * The Brain checks resolution at query time as a capability — no separate
+ * API key system. The registrar enforces TTL on chain.
  */
 export interface IssueAccessTokenInput {
   /** The agent's address that paid for the query. */
@@ -25,9 +25,10 @@ export interface IssueAccessTokenInput {
 export interface IssuedAccessToken {
   /** The full subname, e.g. agent7af2.client.brainpedia.eth */
   tokenName: string;
+  label: string;
   /** Block timestamp at which the token expires. */
   expiresAt: number;
-  txHash: `0x${string}`;
+  txHash: Hash;
 }
 
 export function deriveAccessTokenLabel(agent: Address, brainEnsName: string, salt: bigint): string {
@@ -40,22 +41,59 @@ export async function issueAccessToken(
   clients: EnsClients,
   input: IssueAccessTokenInput,
 ): Promise<IssuedAccessToken> {
-  void clients.config.accessTokenRegistrarAddress;
-  void input;
-  throw new Error('issueAccessToken: not yet implemented (Day 3)');
+  if (!clients.walletClient?.account) {
+    throw new Error('issueAccessToken: walletClient with account is required');
+  }
+  const wallet: WalletClient = clients.walletClient;
+  const ttl = BigInt(input.ttlSeconds ?? clients.config.accessTokenTtlSeconds);
+  const salt = BigInt(Date.now()) ^ (BigInt(Math.floor(Math.random() * 1e9)) << 32n);
+  const label = deriveAccessTokenLabel(input.agent, input.brainEnsName, salt);
+  const tokenName = `${label}.client.${clients.config.parentName}`;
+  const brainHash = namehash(input.brainEnsName);
+
+  const txHash = await wallet.writeContract({
+    address: clients.config.accessTokenRegistrarAddress,
+    abi: accessTokenRegistrarAbi,
+    functionName: 'issue',
+    args: [label, input.agent, brainHash, ttl],
+    account: wallet.account!,
+    chain: wallet.chain ?? null,
+  });
+  await clients.publicClient.waitForTransactionReceipt({ hash: txHash });
+
+  const expiresAt = Math.floor(Date.now() / 1000) + Number(ttl);
+  return { tokenName, label, expiresAt, txHash };
 }
 
 export async function revokeAccessToken(
   clients: EnsClients,
-  tokenName: string,
-): Promise<{ txHash: `0x${string}` }> {
-  void tokenName;
-  throw new Error('revokeAccessToken: not yet implemented (Day 3)');
+  label: string,
+): Promise<{ txHash: Hash }> {
+  if (!clients.walletClient?.account) {
+    throw new Error('revokeAccessToken: walletClient with account is required');
+  }
+  const wallet: WalletClient = clients.walletClient;
+  const txHash = await wallet.writeContract({
+    address: clients.config.accessTokenRegistrarAddress,
+    abi: accessTokenRegistrarAbi,
+    functionName: 'revoke',
+    args: [label],
+    account: wallet.account!,
+    chain: wallet.chain ?? null,
+  });
+  await clients.publicClient.waitForTransactionReceipt({ hash: txHash });
+  return { txHash };
 }
 
 export async function isAccessTokenValid(
-  _clients: EnsClients,
-  _tokenName: string,
+  clients: EnsClients,
+  label: string,
+  agent: Address,
 ): Promise<boolean> {
-  throw new Error('isAccessTokenValid: not yet implemented (Day 3)');
+  return clients.publicClient.readContract({
+    address: clients.config.accessTokenRegistrarAddress,
+    abi: accessTokenRegistrarAbi,
+    functionName: 'isValid',
+    args: [label, agent],
+  });
 }

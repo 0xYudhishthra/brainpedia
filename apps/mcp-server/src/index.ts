@@ -7,6 +7,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { setupBrainTool, handleSetupBrain } from './tools/setup-brain.js';
 import { uploadArticlesTool, handleUploadArticles } from './tools/upload-articles.js';
+import { finalizeBrainTool, handleFinalizeBrain } from './tools/finalize-brain.js';
 import { syncVaultTool, handleSyncVault } from './tools/sync-vault.js';
 import { queryBrainTool, handleQueryBrain } from './tools/query-brain.js';
 
@@ -23,7 +24,13 @@ const server = new Server(
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [setupBrainTool, uploadArticlesTool, syncVaultTool, queryBrainTool],
+  tools: [
+    setupBrainTool,
+    uploadArticlesTool,
+    finalizeBrainTool,
+    syncVaultTool,
+    queryBrainTool,
+  ],
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
@@ -33,6 +40,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return handleSetupBrain(args ?? {});
     case 'upload_articles':
       return handleUploadArticles(args ?? {});
+    case 'finalize_brain':
+      return handleFinalizeBrain(args ?? {});
     case 'sync_vault':
       return handleSyncVault(args ?? {});
     case 'query_brain':

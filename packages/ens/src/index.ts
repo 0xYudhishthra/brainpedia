@@ -8,8 +8,9 @@ export { BRAIN_TEXT_KEYS } from './types.js';
 export type { BrainTextKey, BrainTextRecords, ResolvedBrain } from './types.js';
 
 export { readBrainRecords, resolveBrain, writeBrainRecords } from './text-records.js';
-export { registerSubname } from './subnames.js';
+export { registerSubname, labelHash, brainNamehash } from './subnames.js';
 export type { RegisterSubnameInput, RegisterSubnameResult } from './subnames.js';
+export { subnameRegistrarAbi, accessTokenRegistrarAbi } from './abi.js';
 
 export {
   deriveAccessTokenLabel,
