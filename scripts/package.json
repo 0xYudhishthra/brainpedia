@@ -9,6 +9,7 @@
     "seed-brain": "bun run setup/seed-brain.ts",
     "issue-token": "bun run setup/issue-access-token.ts",
     "issue-discovery": "bun run setup/issue-discovery-shortcut.ts",
+    "verify-live": "bun run setup/verify-live.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
