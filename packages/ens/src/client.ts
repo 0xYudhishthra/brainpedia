@@ -1,5 +1,6 @@
-import { createPublicClient, http, type PublicClient, type WalletClient } from 'viem';
+import { createPublicClient, http, type WalletClient } from 'viem';
 import { addEnsContracts } from '@ensdomains/ensjs';
+import type { ClientWithEns } from '@ensdomains/ensjs/contracts';
 import { loadEnsConfig, viemChainForNetwork, type EnsConfig } from './config.js';
 
 /**
@@ -8,7 +9,7 @@ import { loadEnsConfig, viemChainForNetwork, type EnsConfig } from './config.js'
  * Resolver / NameWrapper addresses — `addEnsContracts` resolves them
  * from the chain id, which itself is selected by ENS_NETWORK env.
  */
-export function createEnsPublicClient(cfg: EnsConfig = loadEnsConfig()): PublicClient {
+export function createEnsPublicClient(cfg: EnsConfig = loadEnsConfig()): ClientWithEns {
   const chain = addEnsContracts(viemChainForNetwork(cfg.network));
   return createPublicClient({
     chain,
@@ -17,7 +18,7 @@ export function createEnsPublicClient(cfg: EnsConfig = loadEnsConfig()): PublicC
 }
 
 export interface EnsClients {
-  publicClient: PublicClient;
+  publicClient: ClientWithEns;
   config: EnsConfig;
   /** Optional — set when we need to write (subname registration, text record updates). */
   walletClient?: WalletClient;

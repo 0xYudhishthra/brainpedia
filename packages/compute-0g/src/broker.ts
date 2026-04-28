@@ -1,38 +1,114 @@
+import { JsonRpcProvider, Wallet, parseEther } from 'ethers';
+import { createZGComputeNetworkBroker } from '@0glabs/0g-serving-broker';
 import type { ComputeConfig } from './config.js';
 
-/**
- * Wraps the 0G serving broker for ledger ops:
- *   - depositFund / transferFund — pre-fund a provider for inference
- *   - listService              — discover providers + models
- *   - getProcessedSecret       — short-lived API key for the OpenAI-compat proxy
- *
- * Day 2 wires `createZGComputeNetworkBroker` against an ethers wallet built
- * from ZG_WALLET_PRIVATE_KEY + cfg.rpcUrl.
- */
 export interface ProviderInfo {
   address: string;
   url: string;
   model: string;
-  pricePerToken?: string;
+  inputPrice?: bigint;
+  outputPrice?: bigint;
+}
+
+/**
+ * Per-request inference handle returned by `getInferenceClient(provider)`.
+ *
+ * The 0G broker (>=0.7) generates fresh signed headers per request via
+ * `broker.inference.getRequestHeaders(provider, content)` — these replace
+ * the deprecated `getProcessedSecret` flow. Always pass the *exact* content
+ * to `headersFor` that you'll send to the model, otherwise the provider
+ * rejects the signature.
+ */
+export interface InferenceHandle {
+  /** Endpoint already includes `/v1/proxy`. */
+  endpoint: string;
+  model: string;
+  headersFor(content: string): Promise<Record<string, string>>;
+  /** Verify the TEE-signed response after the call (unblocks billing). */
+  verify(chatId: string, content: string): Promise<boolean>;
 }
 
 export interface BrokerHandle {
   listProviders(): Promise<ProviderInfo[]>;
-  ensureFunded(provider: string, minAmount: bigint): Promise<void>;
-  /** Returns a short-lived API key + the proxy base URL for the OpenAI client. */
-  getInferenceCredentials(provider: string): Promise<{ apiKey: string; baseURL: string }>;
+  /**
+   * One-shot setup before transferring funds:
+   *   1. addLedger (idempotent-ish; required first time per wallet)
+   *   2. depositFund        — units: OG (number)
+   *   3. transferFund       — units: neuron (bigint, e.g. parseEther("5"))
+   */
+  ensureFunded(provider: string, depositOg: number, transferNeuron: bigint): Promise<void>;
+  /** Acknowledge a provider's TEE signer once per (user, provider). */
+  acknowledgeProvider(provider: string): Promise<void>;
+  /** Return a callable handle that produces fresh per-request headers. */
+  getInferenceClient(provider: string): Promise<InferenceHandle>;
 }
 
-export function createBroker(_cfg: ComputeConfig, _signerPrivateKey: string): BrokerHandle {
+export function createBroker(cfg: ComputeConfig, signerPrivateKey: string): BrokerHandle {
+  const provider = new JsonRpcProvider(cfg.rpcUrl);
+  const wallet = new Wallet(signerPrivateKey, provider);
+  let cached: Awaited<ReturnType<typeof createZGComputeNetworkBroker>> | null = null;
+
+  async function broker() {
+    // ESM/CJS dual-package hazard: SDK was built against ethers CJS,
+    // our Wallet is from ethers ESM — structurally identical, types differ.
+    if (!cached) cached = await createZGComputeNetworkBroker(wallet as never);
+    return cached;
+  }
+
   return {
     async listProviders() {
-      throw new Error('broker.listProviders: not yet wired (Day 2)');
+      const b = await broker();
+      const services = await b.inference.listService();
+      return services.map((s) => ({
+        address: s.provider,
+        url: s.url,
+        model: s.model,
+        inputPrice: s.inputPrice,
+        outputPrice: s.outputPrice,
+      }));
     },
-    async ensureFunded() {
-      throw new Error('broker.ensureFunded: not yet wired (Day 2)');
+
+    async ensureFunded(providerAddr, depositOg, transferNeuron) {
+      const b = await broker();
+      // addLedger creates a signing keypair on chain — first call only;
+      // subsequent calls revert. We swallow that revert to keep this idempotent.
+      try {
+        await b.ledger.addLedger(depositOg);
+      } catch (err) {
+        const msg = (err as Error).message ?? '';
+        if (!/already|exists|registered/i.test(msg)) throw err;
+      }
+      await b.ledger.depositFund(depositOg);
+      await b.ledger.transferFund(providerAddr, 'inference', transferNeuron);
     },
-    async getInferenceCredentials() {
-      throw new Error('broker.getInferenceCredentials: not yet wired (Day 2)');
+
+    async acknowledgeProvider(providerAddr) {
+      const b = await broker();
+      try {
+        await b.inference.acknowledgeProviderSigner(providerAddr);
+      } catch (err) {
+        // Already acknowledged → contract reverts; ignore.
+        const msg = (err as Error).message ?? '';
+        if (!/already|acknowledged/i.test(msg)) throw err;
+      }
+    },
+
+    async getInferenceClient(providerAddr) {
+      const b = await broker();
+      const meta = await b.inference.getServiceMetadata(providerAddr);
+      return {
+        endpoint: meta.endpoint,
+        model: meta.model,
+        async headersFor(content) {
+          const h = await b.inference.getRequestHeaders(providerAddr, content);
+          return h as unknown as Record<string, string>;
+        },
+        async verify(chatId, content) {
+          return Boolean(await b.inference.processResponse(providerAddr, chatId, content));
+        },
+      };
     },
   };
 }
+
+export { parseEther };
