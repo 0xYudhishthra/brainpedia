@@ -1,4 +1,22 @@
 import Link from 'next/link';
+import { NetworkViz } from '@/components/network-viz';
+
+const DEMO_NODES = [
+  { id: 'agent', label: 'querying agent', kind: 'agent' as const, active: 0.8 },
+  { id: 'orch', label: 'orchestrator', kind: 'orchestrator' as const, active: 0.7 },
+  { id: 'defi', label: 'defi.brainpedia.eth', kind: 'brain' as const, active: 0.5 },
+  { id: 'malaysia', label: 'malaysia.brainpedia.eth', kind: 'brain' as const, active: 0.5 },
+  { id: 'mush', label: 'mushroom.brainpedia.eth', kind: 'brain' as const, active: 0.3 },
+];
+
+const DEMO_LINKS = [
+  { source: 'agent', target: 'orch', kind: 'request' as const, active: 0.8 },
+  { source: 'orch', target: 'defi', kind: 'request' as const, active: 0.7 },
+  { source: 'orch', target: 'malaysia', kind: 'request' as const, active: 0.7 },
+  { source: 'orch', target: 'mush', kind: 'request' as const, active: 0.4 },
+  { source: 'defi', target: 'orch', kind: 'response' as const, active: 0.6 },
+  { source: 'malaysia', target: 'orch', kind: 'response' as const, active: 0.6 },
+];
 
 export default function HomePage() {
   return (
@@ -9,6 +27,20 @@ export default function HomePage() {
           Compiled human expertise as iNFTs — a knowledge layer agents pay to query.
         </p>
       </header>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm uppercase tracking-wider text-[var(--muted)]">
+          Mixture-of-Brains query
+        </h2>
+        <div className="rounded-lg border border-current/10 bg-black/[0.02] p-3 dark:bg-white/[0.02]">
+          <NetworkViz nodes={DEMO_NODES} links={DEMO_LINKS} />
+        </div>
+        <p className="text-xs text-[var(--muted)]">
+          Agent → orchestrator (AXL <code className="font-mono">/mcp</code>) → fan-out to
+          specialty Brains → synthesized response. Each Brain runs its own AXL daemon with
+          its own Ed25519 peer id.
+        </p>
+      </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm uppercase tracking-wider text-[var(--muted)]">Get started</h2>
