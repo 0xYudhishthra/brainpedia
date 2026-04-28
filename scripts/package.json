@@ -8,6 +8,7 @@
     "register-parent": "bun run setup/register-parent.ts",
     "seed-brain": "bun run setup/seed-brain.ts",
     "issue-token": "bun run setup/issue-access-token.ts",
+    "issue-discovery": "bun run setup/issue-discovery-shortcut.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
