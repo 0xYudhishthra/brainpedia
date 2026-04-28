@@ -21,7 +21,9 @@ WORKDIR /repo
 COPY --from=deps /repo/node_modules ./node_modules
 COPY --from=deps /repo/apps/web/node_modules ./apps/web/node_modules
 COPY . .
-RUN bun run --cwd apps/web build
+# Build all workspace deps the web app pulls in (their package.json's main
+# points at dist/), then build the Next.js app itself.
+RUN bun run build --filter=@brainpedia/web
 
 FROM oven/bun:1.3-alpine AS runner
 WORKDIR /repo
