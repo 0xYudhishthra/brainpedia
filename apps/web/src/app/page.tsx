@@ -45,14 +45,27 @@ export default function HomePage() {
       <section className="flex flex-col gap-3">
         <h2 className="text-sm uppercase tracking-wider text-[var(--muted)]">Get started</h2>
         <div className="rounded-lg border border-current/10 p-5">
-          <p className="mb-3 text-sm">Connect Brainpedia to Claude Desktop:</p>
+          <p className="mb-3 text-sm">Run the MCP server locally and point Claude Desktop at it:</p>
           <pre className="overflow-x-auto rounded bg-black/5 p-3 font-mono text-xs dark:bg-white/5">
-{`# in Claude Desktop's mcp config
+{`git clone https://github.com/0xYudhishthra/brainpedia
+cd brainpedia
+bun install && bun run --filter=@brainpedia/mcp-server build
+
+# claude_desktop_config.json
 {
   "mcpServers": {
     "brainpedia": {
-      "command": "npx",
-      "args": ["-y", "@brainpedia/mcp-server"]
+      "command": "node",
+      "args": ["/absolute/path/to/brainpedia/apps/mcp-server/dist/index.js"],
+      "env": {
+        "ZG_WALLET_PRIVATE_KEY": "0x...",
+        "ZG_INFT_CONTRACT_ADDRESS": "0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6",
+        "ENS_RPC_URL": "https://ethereum-sepolia.publicnode.com",
+        "ENS_PARENT_NAME": "brainpedia.eth",
+        "ENS_NETWORK": "sepolia",
+        "ENS_SUBNAME_REGISTRAR_ADDRESS": "0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6",
+        "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x36ce746e88b9098899fc8d0ab274c45748d04fd9"
+      }
     }
   }
 }`}
