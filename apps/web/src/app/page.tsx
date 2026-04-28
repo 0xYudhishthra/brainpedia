@@ -72,6 +72,39 @@ export default function HomePage() {
         </p>
       </section>
 
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <DemoLink
+          href="/yudhi"
+          label="Sample Brain"
+          detail="defi-yield-strategies, 6 articles, 0.001 OG/query"
+        />
+        <DemoLink href="/status" label="Live status" detail="7 read-only checks against on-chain state" />
+        <DemoLink
+          external
+          href="https://app.ens.domains/brainpedia.eth?chain=sepolia"
+          label="brainpedia.eth on ENS"
+          detail="parent name, deployer-owned"
+        />
+        <DemoLink
+          external
+          href="https://app.ens.domains/yudhi.brainpedia.eth?chain=sepolia"
+          label="yudhi.brainpedia.eth"
+          detail="all 8 brain.* records"
+        />
+        <DemoLink
+          external
+          href="https://app.ens.domains/defi.discover.brainpedia.eth?chain=sepolia"
+          label="defi.discover…"
+          detail="topic discovery shortcut"
+        />
+        <DemoLink
+          external
+          href="https://chainscan-galileo.0g.ai/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6"
+          label="Brain.sol on 0G"
+          detail="ERC-7857 iNFT, tokenId 1 minted"
+        />
+      </section>
+
       <footer className="mt-auto border-t border-current/10 pt-6 text-xs text-[var(--muted)]">
         <p>
           Built for ETHGlobal Open Agents · 0G · ENS · Gensyn AXL ·{' '}
@@ -86,3 +119,28 @@ export default function HomePage() {
     </main>
   );
 }
+
+function DemoLink({
+  href,
+  label,
+  detail,
+  external,
+}: {
+  href: string;
+  label: string;
+  detail: string;
+  external?: boolean;
+}) {
+  const Comp: 'a' | typeof Link = external ? 'a' : Link;
+  const props = external ? { href, target: '_blank', rel: 'noreferrer' } : { href };
+  return (
+    <Comp
+      {...(props as { href: string; target?: string; rel?: string })}
+      className="flex flex-col gap-1 rounded-lg border border-current/10 p-3 hover:border-current/20 transition-colors"
+    >
+      <span className="text-sm font-medium">{label} →</span>
+      <span className="text-xs text-[var(--muted)]">{detail}</span>
+    </Comp>
+  );
+}
+
