@@ -16,6 +16,7 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
+    "@brainpedia/axl": "workspace:*",
     "@brainpedia/compute-0g": "workspace:*",
     "@brainpedia/ens": "workspace:*",
     "@brainpedia/obsidian-parser": "workspace:*",
