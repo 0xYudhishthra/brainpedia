@@ -10,28 +10,65 @@ Targets:
 | Contracts | 0G Galileo testnet (chain id 16602) via `forge script` | One-time deploy from local CLI |
 | ENS contracts | Sepolia (or mainnet) via `forge script` | One-time deploy from local CLI |
 
-## Railway — first deploy
+## Railway project
 
-```bash
-# from the repo root, with the user logged into the Bundie workspace
-railway init --name brainpedia
-railway add --service brainpedia-web
-railway up --service brainpedia-web
+Already created under the Bundie workspace:
+
+- **Project**: `brainpedia` — id `941699b4-511f-4e87-a65e-48d67a9f37dc`
+- **Dashboard**: https://railway.com/project/941699b4-511f-4e87-a65e-48d67a9f37dc
+- **Services** (both empty, env-vars-set, sources not yet linked):
+  - `brainpedia-web` — id `1d499176-abc5-4bb7-afb5-f88fb044a2fc`
+  - `axl-bootstrap` — id `11e504a7-68a7-4bc6-a2ad-958deada4d4b`
+
+## Linking the GitHub repo (one-time)
+
+The repo is private, so the [Railway GitHub app](https://github.com/apps/railway-app) needs permission for `0xYudhishthra/brainpedia` first. Then in the dashboard for each service:
+
+1. **brainpedia-web** → Settings → Source → connect repo → set:
+   - Repo: `0xYudhishthra/brainpedia`
+   - Branch: `main`
+   - Root Directory: `apps/web`
+2. **axl-bootstrap** → Settings → Source → connect repo → set:
+   - Repo: `0xYudhishthra/brainpedia`
+   - Branch: `main`
+   - Dockerfile Path: `scripts/setup/Dockerfile.axl-bootstrap`
+
+(Once linked, every push to `main` auto-deploys.)
+
+## Required env vars (already set)
+
+`brainpedia-web`:
+
+```
+NEXT_PUBLIC_APP_URL          = https://brainpedia.xyz
+NEXT_PUBLIC_ZG_RPC_URL       = https://evmrpc-testnet.0g.ai
+NEXT_PUBLIC_ZG_CHAIN_ID      = 16602
+NEXT_PUBLIC_ZG_EXPLORER_URL  = https://chainscan-galileo.0g.ai
+ENS_NETWORK                  = sepolia
+ENS_PARENT_NAME              = brainpedia.eth
+ENS_ACCESS_TOKEN_TTL_SECONDS = 900
 ```
 
-Set required env vars on `brainpedia-web`:
+Still pending (set after Day 3 deploys):
+
+```
+ENS_RPC_URL                       = <sepolia rpc>
+ENS_SUBNAME_REGISTRAR_ADDRESS     = <deployed addr>
+ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS = <deployed addr>
+ZG_INFT_CONTRACT_ADDRESS          = <deployed addr>
+```
+
+`axl-bootstrap`:
+
+```
+AXL_API_LISTEN       = 0.0.0.0:9002
+AXL_NODE_CONFIG_PATH = /etc/axl/node-config.json
+```
+
+To set additional vars later:
 
 ```bash
-railway variable set --service brainpedia-web \
-  NEXT_PUBLIC_APP_URL=https://brainpedia.xyz \
-  NEXT_PUBLIC_ZG_RPC_URL=https://evmrpc-testnet.0g.ai \
-  NEXT_PUBLIC_ZG_CHAIN_ID=16602 \
-  NEXT_PUBLIC_ZG_EXPLORER_URL=https://chainscan-galileo.0g.ai \
-  ENS_PARENT_NAME=brainpedia.eth \
-  ENS_NETWORK=sepolia \
-  ENS_RPC_URL=<sepolia_rpc> \
-  ENS_SUBNAME_REGISTRAR_ADDRESS=<deployed_addr> \
-  ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS=<deployed_addr>
+railway variable set --service brainpedia-web KEY=VALUE
 ```
 
 ## AXL bootstrap node
