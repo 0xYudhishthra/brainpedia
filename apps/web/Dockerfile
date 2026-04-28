@@ -8,6 +8,7 @@ COPY package.json bun.lock* ./
 COPY turbo.json tsconfig.base.json ./
 COPY apps/web/package.json ./apps/web/
 COPY apps/mcp-server/package.json ./apps/mcp-server/
+COPY apps/brain/package.json ./apps/brain/
 COPY packages/obsidian-parser/package.json ./packages/obsidian-parser/
 COPY packages/storage-0g/package.json ./packages/storage-0g/
 COPY packages/compute-0g/package.json ./packages/compute-0g/
