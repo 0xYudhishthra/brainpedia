@@ -10,6 +10,16 @@ Targets:
 | Contracts | 0G Galileo testnet (chain id 16602) via `forge script` | One-time deploy from local CLI |
 | ENS contracts | Sepolia (or mainnet) via `forge script` | One-time deploy from local CLI |
 
+## Deployed contracts
+
+| Contract | Network | Address | Explorer |
+|---|---|---|---|
+| `Brain.sol` (ERC-7857) | 0G Galileo (16602) | `0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6` | [chainscan-galileo](https://chainscan-galileo.0g.ai/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6) |
+| `SubnameRegistrar.sol` | Sepolia (11155111) | `0xC22c0F1Dd48cE1370B588ec24eB683a17540B227` | [sepolia.etherscan](https://sepolia.etherscan.io/address/0xC22c0F1Dd48cE1370B588ec24eB683a17540B227) |
+| `AccessTokenRegistrar.sol` | Sepolia (11155111) | `0x8fAC641752b239b422bf668A4C329d9Fe629a299` | [sepolia.etherscan](https://sepolia.etherscan.io/address/0x8fAC641752b239b422bf668A4C329d9Fe629a299) |
+
+Deployer for both: `0x0a9a3BB8E921c7983ea2C75f13B8F502d349dE64`.
+
 ## Railway project
 
 Already created under the Bundie workspace:
