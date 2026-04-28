@@ -13,6 +13,7 @@ COPY packages/storage-0g/package.json ./packages/storage-0g/
 COPY packages/compute-0g/package.json ./packages/compute-0g/
 COPY packages/ens/package.json ./packages/ens/
 COPY packages/axl/package.json ./packages/axl/
+COPY scripts/package.json ./scripts/
 RUN bun install
 
 FROM oven/bun:1.3-alpine AS builder
