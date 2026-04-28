@@ -5,7 +5,6 @@
     "dockerfilePath": "scripts/setup/Dockerfile.axl-bootstrap"
   },
   "deploy": {
-    "startCommand": "/usr/local/bin/axl -config /etc/axl/node-config.json",
     "restartPolicyType": "ALWAYS",
     "restartPolicyMaxRetries": 10
   }
