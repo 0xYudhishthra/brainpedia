@@ -47,9 +47,26 @@ git grep -nE '\.eth' -- packages/ens/src/
 # (expect: zero results — parent name comes from env)
 ```
 
+## Live state
+
+| Name | Resolves to |
+|---|---|
+| [`brainpedia.eth`](https://app.ens.domains/brainpedia.eth?chain=sepolia) | Deployer-owned parent name |
+| [`yudhi.brainpedia.eth`](https://app.ens.domains/yudhi.brainpedia.eth?chain=sepolia) | Sample Brain — 8 brain.* text records, all live |
+| [`defi.discover.brainpedia.eth`](https://app.ens.domains/defi.discover.brainpedia.eth?chain=sepolia) | Topic discovery shortcut → list of relevant Brains |
+| `agenta5b68322.client.brainpedia.eth` | Sample one-time-use access-token subname (TTL-bounded) |
+
+Contracts:
+
+| Contract | Sepolia address |
+|---|---|
+| `SubnameRegistrar` | [`0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6`](https://sepolia.etherscan.io/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6) |
+| `AccessTokenRegistrar` | [`0x36ce746e88b9098899fc8d0ab274c45748d04fd9`](https://sepolia.etherscan.io/address/0x36ce746e88b9098899fc8d0ab274c45748d04fd9) |
+
 ## Submission checklist
 
-- [x] Functional demo, no hard-coded values — verified via env-driven config + the grep above
-- [x] Obvious how ENS improves agent identity/discoverability — discovery shortcuts + text records make Brains queryable by capability, not address
-- [x] Creative angle: subnames-as-access-tokens (one-time-use auth subnames, TTL on chain)
-- [ ] Video / live demo link
+- [x] Functional demo, no hard-coded values — every ENS value flows through env + the grep recipe above proves no addresses inline
+- [x] Obvious how ENS improves agent identity/discoverability — `<topic>.discover.brainpedia.eth` shortcuts + per-Brain `brain.*` text records make Brains queryable by capability, not 0x address
+- [x] Creative angle: subnames-as-access-tokens — `agent<hash>.client.brainpedia.eth` issued by AccessTokenRegistrar with on-chain TTL, no off-chain auth service
+- [x] Live demo: https://brainpedia-web-production.up.railway.app/yudhi reads all 8 brain.* records on every render
+- [ ] Video
