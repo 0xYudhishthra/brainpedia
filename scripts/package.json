@@ -5,10 +5,16 @@
   "type": "module",
   "scripts": {
     "prep-deploy": "bun run setup/prep-deploy.ts",
+    "register-parent": "bun run setup/register-parent.ts",
+    "seed-brain": "bun run setup/seed-brain.ts",
+    "issue-token": "bun run setup/issue-access-token.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@brainpedia/ens": "workspace:*",
+    "@brainpedia/storage-0g": "workspace:*",
     "@ensdomains/ensjs": "^4.2.2",
+    "ethers": "^6.13.4",
     "viem": "^2.48.4"
   },
   "devDependencies": {
