@@ -1,29 +1,14 @@
 # syntax=docker/dockerfile:1.7
 # Brainpedia web — monorepo-aware build.
-# Built from the monorepo root so workspace deps (@brainpedia/*) resolve.
-
-FROM oven/bun:1.3-alpine AS deps
-WORKDIR /repo
-COPY package.json bun.lock* ./
-COPY turbo.json tsconfig.base.json ./
-COPY apps/web/package.json ./apps/web/
-COPY apps/mcp-server/package.json ./apps/mcp-server/
-COPY apps/brain/package.json ./apps/brain/
-COPY packages/obsidian-parser/package.json ./packages/obsidian-parser/
-COPY packages/storage-0g/package.json ./packages/storage-0g/
-COPY packages/compute-0g/package.json ./packages/compute-0g/
-COPY packages/ens/package.json ./packages/ens/
-COPY packages/axl/package.json ./packages/axl/
-COPY scripts/package.json ./scripts/
-RUN bun install
+# Single install+build stage so bun's workspace symlinks survive intact;
+# slim runner stage with only what `next start` needs.
 
 FROM oven/bun:1.3-alpine AS builder
 WORKDIR /repo
-COPY --from=deps /repo/node_modules ./node_modules
-COPY --from=deps /repo/apps/web/node_modules ./apps/web/node_modules
 COPY . .
-# Build all workspace deps the web app pulls in (their package.json's main
-# points at dist/), then build the Next.js app itself.
+RUN bun install --frozen-lockfile
+# Turbo walks dependsOn:[^build] so workspace deps tsc to dist/ before
+# Next.js webpack tries to resolve @brainpedia/* imports.
 RUN bun run build --filter=@brainpedia/web
 
 FROM oven/bun:1.3-alpine AS runner
