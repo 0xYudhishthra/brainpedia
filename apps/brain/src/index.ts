@@ -1,10 +1,11 @@
 /**
- * @brainpedia/brain — entry point for the Brain-side service.
+ * @brainpedia/brain — Brain-side service.
  *
- * Exports the pure query handler so it can be wired behind any transport
- * (AXL MCP routing, raw HTTP, A2A, in-process). A standalone HTTP server
- * wrapper will land here once the AXL daemon's service-registration API
- * is verified against the live binary.
+ *   handler.ts → pure query handler (no transport assumptions)
+ *   server.ts  → JSON-RPC HTTP server that registers with the AXL MCP
+ *                router (POST /register {service, endpoint}) so incoming
+ *                /mcp/{peer}/brainpedia.brain calls are forwarded here.
+ *   cli.ts     → entry point reading env vars (run with `bun run start`)
  */
 export {
   createBrainHandler,
@@ -12,3 +13,4 @@ export {
   type BrainQueryRequest,
   type BrainQueryResult,
 } from './handler.js';
+export { startBrainServer } from './server.js';
