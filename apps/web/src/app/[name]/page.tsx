@@ -6,6 +6,9 @@ import {
   BRAIN_TEXT_KEYS,
   type ResolvedBrain,
 } from '@brainpedia/ens';
+import { ArticleList } from '@/components/article-list';
+import { QueryDemo } from '@/components/query-demo';
+import { SAMPLE_BRAIN_LABEL, SAMPLE_BRAIN_ARTICLES } from '@/lib/sample-articles';
 
 interface BrainPageProps {
   params: Promise<{ name: string }>;
@@ -41,6 +44,20 @@ export default async function BrainPage({ params }: BrainPageProps) {
         <Stat label="Compute provider" value={r.computeUrl ?? '—'} mono truncate />
       </section>
 
+      <QueryDemo
+        brainEnsName={brain.ensName}
+        iNFT={r.inft ?? null}
+        peerId={r.axlPeerId ?? null}
+        pricePerQuery={r.priceQuery ?? null}
+      />
+
+      {name === SAMPLE_BRAIN_LABEL && (
+        <ArticleList
+          articles={SAMPLE_BRAIN_ARTICLES}
+          storageRoot={r.storageRoot ?? null}
+        />
+      )}
+
       <section className="flex flex-col gap-3">
         <h2 className="text-sm uppercase tracking-wider text-[var(--muted)]">
           How agents query this Brain
@@ -53,8 +70,7 @@ export default async function BrainPage({ params }: BrainPageProps) {
           </li>
           <li>
             Call <code className="font-mono">authorizeUsage(tokenId, agent, ttl)</code> on{' '}
-            {r.inft ? <code className="font-mono">{r.inft}</code> : 'the iNFT'} with
-            payment.
+            {r.inft ? <code className="font-mono">{r.inft}</code> : 'the iNFT'} with payment.
           </li>
           <li>
             POST the prompt to{' '}

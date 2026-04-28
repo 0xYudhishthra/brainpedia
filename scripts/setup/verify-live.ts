@@ -41,8 +41,8 @@ const zgFetch = (method: string, params: unknown[]) =>
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', method, params, id: 1 }),
   })
-    .then((r) => r.json())
-    .then((d: { result?: string }) => d.result);
+    .then((r) => r.json() as Promise<{ result?: string }>)
+    .then((d) => d.result);
 
 await check('Brain contract has code', async () => {
   const code = await zgFetch('eth_getCode', [BRAIN, 'latest']);
@@ -84,8 +84,8 @@ const sepoliaCode = (addr: Address) =>
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_getCode', params: [addr, 'latest'], id: 1 }),
   })
-    .then((r) => r.json())
-    .then((d: { result?: string }) => d.result ?? '0x');
+    .then((r) => r.json() as Promise<{ result?: string }>)
+    .then((d) => d.result ?? '0x');
 
 await check('SubnameRegistrar deployed', async () => {
   const code = await sepoliaCode(SUBNAME_REGISTRAR);
@@ -117,8 +117,8 @@ await check('brainpedia.eth registered', async () => {
       id: 1,
     }),
   })
-    .then((r) => r.json())
-    .then((d: { result?: string }) => '0x' + (d.result ?? '').slice(-40));
+    .then((r) => r.json() as Promise<{ result?: string }>)
+    .then((d) => '0x' + (d.result ?? '').slice(-40));
   if (result === '0x0000000000000000000000000000000000000000') throw new Error('not registered');
   ok(`brainpedia.eth owner = ${result}`);
 });
