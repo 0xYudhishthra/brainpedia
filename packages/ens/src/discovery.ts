@@ -1,6 +1,10 @@
+import { getTextRecord } from '@ensdomains/ensjs/public';
 import type { EnsClients } from './client.js';
 import { resolveBrain } from './text-records.js';
 import type { ResolvedBrain } from './types.js';
+
+/** Text record key on the discovery shortcut whose value is a list of brain ENS names. */
+export const DISCOVERY_BRAINS_KEY = 'brainpedia.brains';
 
 /**
  * Topic discovery — `<topic>.discover.<parentName>` resolves (via a curated
@@ -18,18 +22,48 @@ export function discoveryNameForTopic(topic: string, parentName: string): string
 }
 
 /**
+ * Read the list of brain ENS names from a discovery shortcut's text record.
+ * Splits on newlines and commas, trims, and dedupes. Returns [] on miss.
+ */
+export async function listBrainsForTopic(
+  clients: EnsClients,
+  topic: string,
+): Promise<string[]> {
+  const shortcut = discoveryNameForTopic(topic, clients.config.parentName);
+  // ensjs typing for getTextRecord wants ClientWithEns; our EnsPublicClient is the
+  // intersection but the action's generic is fussy — cast at the call site only.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = await getTextRecord(clients.publicClient as any, {
+    name: shortcut,
+    key: DISCOVERY_BRAINS_KEY,
+  });
+  if (!raw) return [];
+  const names = raw
+    .split(/[\n,]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return Array.from(new Set(names));
+}
+
+/**
  * Resolve a topic shortcut to a list of fully-resolved Brains.
- *
- * Day 3 reads the `brainpedia.brains` text record (newline- or
- * comma-separated list of ENS names) and parallel-resolves each.
+ * Reads the `brainpedia.brains` text record on the shortcut and parallel-
+ * resolves each name's records.
  */
 export async function discoverBrains(
   clients: EnsClients,
   topic: string,
 ): Promise<ResolvedBrain[]> {
-  const _shortcut = discoveryNameForTopic(topic, clients.config.parentName);
-  // Day 3: read text record, split into names, Promise.all(resolveBrain(...))
-  void _shortcut;
-  void resolveBrain;
-  return [];
+  const names = await listBrainsForTopic(clients, topic);
+  if (names.length === 0) return [];
+  const resolved = await Promise.all(
+    names.map((name) =>
+      resolveBrain(clients, name).catch(() => ({
+        ensName: name,
+        owner: null,
+        records: {},
+      })),
+    ),
+  );
+  return resolved;
 }

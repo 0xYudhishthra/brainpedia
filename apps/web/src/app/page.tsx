@@ -1,24 +1,80 @@
 import Link from 'next/link';
-import { NetworkViz } from '@/components/network-viz';
+import {
+  loadEnsConfig,
+  createEnsPublicClient,
+  listBrainsForTopic,
+} from '@brainpedia/ens';
+import {
+  NetworkViz,
+  type NetworkNode,
+  type NetworkLink,
+} from '@/components/network-viz';
 
-const DEMO_NODES = [
-  { id: 'agent', label: 'querying agent', kind: 'agent' as const, active: 0.8 },
-  { id: 'orch', label: 'orchestrator', kind: 'orchestrator' as const, active: 0.7 },
-  { id: 'defi', label: 'defi.brainpedia.eth', kind: 'brain' as const, active: 0.5 },
-  { id: 'malaysia', label: 'malaysia.brainpedia.eth', kind: 'brain' as const, active: 0.5 },
-  { id: 'mush', label: 'mushroom.brainpedia.eth', kind: 'brain' as const, active: 0.3 },
-];
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-const DEMO_LINKS = [
-  { source: 'agent', target: 'orch', kind: 'request' as const, active: 0.8 },
-  { source: 'orch', target: 'defi', kind: 'request' as const, active: 0.7 },
-  { source: 'orch', target: 'malaysia', kind: 'request' as const, active: 0.7 },
-  { source: 'orch', target: 'mush', kind: 'request' as const, active: 0.4 },
-  { source: 'defi', target: 'orch', kind: 'response' as const, active: 0.6 },
-  { source: 'malaysia', target: 'orch', kind: 'response' as const, active: 0.6 },
-];
+/** Topic used as the discovery shortcut for the homepage graph. */
+const HOMEPAGE_DISCOVERY_TOPIC = 'defi';
 
-export default function HomePage() {
+interface GraphData {
+  nodes: NetworkNode[];
+  links: NetworkLink[];
+  brainNames: string[];
+}
+
+async function loadGraph(): Promise<GraphData> {
+  const baseNodes: NetworkNode[] = [
+    { id: 'agent', label: 'querying agent', kind: 'agent', active: 0.8 },
+    { id: 'orch', label: 'orchestrator', kind: 'orchestrator', active: 0.7 },
+  ];
+  const baseLinks: NetworkLink[] = [
+    { source: 'agent', target: 'orch', kind: 'request', active: 0.8 },
+  ];
+
+  // If ENS env isn't configured (build-time / dev with no .env), return just
+  // the agent + orchestrator skeleton — never the old hardcoded demo brains.
+  if (
+    !process.env.ENS_PARENT_NAME ||
+    !process.env.ENS_RPC_URL ||
+    !process.env.ENS_SUBNAME_REGISTRAR_ADDRESS ||
+    !process.env.ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS
+  ) {
+    return { nodes: baseNodes, links: baseLinks, brainNames: [] };
+  }
+
+  let brainNames: string[] = [];
+  try {
+    const cfg = loadEnsConfig();
+    const client = createEnsPublicClient(cfg);
+    brainNames = await listBrainsForTopic(
+      { publicClient: client, config: cfg },
+      HOMEPAGE_DISCOVERY_TOPIC,
+    );
+  } catch {
+    brainNames = [];
+  }
+
+  const brainNodes: NetworkNode[] = brainNames.map((ensName) => ({
+    id: ensName,
+    label: ensName,
+    kind: 'brain',
+    active: 0.55,
+  }));
+
+  const brainLinks: NetworkLink[] = brainNames.flatMap((ensName) => [
+    { source: 'orch', target: ensName, kind: 'request', active: 0.6 },
+    { source: ensName, target: 'orch', kind: 'response', active: 0.5 },
+  ]);
+
+  return {
+    nodes: [...baseNodes, ...brainNodes],
+    links: [...baseLinks, ...brainLinks],
+    brainNames,
+  };
+}
+
+export default async function HomePage() {
+  const { nodes, links, brainNames } = await loadGraph();
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-12 px-6 py-20">
       <header className="flex flex-col gap-4">
@@ -33,12 +89,27 @@ export default function HomePage() {
           Mixture-of-Brains query
         </h2>
         <div className="rounded-lg border border-current/10 bg-black/[0.02] p-3 dark:bg-white/[0.02]">
-          <NetworkViz nodes={DEMO_NODES} links={DEMO_LINKS} />
+          <NetworkViz nodes={nodes} links={links} />
         </div>
         <p className="text-xs text-[var(--muted)]">
-          Agent → orchestrator (AXL <code className="font-mono">/mcp</code>) → fan-out to
-          specialty Brains → synthesized response. Each Brain runs its own AXL daemon with
-          its own Ed25519 peer id.
+          {brainNames.length > 0 ? (
+            <>
+              Live from Sepolia ENS — {brainNames.length} brain
+              {brainNames.length === 1 ? '' : 's'} listed under{' '}
+              <code className="font-mono">{HOMEPAGE_DISCOVERY_TOPIC}.discover.brainpedia.eth</code>.
+              Agent → orchestrator (AXL <code className="font-mono">/mcp</code>) → fan-out to
+              specialty Brains → synthesized response. Each Brain runs its own AXL daemon
+              with its own Ed25519 peer id.
+            </>
+          ) : (
+            <>
+              No brains registered yet under{' '}
+              <code className="font-mono">{HOMEPAGE_DISCOVERY_TOPIC}.discover.brainpedia.eth</code>
+              . Once a Brain ENS name is added to the discovery shortcut&apos;s{' '}
+              <code className="font-mono">brainpedia.brains</code> text record, it shows up
+              here automatically.
+            </>
+          )}
         </p>
       </section>
 

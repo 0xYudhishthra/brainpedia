@@ -20,4 +20,9 @@ export {
 } from './access-tokens.js';
 export type { IssueAccessTokenInput, IssuedAccessToken } from './access-tokens.js';
 
-export { discoveryNameForTopic, discoverBrains } from './discovery.js';
+export {
+  discoveryNameForTopic,
+  discoverBrains,
+  listBrainsForTopic,
+  DISCOVERY_BRAINS_KEY,
+} from './discovery.js';
