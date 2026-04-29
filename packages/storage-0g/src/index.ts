@@ -4,3 +4,5 @@ export { streamIdForBrain, createBrainKvClient } from './kv.js';
 export type { ArticleRecord, BrainKvClient } from './kv.js';
 export { createBrainLogClient } from './log.js';
 export type { SnapshotManifest, SnapshotResult, BrainLogClient } from './log.js';
+export { buildSubmissionFromBytes } from './submission.js';
+export type { BuiltSubmission, SubmissionNodeInput } from './submission.js';

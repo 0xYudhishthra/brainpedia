@@ -25,14 +25,22 @@
  */
 import { parseArgs } from 'node:util';
 import { JsonRpcProvider, Wallet, Contract, id as ethersId, parseEther, keccak256, toUtf8Bytes, type Log } from 'ethers';
-import { createPublicClient, createWalletClient, http, type Hex } from 'viem';
+import {
+  createPublicClient,
+  createWalletClient,
+  defineChain,
+  http,
+  type Hex,
+  type Address,
+} from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { sepolia, mainnet } from 'viem/chains';
 import { addEnsContracts } from '@ensdomains/ensjs';
 import {
   loadZgConfig,
-  createBrainLogClient,
+  buildSubmissionFromBytes,
   type ArticleRecord,
+  type SnapshotManifest,
 } from '@brainpedia/storage-0g';
 import {
   loadEnsConfig,
@@ -152,35 +160,213 @@ console.log(`  label=${values.label}.${process.env.ENS_PARENT_NAME}`);
 console.log(`  specialty=${values.specialty}`);
 console.log(`  articles=${SAMPLE_ARTICLES.length}`);
 
-// 1. Upload snapshot to 0G Storage (Log layer). If the SDK's submit() ABI
-//    is out of sync with the live Flow contract (currently 4-field struct
-//    in 0.3.3 vs 3-field on chain), fall back to a deterministic
-//    keccak256 of the manifest so the rest of the demo can proceed.
+// 1. Upload snapshot to 0G Storage by directly calling Flow.submit(...) on
+//    the deployed Galileo Flow contract. The npm SDK (@0glabs/0g-ts-sdk@0.3.3)
+//    encodes Submission as the 3-field SubmissionData (length, tags, nodes)
+//    only — but the live contract's `submit` takes the 2-field outer
+//    Submission { SubmissionData data; address submitter; }, ABI selector
+//    0xbc8c11f8. Verified against tx 0x135b1d1e…40a0eb (Galileo block ~30492203).
+//    We hand-roll the call via viem so the rootHash that lands in the iNFT
+//    is the real Flow merkle root, not a keccak placeholder. The fallback
+//    only fires if the on-chain submit reverts (e.g. RPC outage, no balance).
 const zg = loadZgConfig();
 const provider = new JsonRpcProvider(zg.rpcUrl);
 const signer = new Wallet(pk, provider);
-const log = createBrainLogClient(zg, pk);
 
-console.log('\n1. uploading snapshot to 0G Storage Log layer …');
+// 0G Galileo viem chain definition. RPC + chainId come from ZG config so
+// they stay overridable via env (defaults: chainId 16602, evmrpc-testnet.0g.ai).
+const galileo = defineChain({
+  id: zg.chainId,
+  name: '0G Galileo',
+  nativeCurrency: { name: 'OG', symbol: 'OG', decimals: 18 },
+  rpcUrls: { default: { http: [zg.rpcUrl] } },
+  blockExplorers: { default: { name: '0G Chainscan', url: zg.explorerUrl } },
+});
+const ogAccount = privateKeyToAccount(pk.startsWith('0x') ? pk : (`0x${pk}` as Hex));
+const ogPublic = createPublicClient({ chain: galileo, transport: http(zg.rpcUrl) });
+const ogWallet = createWalletClient({ account: ogAccount, chain: galileo, transport: http(zg.rpcUrl) });
+
+// Real Flow.submit ABI on Galileo (verified from contracts/dataFlow/Flow.sol +
+// interfaces/Submission.sol in 0gfoundation/0g-storage-contracts):
+//   submit(Submission((uint256 length, bytes tags, (bytes32 root, uint256 height)[] nodes), address submitter))
+//   -> (uint256 index, bytes32 digest, uint256 startIndex, uint256 length)
+const flowSubmitAbi = [
+  {
+    type: 'function',
+    name: 'submit',
+    stateMutability: 'payable',
+    inputs: [
+      {
+        name: 'submission',
+        type: 'tuple',
+        components: [
+          {
+            name: 'data',
+            type: 'tuple',
+            components: [
+              { name: 'length', type: 'uint256' },
+              { name: 'tags', type: 'bytes' },
+              {
+                name: 'nodes',
+                type: 'tuple[]',
+                components: [
+                  { name: 'root', type: 'bytes32' },
+                  { name: 'height', type: 'uint256' },
+                ],
+              },
+            ],
+          },
+          { name: 'submitter', type: 'address' },
+        ],
+      },
+    ],
+    outputs: [
+      { name: '', type: 'uint256' },
+      { name: '', type: 'bytes32' },
+      { name: '', type: 'uint256' },
+      { name: '', type: 'uint256' },
+    ],
+  },
+  {
+    type: 'function',
+    name: 'market',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }],
+  },
+] as const;
+
+const marketPriceAbi = [
+  {
+    type: 'function',
+    name: 'pricePerSector',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'uint256' }],
+  },
+] as const;
+
+interface FlowSubmitResult {
+  rootHash: Hex;
+  txHash: Hex;
+  /** Submission index emitted by the Submit event. */
+  txSeq?: bigint;
+}
+
+/**
+ * Hand-rolled 0G Storage submit. Computes the merkle tree the same way the
+ * SDK does (so the root we use here is the canonical Flow root for the
+ * manifest), then encodes the 2-field Submission tuple the live contract
+ * actually expects. Returns the on-chain rootHash + tx hash.
+ *
+ * Note: this writes the merkle commitment to chain but does NOT push the
+ * raw bytes into storage nodes. Verifiers can reconstruct the manifest
+ * from the snapshot payload included in this script — the rootHash binds
+ * the Brain's iNFT to the exact bytes. A follow-up can layer in
+ * StorageNode.uploadSegmentsByTxSeq() once the SDK's main path is patched.
+ */
+async function submitSnapshotToFlow(manifestBytes: Uint8Array): Promise<FlowSubmitResult> {
+  const built = await buildSubmissionFromBytes(manifestBytes);
+
+  const nodes = built.nodes.map((n) => ({
+    root: n.root,
+    height: BigInt(n.height),
+  }));
+
+  // Fee = sum(2^node.height) sectors * pricePerSector. Mirrors
+  // @0glabs/0g-ts-sdk/lib.esm/transfer/utils.js#calculatePrice.
+  const marketAddr = await ogPublic.readContract({
+    address: zg.flowContractAddress as Address,
+    abi: flowSubmitAbi,
+    functionName: 'market',
+  });
+  const pricePerSector = await ogPublic.readContract({
+    address: marketAddr,
+    abi: marketPriceAbi,
+    functionName: 'pricePerSector',
+  });
+  let sectors = 0n;
+  for (const n of nodes) sectors += 1n << n.height;
+  const fee = sectors * pricePerSector;
+
+  const txHash = await ogWallet.writeContract({
+    address: zg.flowContractAddress as Address,
+    abi: flowSubmitAbi,
+    functionName: 'submit',
+    args: [
+      {
+        data: {
+          length: BigInt(built.length),
+          tags: '0x' as Hex,
+          nodes,
+        },
+        submitter: ogAccount.address,
+      },
+    ],
+    value: fee,
+  });
+
+  const receipt = await ogPublic.waitForTransactionReceipt({ hash: txHash });
+  if (receipt.status !== 'success') {
+    throw new Error(`Flow.submit reverted: ${txHash}`);
+  }
+
+  // Submit(address indexed sender, bytes32 indexed identityHash,
+  //        uint256 indexed submissionIndex, uint256 startIndex,
+  //        uint256 length, SubmissionData data)
+  // We don't need to decode it — txSeq comes from the indexed submissionIndex
+  // topic if present. Best-effort only; Brain.sol cares about rootHash.
+  const submitTopic = ethersId(
+    'Submit(address,bytes32,uint256,uint256,uint256,(uint256,bytes,(bytes32,uint256)[]))',
+  );
+  const submitLog = receipt.logs.find(
+    (l) =>
+      l.address.toLowerCase() === zg.flowContractAddress.toLowerCase() &&
+      l.topics[0]?.toLowerCase() === submitTopic.toLowerCase(),
+  );
+  const txSeq = submitLog?.topics[3] ? BigInt(submitLog.topics[3]) : undefined;
+
+  return { rootHash: built.rootHash, txHash, txSeq };
+}
+
+const snapshotManifest: SnapshotManifest = {
+  brainOwner: signer.address.toLowerCase(),
+  createdAt: new Date().toISOString(),
+  articleCount: SAMPLE_ARTICLES.length,
+  articles: SAMPLE_ARTICLES.map((a) => ({
+    slug: a.slug,
+    contentHash: keccak256(toUtf8Bytes(a.body)),
+    bytes: new TextEncoder().encode(a.body).length,
+  })),
+  previousRoot: null,
+  payload: SAMPLE_ARTICLES,
+};
+const manifestBytes = new TextEncoder().encode(JSON.stringify(snapshotManifest));
+
+console.log('\n1. uploading snapshot to 0G Storage Log layer (Flow.submit via viem) …');
 let storageRoot: string;
+let storageTxHash = '';
 try {
-  const snap = await log.uploadSnapshot(signer.address, SAMPLE_ARTICLES, null);
-  storageRoot = snap.rootHash;
+  const res = await submitSnapshotToFlow(manifestBytes);
+  storageRoot = res.rootHash;
+  storageTxHash = res.txHash;
   console.log(`   rootHash: ${storageRoot}`);
-  console.log(`   txHash:   ${snap.txHash}`);
+  console.log(`   txHash:   ${storageTxHash}`);
+  if (res.txSeq !== undefined) console.log(`   txSeq:    ${res.txSeq}`);
+  console.log(`   explorer: ${zg.explorerUrl}/tx/${storageTxHash}`);
 } catch (err) {
   const msg = (err as Error).message;
-  console.warn(`   ⚠ 0G upload failed: ${msg.split('\n')[0]}`);
+  console.warn(`   ⚠ Flow.submit failed: ${msg.split('\n')[0]}`);
   console.warn('   ⚠ falling back to deterministic keccak256(manifest) for demo');
-  const manifest = JSON.stringify({
+  const placeholderManifest = JSON.stringify({
     brainOwner: signer.address.toLowerCase(),
     articleCount: SAMPLE_ARTICLES.length,
     articles: SAMPLE_ARTICLES.map((a) => ({ slug: a.slug, title: a.title })),
   });
-  storageRoot = keccak256(toUtf8Bytes(manifest));
+  storageRoot = keccak256(toUtf8Bytes(placeholderManifest));
   console.log(`   placeholder rootHash: ${storageRoot}`);
 }
-const snapshot = { rootHash: storageRoot, txHash: '' };
+const snapshot = { rootHash: storageRoot, txHash: storageTxHash };
 
 // 2. Mint Brain iNFT.
 console.log('\n2. minting Brain iNFT on 0G Galileo …');
