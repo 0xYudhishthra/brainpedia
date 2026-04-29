@@ -1,6 +1,6 @@
 # Final status — what's live, what's next
 
-> Last updated: 2026-04-28, before the demo.
+> Last updated: 2026-04-29, demo path locked in (path B — `QueryDemo` animation as the on-screen Brain query; everything else is real).
 
 ## TL;DR
 
@@ -49,7 +49,8 @@ Deployer for all three: `0x0a9a3BB8E921c7983ea2C75f13B8F502d349dE64`.
 * Provider URL: `https://compute-network-6.integratenetwork.work`
 * Model: `qwen/qwen-2.5-7b-instruct`
 * Broker initializes successfully against the provider.
-* **Blocker for live inference**: 0G ledger requires a 3 OG minimum deposit; deployer wallet currently at 0.09 OG. Top up at <https://faucet.0g.ai>.
+* Deployer wallet **funded** (10 OG on Galileo, 0.99 ETH on Sepolia) — over the 3 OG threshold for `addLedger`.
+* Live inference path is **not on the demo critical path** (path B uses `QueryDemo` for the on-screen query). To run a real query end-to-end, see `docs/axl-integration.md` for the full stack (axl daemon + Python MCP router + segment upload).
 
 ### AXL
 
@@ -61,7 +62,7 @@ Deployer for all three: `0x0a9a3BB8E921c7983ea2C75f13B8F502d349dE64`.
 
 ### Web
 
-* https://brainpedia.up.railway.app — homepage with D3 force-directed network viz
+* https://brainpedia.up.railway.app — homepage with D3 force-directed network viz; **graph is now live ENS-backed** (server-renders from `defi.discover.brainpedia.eth`'s `brainpedia.brains` text record on every request)
 * https://brainpedia.up.railway.app/yudhi — sample Brain page (live ENS resolution + article list + animated query demo)
 * https://brainpedia.up.railway.app/status — 7 read-only system health checks
 
@@ -75,17 +76,25 @@ Deployer for all three: `0x0a9a3BB8E921c7983ea2C75f13B8F502d349dE64`.
 
 | Task | Owner | Status |
 |---|---|---|
-| Faucet 0G wallet to ≥ 3 OG (unlocks live 0G Compute) | User | Pending |
+| Faucet 0G wallet to ≥ 3 OG | User | **Done** (10 OG) |
+| Storage SDK fix — hand-rolled Flow.submit via viem | — | **Done** (commit `a373364`) |
+| Homepage graph reads live ENS | — | **Done** (commit `04dd976`) |
 | Run MCP tools end-to-end via Claude Desktop | User | Pending |
 | Demo video | User | Pending |
+| Re-seed yudhi with real merkle root (optional, needs PK) | User | Pending |
+| Add more brains to `defi.discover.brainpedia.eth` for richer homepage graph | User | Pending |
 
-Two known limitations to either skip in the demo or call out:
-1. **0G Storage upload** — `@0glabs/0g-ts-sdk@0.3.3` encodes a 4-field `submit()` struct, but the live Flow contract expects 3 fields. Until the SDK updates, the storage root in the iNFT is `keccak256(JSON.stringify(snapshot))` instead of the indexer's merkle root. Other layers all use the same hash so the chain is internally consistent.
-2. **0G Compute live inference** — 3 OG minimum to create a ledger account; demo wallet at 0.09 OG.
+Known limitation we're calling out instead of fixing pre-demo:
+* **0G Storage segment upload** — the new viem-based `Flow.submit` writes a real merkle commitment on-chain, but raw segments still need `StorageNode.uploadSegmentsByTxSeq()` for `indexer.download()` round-trip. Path B doesn't depend on this. Follow-up if we go for full live e2e later.
 
 ## Today's commits
 
 ```
+feat(web): homepage graph reads live ENS brains via discovery shortcut
+fix(storage-0g): real Flow.submit via viem — npm SDK 0.3.3 omits submitter
+docs: HANDOFF.md for next session
+chore: drop brainpedia.xyz custom domain
+docs: final status snapshot for tomorrow
 chore: drop obsolete Deploy.s.sol
 fix(web): replace fake npx snippet with real local-install
 feat(web): homepage demo links
