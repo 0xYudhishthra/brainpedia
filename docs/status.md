@@ -1,6 +1,6 @@
 # Final status — what's live, what's next
 
-> Last updated: 2026-04-29, demo path locked in (path B — `QueryDemo` animation as the on-screen Brain query; everything else is real).
+> Last updated: 2026-04-30. **Path A landed** — full live e2e Brain query working. The on-screen Brain query is now real: ENS → 0G storage → top-K → 0G Compute (Qwen 2.5 7B, TEE-verified) → cited answer.
 
 ## TL;DR
 
@@ -49,8 +49,9 @@ Deployer for all three: `0x0a9a3BB8E921c7983ea2C75f13B8F502d349dE64`.
 * Provider URL: `https://compute-network-6.integratenetwork.work`
 * Model: `qwen/qwen-2.5-7b-instruct`
 * Broker initializes successfully against the provider.
-* Deployer wallet **funded** (10 OG on Galileo, 0.99 ETH on Sepolia) — over the 3 OG threshold for `addLedger`.
-* Live inference path is **not on the demo critical path** (path B uses `QueryDemo` for the on-screen query). To run a real query end-to-end, see `docs/axl-integration.md` for the full stack (axl daemon + Python MCP router + segment upload).
+* Deployer wallet (testnet): 4.08 OG remaining on Galileo, 0.99 ETH on Sepolia.
+* **Live inference works end-to-end.** Ledger account created (tx `0x936473…`), provider acknowledged. Two confirmed real queries returned cited answers from the real on-chain manifest, both `verified: true`.
+* Provider: `0xa48f01287233509FD694a22Bf840225062E67836`, model `qwen/qwen-2.5-7b-instruct`, 0.5 OG transferred to provider sub-account.
 
 ### AXL
 
@@ -76,16 +77,49 @@ Deployer for all three: `0x0a9a3BB8E921c7983ea2C75f13B8F502d349dE64`.
 
 | Task | Owner | Status |
 |---|---|---|
-| Faucet 0G wallet to ≥ 3 OG | User | **Done** (10 OG) |
-| Storage SDK fix — hand-rolled Flow.submit via viem | — | **Done** (commit `a373364`) |
-| Homepage graph reads live ENS | — | **Done** (commit `04dd976`) |
+| Faucet 0G wallet | User | **Done** |
+| Storage SDK fix — hand-rolled `Flow.submit` via viem | — | **Done** (`a373364`) |
+| Storage segment upload via `uploadSegmentsByTxSeq` | — | **Done** (`f959b33`) |
+| Homepage graph reads live ENS | — | **Done** (`04dd976`) |
+| `apps/brain` audit fixes (access-token guard, verify swallow, broker reconnect) | — | **Done** (`c70eb98`) |
+| Re-seed yudhi: real merkle root + segments uploaded + `appendStorageRoot(1, …)` | — | **Done** (Galileo tx `0xc0e5c925…`, ENS tx `0x998399d8…`) |
+| 0G Compute ledger + provider acknowledgment | — | **Done** (Galileo txs `0x936473…`, `0xe98f69…`, `0x12e4f1…`) |
+| Live e2e Brain query (ENS → storage → top-K → 0G Compute) | — | **Done** — two queries returned cited, verified answers |
 | Run MCP tools end-to-end via Claude Desktop | User | Pending |
 | Demo video | User | Pending |
-| Re-seed yudhi with real merkle root (optional, needs PK) | User | Pending |
 | Add more brains to `defi.discover.brainpedia.eth` for richer homepage graph | User | Pending |
 
-Known limitation we're calling out instead of fixing pre-demo:
-* **0G Storage segment upload** — the new viem-based `Flow.submit` writes a real merkle commitment on-chain, but raw segments still need `StorageNode.uploadSegmentsByTxSeq()` for `indexer.download()` round-trip. Path B doesn't depend on this. Follow-up if we go for full live e2e later.
+## How to re-run a live query
+The router + brain are still running locally. Fire another query:
+```
+curl -s -X POST http://127.0.0.1:9003/route -H 'Content-Type: application/json' -d '{
+  "service":"brainpedia.brain",
+  "request":{"jsonrpc":"2.0","id":1,"method":"query","params":{"prompt":"<your prompt>"}},
+  "from_peer_id":"smoke"
+}'
+```
+
+If the processes are gone, restart them:
+```
+# router
+/home/yudhishthra/.venvs/axl-mcp-router/bin/python \
+  /home/yudhishthra/src/axl/integrations/mcp_routing/mcp_router.py --port 9003 &
+
+# brain (PRIVATE_KEY in env, never on disk)
+ZG_WALLET_PRIVATE_KEY=… ZG_RPC_URL=https://evmrpc-testnet.0g.ai \
+  ZG_COMPUTE_PROVIDER_ADDRESS=0xa48f01287233509FD694a22Bf840225062E67836 \
+  ZG_COMPUTE_PROVIDER_URL=https://compute-network-6.integratenetwork.work \
+  ZG_COMPUTE_MODEL=qwen/qwen-2.5-7b-instruct \
+  ZG_INFT_CONTRACT_ADDRESS=0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6 \
+  ENS_RPC_URL=https://ethereum-sepolia.publicnode.com ENS_NETWORK=sepolia \
+  ENS_PARENT_NAME=brainpedia.eth \
+  ENS_SUBNAME_REGISTRAR_ADDRESS=0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6 \
+  ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS=0x36ce746e88b9098899fc8d0ab274c45748d04fd9 \
+  BRAIN_ENS_NAME=yudhi.brainpedia.eth \
+  BRAIN_STORAGE_ROOT=0x4e50c0447d3d837d0a6930ceb3345346aa17100d6cfee46785ad3b782c9c799b \
+  BRAIN_SPECIALTY=defi-yield-strategies BRAIN_ENFORCE_ACCESS_TOKENS=false \
+  bun run --cwd apps/brain start &
+```
 
 ## Today's commits
 
