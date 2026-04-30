@@ -12,8 +12,10 @@ function must(name: string): string {
 }
 
 const opts = {
-  port: Number(process.env.BRAIN_PORT ?? 7100),
-  routerUrl: process.env.BRAIN_ROUTER_URL ?? 'http://127.0.0.1:9003',
+  // Railway injects PORT; locally we default to BRAIN_PORT/7100.
+  port: Number(process.env.BRAIN_PORT ?? process.env.PORT ?? 7100),
+  // Empty string / unset means "skip router registration" — brain still serves /mcp.
+  routerUrl: process.env.BRAIN_ROUTER_URL ?? '',
   serviceName: process.env.BRAIN_SERVICE_NAME ?? 'brainpedia.brain',
   signerPrivateKey: must('ZG_WALLET_PRIVATE_KEY'),
   ensName: must('BRAIN_ENS_NAME'),

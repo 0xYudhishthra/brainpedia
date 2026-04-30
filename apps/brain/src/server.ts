@@ -43,6 +43,19 @@ export function startBrainServer(opts: ServerOptions) {
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
+
+    // Permissive CORS so the web app's API route (and dev tools) can call us.
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204, {
+        'access-control-allow-origin': '*',
+        'access-control-allow-methods': 'GET, POST, OPTIONS',
+        'access-control-allow-headers': 'content-type, authorization',
+        'access-control-max-age': '86400',
+      });
+      return res.end();
+    }
+    res.setHeader('access-control-allow-origin', '*');
+
     if (req.method === 'GET' && url.pathname === '/health') {
       return json(res, 200, { ok: true, service: opts.serviceName });
     }
@@ -85,22 +98,34 @@ export function startBrainServer(opts: ServerOptions) {
     }
   });
 
+  // Bind 0.0.0.0 so containers (Railway) can route external traffic in.
+  // routerUrl="" means router registration is skipped entirely.
+  const host = process.env.BRAIN_BIND_HOST ?? '0.0.0.0';
   return new Promise<{ close: () => Promise<void> }>((resolve, reject) => {
     server.once('error', reject);
-    server.listen(opts.port, '127.0.0.1', async () => {
-      try {
-        await registerWithRouter(opts.routerUrl, opts.serviceName, endpoint);
+    server.listen(opts.port, host, async () => {
+      if (opts.routerUrl) {
+        try {
+          await registerWithRouter(opts.routerUrl, opts.serviceName, endpoint);
+          // eslint-disable-next-line no-console
+          console.log(
+            `[brain] ${opts.serviceName} listening at http://${host}:${opts.port}/mcp (registered with ${opts.routerUrl})`,
+          );
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.error('[brain] router registration failed:', (err as Error).message);
+        }
+      } else {
         // eslint-disable-next-line no-console
         console.log(
-          `[brain] ${opts.serviceName} listening at ${endpoint} (registered with ${opts.routerUrl})`,
+          `[brain] ${opts.serviceName} listening at http://${host}:${opts.port}/mcp (router registration skipped)`,
         );
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('[brain] router registration failed:', (err as Error).message);
       }
 
       const close = async () => {
-        await deregisterFromRouter(opts.routerUrl, opts.serviceName).catch(() => {});
+        if (opts.routerUrl) {
+          await deregisterFromRouter(opts.routerUrl, opts.serviceName).catch(() => {});
+        }
         await new Promise<void>((r) => server.close(() => r()));
       };
       // Deregister cleanly on SIGTERM/SIGINT.
