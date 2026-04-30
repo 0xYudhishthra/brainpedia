@@ -127,15 +127,18 @@ bun install && bun run --filter=@brainpedia/mcp-server build
   "mcpServers": {
     "brainpedia": {
       "command": "node",
-      "args": ["/absolute/path/to/brainpedia/apps/mcp-server/dist/index.js"],
+      "args": ["<absolute-path>/brainpedia/apps/mcp-server/dist/index.js"],
       "env": {
-        "ZG_WALLET_PRIVATE_KEY": "0x...",
+        "ZG_WALLET_PRIVATE_KEY": "0x<your-testnet-pk>",
         "ZG_INFT_CONTRACT_ADDRESS": "0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6",
-        "ENS_RPC_URL": "https://ethereum-sepolia.publicnode.com",
-        "ENS_PARENT_NAME": "brainpedia.eth",
+        "ZG_RPC_URL": "https://evmrpc-testnet.0g.ai",
         "ENS_NETWORK": "sepolia",
+        "ENS_PARENT_NAME": "brainpedia.eth",
+        "ENS_RPC_URL": "https://ethereum-sepolia.publicnode.com",
         "ENS_SUBNAME_REGISTRAR_ADDRESS": "0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6",
-        "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x36ce746e88b9098899fc8d0ab274c45748d04fd9"
+        "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x36ce746e88b9098899fc8d0ab274c45748d04fd9",
+        "AXL_API_URL": "http://127.0.0.1:9012",
+        "BRAINPEDIA_DEFAULT_VAULT_PATH": "<absolute-path>/your-obsidian-vault"
       }
     }
   }
