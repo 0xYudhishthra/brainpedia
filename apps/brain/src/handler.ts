@@ -70,7 +70,12 @@ export function createBrainHandler(opts: BrainOptions, signerPrivateKey: string)
   return {
     async query(req: BrainQueryRequest): Promise<BrainQueryResult> {
       // 1. Access-token check (ENS subname capability).
-      if (opts.enforceAccessTokens !== false && req.accessToken && req.agent) {
+      if (opts.enforceAccessTokens !== false) {
+        if (!req.accessToken || !req.agent) {
+          throw new Error(
+            'brain.query: access token and agent address are required (enforceAccessTokens=true)',
+          );
+        }
         const label = req.accessToken.split('.')[0]!;
         const ok = await isAccessTokenValid(
           { publicClient: ensClient, config: ens as EnsConfig },
