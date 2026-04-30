@@ -1,6 +1,6 @@
 # Final status — what's live, what's next
 
-> Last updated: 2026-04-30. **Path A landed** — full live e2e Brain query working. The on-screen Brain query is now real: ENS → 0G storage → top-K → 0G Compute (Qwen 2.5 7B, TEE-verified) → cited answer.
+> Last updated: 2026-04-30. **Full app live.** Three brains registered, real e2e queries from the public web, access-token enforcement verified, axl daemon up, MCP server config snippet ready for Claude Desktop. Demo video is the only remaining user task.
 
 ## TL;DR
 
@@ -31,8 +31,10 @@ Deployer for all three: `0x0a9a3BB8E921c7983ea2C75f13B8F502d349dE64`.
 | `brainpedia.eth` | Parent name, deployer-owned, both registrars approved on Registry + Public Resolver |
 | `client.brainpedia.eth` | Subnode owned by AccessTokenRegistrar (one-time setup) |
 | `discover.brainpedia.eth` | Subnode owned by deployer for topic shortcuts |
-| `yudhi.brainpedia.eth` | Sample Brain — 8 brain.* text records resolving live |
-| `defi.discover.brainpedia.eth` | Topic discovery shortcut → list of relevant Brains |
+| `yudhi.brainpedia.eth` | DeFi-yield-strategies Brain (tokenId 1, root `0x4e50c044…799b`) |
+| `malaysia.brainpedia.eth` | Malaysia-defi-regulatory Brain (tokenId 2, root `0x49493459…e128`) |
+| `rwa.brainpedia.eth` | Real-world-assets Brain (tokenId 3, root `0xe4999c4b…3e4f`) |
+| `defi.discover.brainpedia.eth` | Topic discovery shortcut → 3 brains |
 | `agenta5b68322.client.brainpedia.eth` | Sample one-time-use access-token subname |
 
 ### iNFT — sample Brain
@@ -84,10 +86,14 @@ Deployer for all three: `0x0a9a3BB8E921c7983ea2C75f13B8F502d349dE64`.
 | `apps/brain` audit fixes (access-token guard, verify swallow, broker reconnect) | — | **Done** (`c70eb98`) |
 | Re-seed yudhi: real merkle root + segments uploaded + `appendStorageRoot(1, …)` | — | **Done** (Galileo tx `0xc0e5c925…`, ENS tx `0x998399d8…`) |
 | 0G Compute ledger + provider acknowledgment | — | **Done** (Galileo txs `0x936473…`, `0xe98f69…`, `0x12e4f1…`) |
-| Live e2e Brain query (ENS → storage → top-K → 0G Compute) | — | **Done** — two queries returned cited, verified answers |
-| Run MCP tools end-to-end via Claude Desktop | User | Pending |
+| Live e2e Brain query (ENS → storage → top-K → 0G Compute) | — | **Done** |
+| Brain on Railway + `/api/query` proxy + `QueryDemo` wires to live | — | **Done** (`338c462`) |
+| Mint 2 additional brains (malaysia, rwa) and add to discovery | — | **Done** |
+| Local axl daemon up, configured at `:9012` API forwarding to MCP router on `:9003` | — | **Done** |
+| MCP server validated; Claude Desktop config snippet on homepage | — | **Done** (`5e31ecd`) |
+| Access-token enforcement re-enabled locally and confirmed (reject without, accept with) | — | **Done** |
+| Run MCP tools end-to-end inside Claude Desktop on user's machine | User | Pending |
 | Demo video | User | Pending |
-| Add more brains to `defi.discover.brainpedia.eth` for richer homepage graph | User | Pending |
 
 ## How to re-run a live query
 The router + brain are still running locally. Fire another query:
