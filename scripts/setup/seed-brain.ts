@@ -39,6 +39,7 @@ import { addEnsContracts } from '@ensdomains/ensjs';
 import {
   loadZgConfig,
   buildSubmissionFromBytes,
+  uploadSegments,
   type ArticleRecord,
   type SnapshotManifest,
 } from '@brainpedia/storage-0g';
@@ -346,10 +347,12 @@ const manifestBytes = new TextEncoder().encode(JSON.stringify(snapshotManifest))
 console.log('\n1. uploading snapshot to 0G Storage Log layer (Flow.submit via viem) …');
 let storageRoot: string;
 let storageTxHash = '';
+let flowTxSeq: bigint | undefined;
 try {
   const res = await submitSnapshotToFlow(manifestBytes);
   storageRoot = res.rootHash;
   storageTxHash = res.txHash;
+  flowTxSeq = res.txSeq;
   console.log(`   rootHash: ${storageRoot}`);
   console.log(`   txHash:   ${storageTxHash}`);
   if (res.txSeq !== undefined) console.log(`   txSeq:    ${res.txSeq}`);
@@ -367,6 +370,34 @@ try {
   console.log(`   placeholder rootHash: ${storageRoot}`);
 }
 const snapshot = { rootHash: storageRoot, txHash: storageTxHash };
+
+// 1b. Push raw segments so the 0G indexer can serve the manifest back to
+//     anyone who only has the rootHash (e.g. apps/brain's log.fetchSnapshot).
+//     Without this step Flow.submit only writes the merkle commitment and
+//     `Indexer.download(rootHash)` returns 404. We fail loudly here — a
+//     real Brain query is impossible without the bytes being retrievable.
+if (flowTxSeq !== undefined) {
+  console.log('\n1b. pushing segments to 0G storage nodes (uploadSegmentsByTxSeq) …');
+  const upload = await uploadSegments(manifestBytes, {
+    indexerUrl: zg.storageIndexerUrl,
+    txSeq: flowTxSeq,
+    expectedReplica: 1,
+  });
+  console.log(`   nodes: ${upload.storageNodeUrls.join(', ') || '(none)'}`);
+  console.log(`   finalized: ${upload.finalized}`);
+  if (upload.rootHash.toLowerCase() !== storageRoot.toLowerCase()) {
+    throw new Error(
+      `seed-brain: rootHash mismatch (Flow=${storageRoot}, segments=${upload.rootHash})`,
+    );
+  }
+} else if (storageTxHash) {
+  // Flow.submit succeeded but we couldn't decode the txSeq from logs. Bail
+  // — without txSeq we can't push segments, and an iNFT pointing at
+  // unrecoverable bytes is worse than a clean failure.
+  throw new Error(
+    'seed-brain: Flow.submit succeeded but txSeq missing from receipt; cannot push segments',
+  );
+}
 
 // 2. Mint Brain iNFT.
 console.log('\n2. minting Brain iNFT on 0G Galileo …');
