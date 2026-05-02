@@ -45,8 +45,11 @@ import {
 } from '@brainpedia/storage-0g';
 import {
   loadEnsConfig,
+  registerSubname,
   writeBrainRecords,
+  subnameRegistrarAbi,
 } from '@brainpedia/ens';
+import { keccak256 as viemKeccak256, stringToBytes } from 'viem';
 
 const { values } = parseArgs({
   options: {
@@ -312,20 +315,21 @@ async function submitSnapshotToFlow(manifestBytes: Uint8Array): Promise<FlowSubm
     throw new Error(`Flow.submit reverted: ${txHash}`);
   }
 
-  // Submit(address indexed sender, bytes32 indexed identityHash,
-  //        uint256 indexed submissionIndex, uint256 startIndex,
-  //        uint256 length, SubmissionData data)
-  // We don't need to decode it — txSeq comes from the indexed submissionIndex
-  // topic if present. Best-effort only; Brain.sol cares about rootHash.
-  const submitTopic = ethersId(
-    'Submit(address,bytes32,uint256,uint256,uint256,(uint256,bytes,(bytes32,uint256)[]))',
-  );
+  // Deployed Flow's Submit event signature is
+  //   keccak256("Submit(address,bytes32,uint256,uint256,uint256,(uint256,bytes,(bytes32,uint256)[]))")
+  //   = 0x167ce04d…  with topics = [sig, indexed sender, indexed identityHash].
+  // The submissionIndex is NOT a 4th topic — it's the first 32 bytes of `data`.
+  // (Verified against tx 0x12947ba… on Galileo.) The previous version of this
+  // code read topics[3] and silently produced txSeq=undefined, skipping the
+  // segment-push step and leaving the indexer with no bytes for the rootHash.
+  const SUBMIT_TOPIC0 = '0x167ce04d2aa1981994d3a31695da0d785373335b1078cec239a1a3a2c7675555';
+  void ethersId;
   const submitLog = receipt.logs.find(
     (l) =>
       l.address.toLowerCase() === zg.flowContractAddress.toLowerCase() &&
-      l.topics[0]?.toLowerCase() === submitTopic.toLowerCase(),
+      l.topics[0]?.toLowerCase() === SUBMIT_TOPIC0,
   );
-  const txSeq = submitLog?.topics[3] ? BigInt(submitLog.topics[3]) : undefined;
+  const txSeq = submitLog ? BigInt(submitLog.data.slice(0, 66)) : undefined;
 
   return { rootHash: built.rootHash, txHash, txSeq };
 }
@@ -433,7 +437,34 @@ const account = privateKeyToAccount(pk.startsWith('0x') ? pk : (`0x${pk}` as Hex
 const ensPublic = createPublicClient({ chain, transport: http(ensRpcUrl) });
 const ensWallet = createWalletClient({ account, chain, transport: http(ensRpcUrl) });
 
-console.log(`\n4. writing brain.* text records to ${values.label}.${ens.parentName}`);
+// 4a. Ensure the subname is registered in SubnameRegistrar with the deployer
+//     as ownerOfLabel — setTextRecords reverts with NotLabelOwner() otherwise.
+//     Idempotent: skips if already registered to us, errors loudly if owned
+//     by someone else (would mean a label collision worth investigating).
+console.log(`\n4. ensuring ${values.label}.${ens.parentName} is registered`);
+const labelHash = viemKeccak256(stringToBytes(values.label!));
+const labelOwner = (await ensPublic.readContract({
+  address: ens.subnameRegistrarAddress,
+  abi: subnameRegistrarAbi,
+  functionName: 'ownerOfLabel',
+  args: [labelHash],
+})) as `0x${string}`;
+if (labelOwner.toLowerCase() === account.address.toLowerCase()) {
+  console.log(`   already registered to ${labelOwner}`);
+} else if (labelOwner === '0x0000000000000000000000000000000000000000') {
+  const reg = await registerSubname(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    { publicClient: ensPublic as any, walletClient: ensWallet as any, config: ens },
+    { label: values.label!, owner: account.address },
+  );
+  console.log(`   registered: ${reg.registerTxHash}`);
+} else {
+  throw new Error(
+    `seed-brain: ${values.label}.${ens.parentName} is owned by ${labelOwner}, not deployer`,
+  );
+}
+
+console.log(`\n5. writing brain.* text records to ${values.label}.${ens.parentName}`);
 const records = {
   description: `${values.specialty} — ${SAMPLE_ARTICLES.length} articles compiled from research notes`,
   url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://brainpedia.up.railway.app'}/${values.label}`,
