@@ -14,7 +14,7 @@
 | **Compute** OpenAI-compat client | Brain inference + synthesis | `@brainpedia/compute-0g` |
 | **Chain** (Galileo, 16602) | Brain.sol deployment | `contracts/` |
 | **iNFT** (ERC-7857) | One token per Brain, append-only `IntelligentData[]` | `contracts/src/Brain.sol` |
-| **Royalty splits on usage** | Multi-Brain query → citation-weighted per-owner payment in one tx | `contracts/src/RoyaltyDistributor.sol` |
+| **Royalty splits on usage** | Multi-Brain query → sticker-priced per-owner payment in one tx (each brain paid its `brain.price_query`) | `contracts/src/RoyaltyDistributor.sol` |
 
 ## How memory is "embedded" in the iNFT
 
@@ -68,22 +68,25 @@ cast call 0x4E5c6DC869F9B3220F01de9047031cEd1577b08F "currentStorageRoot(uint256
 - [x] Architecture diagram → [architecture.md](architecture.md)
 - [x] Swarm coordination explanation → above
 - [x] Link to minted iNFT — Brain.sol [`0x4E5c6DC8…b08F`](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F) holds tokenIds 1-4 (yudhi, malaysia, rwa, vaultdemo)
-- [x] Automatic royalty splits on usage — citation-weighted per-Brain shares computed per query in `/api/query?mode=mixture`, settled via `RoyaltyDistributor.distribute(tokenIds[], amounts[], reason)`. Verified live: tx [`0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e) settled 0.001 OG to tokenId 1 + 0.001 OG to tokenId 2 in one call, two `Distributed` events emitted on chain.
+- [x] Automatic royalty splits on usage — sticker-priced per-Brain payments (each responder gets its own `brain.price_query`) computed per query in `/api/query?mode=mixture`, settled via `RoyaltyDistributor.distribute(tokenIds[], amounts[], reason)`. Synthesis is gated server-side until the on-chain `Distributed` events are verified to match the cached payment plan. Verified live: tx [`0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e) settled 0.001 OG to tokenId 1 + 0.001 OG to tokenId 2 in one call, two `Distributed` events emitted on chain.
 
 ## Royalty splits on multi-Brain queries
 
-When `/api/query?mode=mixture` fans out to N brains, the orchestrator computes citation-weighted shares per responding brain:
+When `/api/query?mode=mixture` fans out to N brains, each responding brain is paid exactly its advertised `brain.price_query` (canonical record format: `"0.001 OG"`):
 
 ```
-weight_i = max(citation_count_i, 1) / Σ max(citation_count, 1)
-amount_i = floor(totalAmountWei * weight_i)
+amount_i = parsePriceQuery(brain_i.brain.price_query)   // sticker, in wei
+totalAmountWei = Σ amount_i across responders
 ```
 
-The `max(_, 1)` floor means a brain that responded but cited nothing still gets a baseline share — otherwise concise no-citation answers would be punished. `totalAmountWei` defaults to the sum of each brain's advertised `brain.price_query` text record; the calling agent can override via the request body's `valueWei`.
+A brain that errored is excluded entirely; a brain whose `brain.price_query` record is missing is served free. Citations are surfaced in the response for transparency but do not affect amounts.
 
 `RoyaltyDistributor.distribute(tokenIds[], amounts[], reason)` (`0x44eaad…0649` on Galileo) settles all shares in a single tx — looks up each `Brain.ownerOf(tokenId)` and forwards via raw `.call`. Surplus `msg.value` refunded to the orchestrator. `reason = keccak256("mixture:<prompt>")` so off-chain analytics can group settlements by query.
 
-End-to-end demo: `bun run scripts/setup/settle-royalties.ts --prompt "..."` fetches the mixture payment plan, parses it, and submits one `distribute` tx — proves the spec's "automatic royalty splits on usage" line.
+The web service then verifies the `Distributed` events against the cached payment plan before unlocking the synthesised answer (the agent posts back `sessionId + txHash` to claim it). End-to-end:
+
+- `bun run scripts/setup/settle-royalties.ts --prompt "..."` — CLI version (no synthesis unlock; just settles)
+- The MCP `query_mixture` tool (`brainpedia-mcp@0.1.5`) — runs phase-1 → settle → phase-2 unlock in one shot using the agent's wallet, returns the synthesised answer plus settlement proof.
 
 ## Note on 0G Storage upload
 

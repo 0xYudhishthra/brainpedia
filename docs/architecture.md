@@ -71,22 +71,50 @@ concurrent `POST /mcp/{brain_peer_id}/brainpedia.brain` calls.
 5. Agent calls `POST /mcp/{brain_peer_id}/brainpedia.brain` with `{prompt, accessToken: "agent7af2.client.bpedia.eth"}`.
 6. Brain validates the access token (ENS resolution + `AccessTokenRegistrar.isValid`), retrieves articles from 0G Storage, runs inference on 0G Compute, returns `{answer, citations, confidence}`.
 
-## Royalty splits
+## Mixture: pay-to-read with sticker pricing
 
-When `/api/query?mode=mixture` fans out to N brains, the orchestrator
-computes citation-weighted per-brain shares and returns them as a
-`payments[]` array in the response (each entry has the brain's iNFT
-ref, citation count, normalised weight, and amount in wei).
+`/api/query?mode=mixture` is **two-phase** to make the payment a real
+gate, not a suggestion:
 
-`RoyaltyDistributor.distribute(tokenIds[], amounts[], reason)` settles
-every share in **one tx** — looks up `Brain.ownerOf(tokenId)` for each
-brain and forwards via raw `.call`, emitting a `Distributed` event per
-recipient. Surplus `msg.value` refunded to the orchestrator.
+**Phase 1** — fan out + cache:
+1. `topic=auto` → orchestrator's LLM router picks a discovery shortcut
+   from the registry (or pass `research`/`frameworks`/`all` directly).
+2. Resolve the shortcut's `brainpedia.brains` ENS text record → list of
+   brain ENS names.
+3. Fan out to each Brain in parallel (over AXL when `AXL_API_URL` is
+   set, otherwise direct HTTPS).
+4. For successful responders, run a TEE-attested 0G Compute call to
+   fuse the per-brain answers + citations into one coherent synthesis.
+5. Compute the payment plan: each responder owes its sticker
+   `brain.price_query` (canonical record format `"0.001 OG"`).
+6. Cache the full result (answers + synthesis + plan) under a fresh
+   `sessionId` (10 min TTL).
+7. Return a **redacted** response: per-brain metadata (citations,
+   verified flag), the payment plan, the `RoyaltyDistributor` address,
+   and the `sessionId`. **No answers, no synthesis.**
+
+**Phase 1.5** — agent settles:
+- `RoyaltyDistributor.distribute(tokenIds[], amounts[], reason)` (one
+  tx) — looks up `Brain.ownerOf(tokenId)` for each brain and forwards
+  via raw `.call`, emitting a `Distributed` event per recipient.
+  Surplus `msg.value` refunded to the agent.
+
+**Phase 2** — unlock:
+1. Agent posts `{sessionId, txHash}` back to `/api/query?mode=mixture`.
+2. Server loads the receipt via viem, decodes the `Distributed` events,
+   confirms each `(tokenId, amount)` from the cached plan was paid by
+   the agent (rejects on underpayment, wrong contract, or missing
+   events).
+3. Returns the cached full response — synthesis + per-brain answers +
+   `settlement: { txHash, payer, blockNumber, explorer }`.
+
+The MCP `query_mixture` tool (`brainpedia-mcp@0.1.5`) drives the whole
+flow in one call using the agent's wallet.
 
 Live on Galileo at
 [`0x44eaad…0649`](https://chainscan-galileo.0g.ai/address/0x44eaad4fdb7d509cd3fe7624ce512cc97b910649).
-Verified end-to-end via `scripts/setup/settle-royalties.ts` —
-[tx `0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e)
+Verified end-to-end via `scripts/setup/settle-royalties.ts` (CLI) and
+the MCP tool — [tx `0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e)
 distributed 0.001 OG to tokenId 1 + 0.001 OG to tokenId 2 in a single call.
 
 ## Surfaces — MCP write path vs web read path

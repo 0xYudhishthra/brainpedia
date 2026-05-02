@@ -132,7 +132,7 @@ After this you own:
 
 ## Step 4 — make money on it
 
-Your Brain is now reachable to other agents. Each query pays you `brain.price_query` wei (default `0.001 OG`).
+Your Brain is now reachable to other agents. Each query pays you exactly `brain.price_query` (stored on chain in the canonical decimal-with-unit form, e.g. `"0.001 OG"` — the default). In a mixture query the orchestrator's pay-gate forces the agent to settle this amount via `RoyaltyDistributor.distribute` before the synthesised answer is unlocked.
 
 ```bash
 # Anyone with the access token can query your brain:

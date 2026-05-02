@@ -54,20 +54,21 @@ Visuals:
 2. The page renders the 8 `brain.*` text records read live from ENS Sepolia. Click `brain.inft` → opens chainscan.
 3. Scroll to "Compiled articles" — show the wiki structure (entity/concept/source pages with citations).
 
-### Scene 4 — Mixture-of-Brains query (1:40–2:30) — the WOW
+### Scene 4 — Mixture-of-Brains query, pay-to-read (1:40–2:30) — the WOW
 
-> Voiceover: *"Now I'll ask the network a question. The orchestrator fans out to every Brain registered under the topic, in parallel, on a real P2P mesh. Each one returns a TEE-attested cited answer. The royalty splits settle in one tx."*
+> Voiceover: *"Now I'll ask the network a question. The orchestrator's LLM picks which discovery shortcut to fan out to, queries each Brain in parallel, and returns a payment plan. The synthesised answer is gated until the agent settles on chain — pay each responding Brain its sticker price, get the synthesis."*
 
-Visuals:
+Visuals — split: Claude Code + browser:
 
-1. (1:40) Terminal: `curl -X POST 'https://brainpedia.up.railway.app/api/query?mode=mixture' -d '{"prompt":"safest stablecoin yield given Malaysian regulatory exposure"}'`
-2. (1:45) Loading state — D3 graph on screen pulses: querying agent → orchestrator → fan-out to `yudhi.bpedia.eth` and `karpathy.bpedia.eth` in parallel.
-3. (2:00) Each Brain returns `verified: true` with citations. Sidebar shows event stream:
-   - `ENS resolved yudhi.bpedia.eth → tokenId 7, peer cb4cc722…`
-   - `0G Compute call → answer (TEE attestation OK)`
-   - `Citation-weighted split: yudhi 0.001 OG, karpathy 0.001 OG`
-4. (2:15) Switch terminals: `bun run scripts/setup/settle-royalties.ts` → one tx settles both Brains. Show the `Distributed` events on chainscan.
-5. (2:25) Final overlay: synthesised answer with linked citations.
+1. (1:40) Claude Code: *"Use query_mixture to ask: compare stablecoin yield strategies with the LLM-Wiki approach to compiling notes."*
+2. (1:45) Loading — D3 graph on the homepage pulses. Sidebar event stream:
+   - `phase 1: orchestrator routes "auto" → all.discover.bpedia.eth (LLM)`
+   - `fanning out to yudhi.bpedia.eth + karpathy.bpedia.eth`
+   - `each brain: ENS resolved → 0G Storage snapshot → top-K → 0G Compute (TEE attestation OK)`
+   - `phase 1 done: payment plan = 0.001 OG yudhi + 0.001 OG karpathy = 0.002 OG total. SYNTHESIS GATED.`
+3. (2:00) Claude Code: *"settling RoyaltyDistributor.distribute([7,6], [0.001, 0.001] OG, "mixture")"* — one tx, two `Distributed` events. Show chainscan.
+4. (2:10) Phase-2 unlock: *"posting sessionId + txHash → server verifies events match the plan → release synthesis"*.
+5. (2:20) Final synthesised answer appears in Claude Code — quoting both `yudhi.bpedia.eth` and `karpathy.bpedia.eth` inline, ending with `Sources: yudhi.bpedia.eth, karpathy.bpedia.eth`. The synthesis itself is a separate TEE-attested 0G Compute call that fuses the two brain answers.
 
 ### Scene 5 — Composition close (2:30–3:00)
 

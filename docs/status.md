@@ -1,6 +1,6 @@
 # Live state
 
-> Last updated: 2026-05-02. Full Brainpedia stack live. 7 Brain iNFTs minted across two cohorts (post-redeploy + the original orphaned set). Mixture-of-Brains queries return TEE-attested cited answers. Royalty splits already settled on chain. MCP server published to npm.
+> Last updated: 2026-05-02. Full Brainpedia stack live. 7 Brain iNFTs minted across two cohorts (post-redeploy + the original orphaned set). Mixture-of-Brains queries return TEE-attested cited answers, fused into a single coherent synthesis by the orchestrator. The synthesis is gated behind on-chain settlement (the agent must pay each responding Brain its sticker `brain.price_query` via `RoyaltyDistributor.distribute` before the synthesis is unlocked). MCP server published to npm at `brainpedia-mcp@0.1.5` with the full phase-1 → settle → phase-2 unlock as a single tool call (`query_mixture`).
 
 ## TL;DR
 
@@ -11,12 +11,22 @@ bun install && bun run --cwd scripts verify-live
 11 read-only on-chain checks should all pass. The same checks render at https://brainpedia.up.railway.app/status on every page load. To test mixture-of-brains:
 
 ```bash
-curl -X POST 'https://brainpedia.up.railway.app/api/query?mode=mixture' \
+# phase 1 — get the gated plan (no synthesis yet, just metadata + per-brain payment plan)
+curl -X POST 'https://brainpedia.up.railway.app/api/query?mode=mixture&topic=auto' \
   -H 'content-type: application/json' \
   -d '{"prompt":"safest stablecoin yield"}'
 ```
 
-Returns per-brain answers, citation-weighted royalty splits, and the `RoyaltyDistributor` address ready to settle.
+Returns per-brain metadata (citations, verified flag), the sticker-priced payment plan (each responder paid its `brain.price_query`), the `RoyaltyDistributor` address, and a `sessionId`. The synthesised answer is REDACTED until you settle on chain and re-call:
+
+```bash
+# phase 2 — unlock the synthesis after RoyaltyDistributor.distribute lands
+curl -X POST 'https://brainpedia.up.railway.app/api/query?mode=mixture' \
+  -H 'content-type: application/json' \
+  -d '{"sessionId":"mix_abc...","txHash":"0x..."}'
+```
+
+Or run the whole flow in one call from Claude Code via the `query_mixture` MCP tool — the agent's wallet auto-settles and unlocks the synthesis.
 
 ## Deployed contracts (Galileo + Sepolia)
 
@@ -91,7 +101,7 @@ For karpathy (tokenId 6), `currentStorageRoot(6)` returns the root of the 16-pag
 
 ## Royalty splits — verified on chain
 
-`RoyaltyDistributor.distribute(tokenIds, amounts, reason)` settles N Brain payments in one tx with citation-weighted shares. Settlement script: `scripts/setup/settle-royalties.ts`. Live proof: tx [`0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e) settled 2 brains in one call with two `Distributed` events.
+`RoyaltyDistributor.distribute(tokenIds, amounts, reason)` settles N Brain payments in one tx. Each responding brain is paid exactly its advertised `brain.price_query` (canonical record format: `"0.001 OG"`); citations are surfaced in the response for transparency but do not affect payment amounts. The web service verifies the on-chain `Distributed` events match the cached payment plan before unlocking the synthesis. Settlement script: `scripts/setup/settle-royalties.ts`. Live proof: tx [`0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e) settled 2 brains in one call with two `Distributed` events.
 
 ## Hosted Obsidian (demo)
 
@@ -108,18 +118,18 @@ For karpathy (tokenId 6), `currentStorageRoot(6)` returns the root of the 16-pag
 - https://brainpedia.up.railway.app/yudhi — per-Brain page (live ENS resolution + article list + in-page query demo)
 - https://brainpedia.up.railway.app/karpathy — same shape, LLM-Wiki content
 - https://brainpedia.up.railway.app/api/query — single-brain proxy
-- https://brainpedia.up.railway.app/api/query?mode=mixture — fan-out + payment plan
+- https://brainpedia.up.railway.app/api/query?mode=mixture — two-phase: phase-1 fan-out + payment plan (synthesis gated), phase-2 unlock with sessionId + on-chain settlement txHash
 - https://brainpedia.up.railway.app/status — 11 read-only health checks against on-chain state
 
 ## MCP server distribution
 
-[`brainpedia-mcp@0.1.1` on npm](https://www.npmjs.com/package/brainpedia-mcp) — single bundled binary (1.5 MB), all 5 workspace deps inlined. Install: `npx -y brainpedia-mcp`. Same tool surface in Claude Code and Claude Desktop.
+[`brainpedia-mcp@0.1.5` on npm](https://www.npmjs.com/package/brainpedia-mcp) — single bundled binary (1.5 MB), all workspace deps inlined. Install: `npx -y brainpedia-mcp`. Same tool surface in Claude Code and Claude Desktop. 6 tools shipped: `setup_brain`, `upload_articles`, `finalize_brain`, `sync_vault`, `query_brain`, `query_mixture` (the last one drives phase-1 → settle → phase-2 unlock end-to-end).
 
 ## Code health
 
 - 14 workspace packages, all typecheck under `bun run typecheck`
 - CI green on the latest `main` (build + contracts jobs both pass)
-- 5 MCP tools (`setup_brain`, `upload_articles`, `finalize_brain`, `query_brain`, `sync_vault`) wired end-to-end and shipped on npm
+- 6 MCP tools (`setup_brain`, `upload_articles`, `finalize_brain`, `sync_vault`, `query_brain`, `query_mixture`) wired end-to-end and shipped on npm
 - ~12 helper scripts under `scripts/setup/` covering deploy, seed, settle, verify
 
 ## What's left
@@ -127,6 +137,4 @@ For karpathy (tokenId 6), `currentStorageRoot(6)` returns the root of the 16-pag
 | Task | Owner |
 |---|---|
 | Demo video (under 3 min) | User |
-| Run the published MCP server end-to-end inside Claude Code on the user's MacBook | User |
-| Mixture-of-Brains UI on the homepage (currently API-only) | Dev — pending |
-| Hyperlink pass on per-Brain page (addresses → explorers) | Dev — in progress |
+| Run the published `brainpedia-mcp@0.1.5` end-to-end inside Claude Code on the user's MacBook | User |

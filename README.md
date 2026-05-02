@@ -27,12 +27,12 @@ Every layer is on chain. No central API. No off-chain auth service. The Brain ou
 | Layer | What | Where |
 |---|---|---|
 | **Web app** | Public site + D3 force-directed network viz + dynamic per-Brain pages + mixture-mode `/api/query` proxy | https://brainpedia.up.railway.app |
-| **MCP server** | 5 tools (`setup_brain`, `upload_articles`, `finalize_brain`, `sync_vault`, `query_brain`) shipped to npm | [`brainpedia-mcp` on npm](https://www.npmjs.com/package/brainpedia-mcp) |
+| **MCP server** | 6 tools (`setup_brain`, `upload_articles`, `finalize_brain`, `sync_vault`, `query_brain`, `query_mixture`) shipped to npm | [`brainpedia-mcp` on npm](https://www.npmjs.com/package/brainpedia-mcp) |
 | **Hosted Obsidian** | KasmVNC + Local REST API plugin, demo vault namespaces under `users/<name>/` | https://brainpedia-obsidian-production.up.railway.app (REST: `tramway.proxy.rlwy.net:12789`) |
 | **AXL bootstrap node** | Yggdrasil daemon, persistent peer ID `cb4cc722…3b8` | Railway `axl-bootstrap` service |
 | **`Brain.sol`** (ERC-7857 iNFT) | 7 brains minted across two cohorts | [chainscan-galileo `0x4E5c…b08F`](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F) |
 | **`BrainMinter`** | Permissionless wrapper that owns Brain.sol — anyone can self-mint | [chainscan-galileo `0xcca5…a2e7`](https://chainscan-galileo.0g.ai/address/0xcca5e8c639505dd6f1d4ebf2f0c138ddc9aca2e7) |
-| **`RoyaltyDistributor`** | Single-tx multi-Brain payment, citation-weighted | [chainscan-galileo `0x44ea…0649`](https://chainscan-galileo.0g.ai/address/0x44eaad4fdb7d509cd3fe7624ce512cc97b910649) |
+| **`RoyaltyDistributor`** | Single-tx multi-Brain payment, sticker-priced (each brain gets its `brain.price_query`) | [chainscan-galileo `0x44ea…0649`](https://chainscan-galileo.0g.ai/address/0x44eaad4fdb7d509cd3fe7624ce512cc97b910649) |
 | **`SubnameRegistrar`** | Issues `<name>.bpedia.eth` for Brain owners | [sepolia.etherscan `0xBb92…28F0`](https://sepolia.etherscan.io/address/0xBb921bFFBbbE2219D1EC365213a74097348F28F0) |
 | **`AccessTokenRegistrar`** | Issues TTL-bounded `agent<hash>.client.bpedia.eth` capability tokens | [sepolia.etherscan `0x3e7D…456b`](https://sepolia.etherscan.io/address/0x3e7D22150d6b883a89703d760d66743D2223456b) |
 | **`bpedia.eth`** parent name | Registered, both registrars approved on ENS Registry + Public Resolver | [sepolia.app.ens.domains/bpedia.eth](https://sepolia.app.ens.domains/bpedia.eth) |
@@ -81,8 +81,8 @@ Surfaces split by intent: the **MCP server is the write path** (read your vault,
 ```
 brainpedia/
 ├── apps/                       deployable applications
-│   ├── web/                    Next.js 15 — public site, D3 viz, /api/query (single + mixture)
-│   ├── mcp-server/             stdio MCP for Claude Code/Desktop, published as `brainpedia-mcp`
+│   ├── web/                    Next.js 15 — public site, D3 viz, /api/query (single + two-phase mixture w/ pay-gate)
+│   ├── mcp-server/             stdio MCP for Claude Code/Desktop, published as `brainpedia-mcp` (6 tools)
 │   └── brain/                  Brain-side service (multi-tenant), runs on Railway
 ├── packages/                   shared libraries (consumed by apps; no app→app deps)
 │   ├── obsidian-parser/        Vault → article graph (FS + Local REST API plugin)
@@ -124,7 +124,7 @@ See [docs/demo.md](docs/demo.md) for the full walkthrough. The TL;DR:
 2. **Discover** — agents resolve `<topic>.discover.bpedia.eth` (e.g. `research.discover.bpedia.eth`) → list of Brain ENS names → resolve each → get peer ID, iNFT ref, price.
 3. **Pay-per-query** — `Brain.authorizeUsage(tokenId, agent, ttl)` with payment forwards to the Brain owner; emits `BrainPayment`. Optionally an access-token subname (`agent<hash>.client.bpedia.eth`) is issued as a one-time capability with on-chain TTL.
 4. **Query** — agent's local AXL daemon forwards a JSON-RPC `query` to the Brain peer via the encrypted Yggdrasil mesh. The Brain validates the access token, fetches the article snapshot from 0G Storage, runs inference on 0G Compute, returns answer + citations + `verified: true` (TEE attestation).
-5. **Mixture-of-Brains** — `POST /api/query?mode=mixture` resolves a discovery shortcut, fans out to N Brains in parallel, returns per-brain answers + citation-weighted royalty splits + the `RoyaltyDistributor` address. Settle on chain in one tx via `scripts/setup/settle-royalties.ts` (verified live: tx [`0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e)).
+5. **Mixture-of-Brains, pay-to-read** — `POST /api/query?mode=mixture` resolves a discovery shortcut (LLM-routed when `topic=auto`), fans out to N Brains in parallel, and returns a redacted phase-1 response: per-brain metadata + citations + the per-brain payment plan (each brain gets its sticker `brain.price_query`). The synthesised answer is **gated** until the agent settles on chain via `RoyaltyDistributor.distribute(...)` and re-calls with `sessionId + txHash`. The MCP `query_mixture` tool runs the full phase-1 → settle → phase-2 unlock in one shot using the agent's wallet. The synthesis itself is another TEE-attested 0G Compute call that fuses the per-brain answers into one coherent response. Verified live: settlement tx [`0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e).
 
 ## Configuration
 

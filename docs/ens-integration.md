@@ -21,7 +21,7 @@ How we satisfy it:
 | Function | Mechanism |
 |---|---|
 | **Brain identity** | `<name>.<parent>` subname per Brain owner (we own the parent and run a permissionless `SubnameRegistrar.sol`). |
-| **Brain metadata** | ENS text records: `brain.inft`, `brain.storage_root`, `brain.axl_peer_id`, `brain.specialty`, `brain.price_query`, `brain.compute_url`, plus standard `description`/`avatar`/`url`. Keys defined once in `packages/ens/src/types.ts`. |
+| **Brain metadata** | ENS text records: `brain.inft`, `brain.storage_root`, `brain.axl_peer_id`, `brain.specialty`, `brain.price_query` (canonical OG-decimal format e.g. `"0.001 OG"` — `parsePriceQuery` in `@brainpedia/ens` also accepts legacy raw-wei integers), `brain.compute_url`, plus standard `description`/`avatar`/`url`. Keys defined once in `packages/ens/src/types.ts`. |
 | **Agent discovery** | `<topic>.discover.<parent>` resolves to a list of Brain ENS names via a `brainpedia.brains` text record on the shortcut. |
 | **Access tokens** *(creative angle)* | `agent<hash>.client.<parent>` — one-time-use subnames issued per pay-to-query session, TTL-enforced on chain (`AccessTokenRegistrar.sol`). Brain validates by resolving the name and calling `isValid(label, agent)`. |
 | **Reverse resolution** | Brain-running addresses set primary names so query logs surface human-readable names. |
