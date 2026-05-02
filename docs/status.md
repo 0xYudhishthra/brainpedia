@@ -1,154 +1,132 @@
-# Final status — what's live, what's next
+# Live state
 
-> Last updated: 2026-05-02. **Full redeploy under a new parent ENS name** (`bpedia.eth`) after the original `brainpedia.eth` deployer key was lost. Web URL unchanged. Live e2e query through Railway brain returns cited TEE-verified answer from `yudhi.bpedia.eth`. The "Live state" section below reflects post-redeploy addresses; the "What's left" table is unchanged at the bottom (most items still done — what was already shipped is shipped, just under new contracts). The orphaned `brainpedia.eth` parent + 3 old iNFTs (tokenIds 1-3 on the old Brain.sol) remain visible on chain as historical artifacts.
+> Last updated: 2026-05-02. Full Brainpedia stack live. 7 Brain iNFTs minted across two cohorts (post-redeploy + the original orphaned set). Mixture-of-Brains queries return TEE-attested cited answers. Royalty splits already settled on chain. MCP server published to npm.
 
 ## TL;DR
-
-The full Brainpedia stack is **live**. Anyone can run:
 
 ```bash
 bun install && bun run --cwd scripts verify-live
 ```
 
-…and see all 11 read-only checks pass. The same checks render at https://brainpedia.up.railway.app/status on every page load.
+11 read-only on-chain checks should all pass. The same checks render at https://brainpedia.up.railway.app/status on every page load. To test mixture-of-brains:
 
-## Live state
+```bash
+curl -X POST 'https://brainpedia.up.railway.app/api/query?mode=mixture' \
+  -H 'content-type: application/json' \
+  -d '{"prompt":"safest stablecoin yield"}'
+```
 
-### Deployed contracts (post-redeploy)
+Returns per-brain answers, citation-weighted royalty splits, and the `RoyaltyDistributor` address ready to settle.
 
-| Contract | Network | Address | Verify |
-|---|---|---|---|
-| `Brain.sol` (ERC-7857) | 0G Galileo (16602) | `0x4E5c6DC869F9B3220F01de9047031cEd1577b08F` | [chainscan-galileo](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F) |
-| `SubnameRegistrar` | Sepolia | `0xBb921bFFBbbE2219D1EC365213a74097348F28F0` | [sepolia.etherscan](https://sepolia.etherscan.io/address/0xBb921bFFBbbE2219D1EC365213a74097348F28F0) |
-| `AccessTokenRegistrar` | Sepolia | `0x3e7D22150d6b883a89703d760d66743D2223456b` | [sepolia.etherscan](https://sepolia.etherscan.io/address/0x3e7D22150d6b883a89703d760d66743D2223456b) |
+## Deployed contracts (Galileo + Sepolia)
 
-Deployer for all three: `0xD24e06f0DBadA268314DbcB97F48f87b85b6Dd30`.
+| Contract | Network | Address |
+|---|---|---|
+| `Brain.sol` (ERC-7857 iNFT) | 0G Galileo (16602) | [`0x4E5c…b08F`](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F) |
+| `BrainMinter` (permissionless mint wrapper) | 0G Galileo | [`0xcca5…a2e7`](https://chainscan-galileo.0g.ai/address/0xcca5e8c639505dd6f1d4ebf2f0c138ddc9aca2e7) |
+| `RoyaltyDistributor` (single-tx multi-Brain settle) | 0G Galileo | [`0x44ea…0649`](https://chainscan-galileo.0g.ai/address/0x44eaad4fdb7d509cd3fe7624ce512cc97b910649) |
+| `SubnameRegistrar` | Sepolia (11155111) | [`0xBb92…28F0`](https://sepolia.etherscan.io/address/0xBb921bFFBbbE2219D1EC365213a74097348F28F0) |
+| `AccessTokenRegistrar` | Sepolia | [`0x3e7D…456b`](https://sepolia.etherscan.io/address/0x3e7D22150d6b883a89703d760d66743D2223456b) |
 
-### ENS (Sepolia)
+Deployer wallet for all five: `0xD24e06f0DBadA268314DbcB97F48f87b85b6Dd30`. (The original `0x0a9a3BB8…` was lost mid-build; everything was redeployed under the new key. The orphaned `brainpedia.eth` parent + Brain.sol at `0x928940c1…3Ef6` and old registrars remain on chain as historical artefacts.)
+
+## ENS — Sepolia
 
 | Name | What |
 |---|---|
-| `bpedia.eth` | Parent name, deployer-owned (unwrapped on Registry), both registrars approved on Registry + Public Resolver |
-| `client.bpedia.eth` | Subnode owned by AccessTokenRegistrar (one-time setup) |
-| `discover.bpedia.eth` | Subnode owned by deployer for topic shortcuts |
-| `yudhi.bpedia.eth` | DeFi-yield-strategies Brain (tokenId 1, root `0xde0ebac7…ca37f`, 7/9 brain.* records resolving) |
-| `defi.discover.bpedia.eth` | Topic discovery shortcut → 1 brain (yudhi) |
+| [`bpedia.eth`](https://sepolia.app.ens.domains/bpedia.eth) | Parent name, deployer-owned (unwrapped on Registry), both registrars approved on Registry + Public Resolver |
+| [`client.bpedia.eth`](https://sepolia.app.ens.domains/client.bpedia.eth) | Subnode owned by `AccessTokenRegistrar` |
+| [`discover.bpedia.eth`](https://sepolia.app.ens.domains/discover.bpedia.eth) | Subnode owned by deployer for topic shortcuts |
 
-> Orphaned (lost-key state, on-chain forever): `brainpedia.eth`, `client.brainpedia.eth`, `discover.brainpedia.eth`, `yudhi.brainpedia.eth`, `malaysia.brainpedia.eth`, `rwa.brainpedia.eth`, `defi.discover.brainpedia.eth`, `agenta5b68322.client.brainpedia.eth`. Plus the old Brain.sol at `0x928940c1…3Ef6` and old registrars.
+### Brains (current cohort under `bpedia.eth`)
 
-### iNFT — sample Brain (new)
+| Subname | tokenId | Specialty | Source |
+|---|---|---|---|
+| [`yudhi.bpedia.eth`](https://sepolia.app.ens.domains/yudhi.bpedia.eth) | 7 | `defi-yield-strategies` | Vault-derived (`scripts/demo/yudhi-vault/` via Railway Obsidian) |
+| [`karpathy.bpedia.eth`](https://sepolia.app.ens.domains/karpathy.bpedia.eth) | 6 | `llm-wiki-pattern` | Vault-derived (`scripts/demo/karpathy-vault/` via Railway Obsidian) |
+| (deprecated) `vaultdemo.bpedia.eth`, `vaultdemo2.bpedia.eth`, `malaysia.bpedia.eth`, `rwa.bpedia.eth` | 2-5 | various | Test fixtures, dropped from active discovery shortcuts |
+| (deprecated) original `yudhi` | 1 | `defi-yield-strategies` | Mock-seeded; retained on chain as the historical "before" snapshot |
 
-* `Brain.currentStorageRoot(1)` = `0xde0ebac78dd387969c8aba6c9ce5ef149a9e726685207c0026ae1c0c155ca37f` (segments live on the indexer at txSeq=70884)
-* `Brain.ownerOf(1)` = deployer (`0xD24e06f0…`)
-* Min payment: 0.001 OG/query (set during seed)
+### Discovery shortcuts (by practice)
 
-### Compute
+| Shortcut | Resolves to |
+|---|---|
+| [`research.discover.bpedia.eth`](https://sepolia.app.ens.domains/research.discover.bpedia.eth) | `yudhi.bpedia.eth` |
+| [`frameworks.discover.bpedia.eth`](https://sepolia.app.ens.domains/frameworks.discover.bpedia.eth) | `karpathy.bpedia.eth` |
+| [`all.discover.bpedia.eth`](https://sepolia.app.ens.domains/all.discover.bpedia.eth) | `yudhi.bpedia.eth`, `karpathy.bpedia.eth` (homepage graph reads this) |
 
-* 0G Compute provider pinned: `0xa48f01287233509FD694a22Bf840225062E67836`
-* Provider URL: `https://compute-network-6.integratenetwork.work`
-* Model: `qwen/qwen-2.5-7b-instruct`
-* Broker initializes successfully against the provider.
-* Deployer wallet (testnet): 4.08 OG remaining on Galileo, 0.99 ETH on Sepolia.
-* **Live inference works end-to-end.** Ledger account created (tx `0x936473…`), provider acknowledged. Two confirmed real queries returned cited answers from the real on-chain manifest, both `verified: true`.
-* Provider: `0xa48f01287233509FD694a22Bf840225062E67836`, model `qwen/qwen-2.5-7b-instruct`, 0.5 OG transferred to provider sub-account.
+### Sample access token
 
-### AXL
+[`agentf14abfb4.client.bpedia.eth`](https://sepolia.app.ens.domains/agentf14abfb4.client.bpedia.eth) — issued via `AccessTokenRegistrar.issue(label, agent, brainNameHash, ttl)`. Verified: `isValid(label, agent)` returns `true` for the granted agent and `false` for any other.
 
-* Bootstrap node deployed on Railway as service `axl-bootstrap`.
-* Pinned Ed25519 peer id: `cb4cc72222a27f577ac28d6a963ec95ce4b02e924ba05f17e700bd8a2e6b33b8`.
-* Yggdrasil mesh listener up on `[::]:7000` (TLS).
-* Python demo (`scripts/demo/axl_demo.py`) spins up 4 separate daemons + brain stubs.
-* TS Brain server (`apps/brain`) registers with the local AXL MCP router via `POST /register {service:"brainpedia.brain", endpoint:"http://127.0.0.1:7100/mcp"}`.
+## iNFT — proof intelligence is embedded
 
-### Web
+```bash
+cast call 0x4E5c6DC869F9B3220F01de9047031cEd1577b08F \
+  "currentStorageRoot(uint256)(bytes32)" 7 \
+  --rpc-url https://evmrpc-testnet.0g.ai
+# returns the merkle root that resolves to yudhi's article snapshot on the
+# 0G Storage indexer; every article's contentHash matches.
+```
 
-* https://brainpedia.up.railway.app — homepage with D3 force-directed network viz; **graph is now live ENS-backed** (server-renders from `defi.discover.bpedia.eth`'s `brainpedia.brains` text record on every request — currently 3 brains: yudhi, malaysia, rwa)
-* https://brainpedia.up.railway.app/yudhi — sample Brain page (live ENS resolution + article list + animated query demo)
-* https://brainpedia.up.railway.app/status — 7 read-only system health checks
+For karpathy (tokenId 6), `currentStorageRoot(6)` returns the root of the 16-page LLM-Wiki vault.
 
-## Code
+## 0G Compute
 
-* 14 workspace packages, all typecheck under `bun run typecheck`
-* 5 MCP tools wired end-to-end: `setup_brain`, `upload_articles`, `finalize_brain`, `query_brain`, `sync_vault`
-* 8 helper scripts: `prep-deploy`, `register-parent`, `seed-brain`, `issue-token`, `issue-discovery`, `verify-live`, plus the AXL Python demo
+| | |
+|---|---|
+| Provider | [`0xa48f0128…7836`](https://chainscan-galileo.0g.ai/address/0xa48f01287233509FD694a22Bf840225062E67836) |
+| URL | `https://compute-network-6.integratenetwork.work` |
+| Model | `qwen/qwen-2.5-7b-instruct` (TEE-attested) |
+| Ledger | Acknowledged for the new deployer wallet; live inference verified end-to-end on every `/api/query` call |
+
+## AXL
+
+| | |
+|---|---|
+| Bootstrap node | Railway service `axl-bootstrap`, persistent peer id `cb4cc722…3b8`, mesh listener on `[::]:7000` |
+| Per-Brain demo | `scripts/demo/axl_demo.py` spins up 4 separate Yggdrasil daemons + brain stubs (orchestrator + 3 brains) |
+| Brain runtime | `apps/brain` registers with the local AXL MCP router via `POST /register {service:"brainpedia.brain", endpoint:"http://127.0.0.1:7100/mcp"}` |
+| Web `/api/query` | Routes through `AxlClient.mcp(peerId, 'brainpedia.brain', request)` when `AXL_API_URL` is set; falls back to direct HTTPS otherwise |
+
+## Royalty splits — verified on chain
+
+`RoyaltyDistributor.distribute(tokenIds, amounts, reason)` settles N Brain payments in one tx with citation-weighted shares. Settlement script: `scripts/setup/settle-royalties.ts`. Live proof: tx [`0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e) settled 2 brains in one call with two `Distributed` events.
+
+## Hosted Obsidian (demo)
+
+| | |
+|---|---|
+| VNC (setup) | https://brainpedia-obsidian-production.up.railway.app — KasmVNC running Obsidian + Local REST API plugin |
+| Public REST API | `tramway.proxy.rlwy.net:12789` (Railway TCP proxy → container `27123`) |
+| Per-user namespacing | `OBSIDIAN_VAULT_PATH=users/<handle>` scopes reads to a folder; `users/karpathy/`, `users/yudhi/` already populated |
+| Used by | `setup_brain` MCP tool when `OBSIDIAN_REST_API_KEY` is set; also by `seed-from-vault.ts` |
+
+## Web
+
+- https://brainpedia.up.railway.app — homepage with D3 force-directed network viz, server-renders from `all.discover.bpedia.eth`'s `brainpedia.brains` text record
+- https://brainpedia.up.railway.app/yudhi — per-Brain page (live ENS resolution + article list + in-page query demo)
+- https://brainpedia.up.railway.app/karpathy — same shape, LLM-Wiki content
+- https://brainpedia.up.railway.app/api/query — single-brain proxy
+- https://brainpedia.up.railway.app/api/query?mode=mixture — fan-out + payment plan
+- https://brainpedia.up.railway.app/status — 11 read-only health checks against on-chain state
+
+## MCP server distribution
+
+[`brainpedia-mcp@0.1.1` on npm](https://www.npmjs.com/package/brainpedia-mcp) — single bundled binary (1.5 MB), all 5 workspace deps inlined. Install: `npx -y brainpedia-mcp`. Same tool surface in Claude Code and Claude Desktop.
+
+## Code health
+
+- 14 workspace packages, all typecheck under `bun run typecheck`
+- CI green on the latest `main` (build + contracts jobs both pass)
+- 5 MCP tools (`setup_brain`, `upload_articles`, `finalize_brain`, `query_brain`, `sync_vault`) wired end-to-end and shipped on npm
+- ~12 helper scripts under `scripts/setup/` covering deploy, seed, settle, verify
 
 ## What's left
 
-| Task | Owner | Status |
-|---|---|---|
-| Faucet 0G wallet | User | **Done** |
-| Storage SDK fix — hand-rolled `Flow.submit` via viem | — | **Done** (`a373364`) |
-| Storage segment upload via `uploadSegmentsByTxSeq` | — | **Done** (`f959b33`) |
-| Homepage graph reads live ENS | — | **Done** (`04dd976`) |
-| `apps/brain` audit fixes (access-token guard, verify swallow, broker reconnect) | — | **Done** (`c70eb98`) |
-| Re-seed yudhi: real merkle root + segments uploaded + `appendStorageRoot(1, …)` | — | **Done** (Galileo tx `0xc0e5c925…`, ENS tx `0x998399d8…`) |
-| 0G Compute ledger + provider acknowledgment | — | **Done** (Galileo txs `0x936473…`, `0xe98f69…`, `0x12e4f1…`) |
-| Live e2e Brain query (ENS → storage → top-K → 0G Compute) | — | **Done** |
-| Brain on Railway + `/api/query` proxy + `QueryDemo` wires to live | — | **Done** (`338c462`) |
-| Mint 2 additional brains (malaysia, rwa) and add to discovery | — | Pending post-redeploy (only yudhi re-minted under bpedia.eth) |
-| Local axl daemon up, configured at `:9012` API forwarding to MCP router on `:9003` | — | **Done** |
-| MCP server validated; Claude Desktop config snippet on homepage | — | **Done** (`5e31ecd`) |
-| Access-token enforcement re-enabled locally and confirmed (reject without, accept with) | — | **Done** |
-| Run MCP tools end-to-end inside Claude Desktop on user's machine | User | Pending |
-| Demo video | User | Pending |
-
-## How to re-run a live query
-The router + brain are still running locally. Fire another query:
-```
-curl -s -X POST http://127.0.0.1:9003/route -H 'Content-Type: application/json' -d '{
-  "service":"brainpedia.brain",
-  "request":{"jsonrpc":"2.0","id":1,"method":"query","params":{"prompt":"<your prompt>"}},
-  "from_peer_id":"smoke"
-}'
-```
-
-If the processes are gone, restart them:
-```
-# router
-/home/yudhishthra/.venvs/axl-mcp-router/bin/python \
-  /home/yudhishthra/src/axl/integrations/mcp_routing/mcp_router.py --port 9003 &
-
-# brain (PRIVATE_KEY in env, never on disk)
-ZG_WALLET_PRIVATE_KEY=… ZG_RPC_URL=https://evmrpc-testnet.0g.ai \
-  ZG_COMPUTE_PROVIDER_ADDRESS=0xa48f01287233509FD694a22Bf840225062E67836 \
-  ZG_COMPUTE_PROVIDER_URL=https://compute-network-6.integratenetwork.work \
-  ZG_COMPUTE_MODEL=qwen/qwen-2.5-7b-instruct \
-  ZG_INFT_CONTRACT_ADDRESS=0x4E5c6DC869F9B3220F01de9047031cEd1577b08F \
-  ENS_RPC_URL=https://ethereum-sepolia.publicnode.com ENS_NETWORK=sepolia \
-  ENS_PARENT_NAME=bpedia.eth \
-  ENS_SUBNAME_REGISTRAR_ADDRESS=0xBb921bFFBbbE2219D1EC365213a74097348F28F0 \
-  ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS=0x3e7D22150d6b883a89703d760d66743D2223456b \
-  BRAIN_ENS_NAME=yudhi.bpedia.eth \
-  BRAIN_STORAGE_ROOT=0xde0ebac78dd387969c8aba6c9ce5ef149a9e726685207c0026ae1c0c155ca37f \
-  BRAIN_SPECIALTY=defi-yield-strategies BRAIN_ENFORCE_ACCESS_TOKENS=false \
-  bun run --cwd apps/brain start &
-```
-
-## Today's commits
-
-```
-feat(web): homepage graph reads live ENS brains via discovery shortcut
-fix(storage-0g): real Flow.submit via viem — npm SDK 0.3.3 omits submitter
-docs: HANDOFF.md for next session
-chore: drop brainpedia.xyz custom domain
-docs: final status snapshot for tomorrow
-chore: drop obsolete Deploy.s.sol
-fix(web): replace fake npx snippet with real local-install
-feat(web): homepage demo links
-feat(web): /status page — live system health
-feat(web): article list + animated query demo on Brain page
-feat(scripts): verify-live full live-state smoke test
-docs: per-track integration docs reflect live state
-feat: discovery shortcut subnames
-feat: real Brain iNFT minted + access-token subname issued
-feat: live ENS subname + text records resolution working e2e
-chore: split deploy scripts + record deployed addresses
-fix(axl-bootstrap): use Yggdrasil's config schema
-feat(apps/brain): JSON-RPC HTTP server + AXL router registration
-fix(scripts/demo/axl_demo.py): Yggdrasil config schema + working brains
-feat(mcp-server): wire sync_vault end-to-end
-feat: query_brain MCP tool + live Brain page resolution
-feat(ens+mcp): wire ENS writes + finalize_brain MCP tool
-feat(0g): wire real Storage + Compute SDK calls
-… (plus the original scaffold and many more — see `git log`)
-```
+| Task | Owner |
+|---|---|
+| Demo video (under 3 min) | User |
+| Run the published MCP server end-to-end inside Claude Code on the user's MacBook | User |
+| Mixture-of-Brains UI on the homepage (currently API-only) | Dev — pending |
+| Hyperlink pass on per-Brain page (addresses → explorers) | Dev — in progress |

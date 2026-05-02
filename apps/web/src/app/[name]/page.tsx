@@ -26,7 +26,14 @@ export default async function BrainPage({ params }: BrainPageProps) {
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-10 px-6 py-16">
       <header className="flex flex-col gap-2">
-        <p className="font-mono text-xs text-[var(--muted)]">{brain.ensName}</p>
+        <a
+          href={ensExplorer(brain.ensName)}
+          target="_blank"
+          rel="noopener"
+          className="font-mono text-xs text-[var(--muted)] hover:underline"
+        >
+          {brain.ensName} ↗
+        </a>
         <h1 className="text-3xl font-medium tracking-tight">
           {r.specialty ? `${name} · ${r.specialty}` : name}
         </h1>
@@ -36,12 +43,24 @@ export default async function BrainPage({ params }: BrainPageProps) {
       </header>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Stat label="iNFT" value={r.inft ?? '—'} mono truncate />
+        <Stat
+          label="iNFT"
+          value={r.inft ?? '—'}
+          href={r.inft ? galileoAddress(r.inft.split(':')[0]!) : null}
+          mono
+          truncate
+        />
         <Stat label="Storage root" value={r.storageRoot ?? '—'} mono truncate />
         <Stat label="AXL peer id" value={r.axlPeerId ?? '—'} mono truncate />
         <Stat label="Specialty" value={r.specialty ?? '—'} />
         <Stat label="Price / query" value={r.priceQuery ?? '—'} mono />
-        <Stat label="Compute provider" value={r.computeUrl ?? '—'} mono truncate />
+        <Stat
+          label="Compute provider"
+          value={r.computeUrl ?? '—'}
+          href={r.computeUrl ?? null}
+          mono
+          truncate
+        />
       </section>
 
       <QueryDemo
@@ -86,29 +105,62 @@ export default async function BrainPage({ params }: BrainPageProps) {
 function Stat({
   label,
   value,
+  href,
   mono,
   truncate,
 }: {
   label: string;
   value: string;
+  href?: string | null;
   mono?: boolean;
   truncate?: boolean;
 }) {
+  const cls = [
+    'mt-1 text-sm',
+    mono ? 'font-mono' : '',
+    truncate ? 'truncate' : '',
+  ].join(' ');
   return (
     <div className="rounded-lg border border-current/10 p-4">
       <p className="text-xs uppercase tracking-wider text-[var(--muted)]">{label}</p>
-      <p
-        className={[
-          'mt-1 text-sm',
-          mono ? 'font-mono' : '',
-          truncate ? 'truncate' : '',
-        ].join(' ')}
-      >
-        {value}
-      </p>
+      {href ? (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener"
+          className={`${cls} block underline-offset-4 hover:underline`}
+          title={value}
+        >
+          {value} ↗
+        </a>
+      ) : (
+        <p className={cls} title={value}>{value}</p>
+      )}
     </div>
   );
 }
+
+/** chainscan-galileo address URL (0G Galileo testnet, chain 16602). */
+function galileoAddress(addr: string): string {
+  return `https://chainscan-galileo.0g.ai/address/${addr}`;
+}
+
+/** chainscan-galileo tx URL (0G Galileo testnet, chain 16602). */
+function galileoTx(hash: string): string {
+  return `https://chainscan-galileo.0g.ai/tx/${hash}`;
+}
+
+/** Sepolia ENS UI URL — the canonical sepolia.app.ens.domains form. */
+function ensExplorer(name: string): string {
+  return `https://sepolia.app.ens.domains/${name}`;
+}
+
+/** sepolia.etherscan.io address URL (used for non-Galileo contract refs). */
+function sepoliaAddress(addr: string): string {
+  return `https://sepolia.etherscan.io/address/${addr}`;
+}
+void galileoTx;
+void sepoliaAddress;
 
 async function safeResolveBrain(name: string): Promise<ResolvedBrain | null> {
   // Skip resolution at build time / in dev when ENS env isn't configured.

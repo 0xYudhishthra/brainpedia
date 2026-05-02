@@ -1,125 +1,132 @@
 # Demo runbook
 
-Step-by-step demo for the ETHGlobal Open Agents submission. Targets a 3-4 minute video.
+Step-by-step demo for the ETHGlobal Open Agents submission. 3 minute video target.
 
 ## Live state heading into the demo
 
-Confirmed working (verifiable by anyone, anytime):
+Verifiable by anyone, anytime:
 
 | Check | URL |
 |---|---|
 | Brain page renders live ENS records | https://brainpedia.up.railway.app/yudhi |
-| `bpedia.eth` exists on Sepolia | https://sepolia.app.ens.domains/bpedia.eth |
+| `bpedia.eth` parent on Sepolia | https://sepolia.app.ens.domains/bpedia.eth |
 | `yudhi.bpedia.eth` resolves | https://sepolia.app.ens.domains/yudhi.bpedia.eth |
-| `Brain.sol` tokenId 1 deployed | https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F |
-| AXL bootstrap peer up | Railway service `axl-bootstrap`, peer id `cb4cc722…3b8` |
+| `karpathy.bpedia.eth` resolves | https://sepolia.app.ens.domains/karpathy.bpedia.eth |
+| `Brain.sol` on Galileo | https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F |
+| `BrainMinter` on Galileo | https://chainscan-galileo.0g.ai/address/0xcca5e8c639505dd6f1d4ebf2f0c138ddc9aca2e7 |
+| `RoyaltyDistributor` on Galileo | https://chainscan-galileo.0g.ai/address/0x44eaad4fdb7d509cd3fe7624ce512cc97b910649 |
+| Royalty settlement proof tx | https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e |
+| AXL bootstrap peer | Railway service `axl-bootstrap`, peer id `cb4cc722…3b8` |
+| MCP server on npm | https://www.npmjs.com/package/brainpedia-mcp |
+| Hosted Obsidian (KasmVNC) | https://brainpedia-obsidian-production.up.railway.app |
 
-## Demo script (3:45 target)
+## Demo script (3:00 target)
 
-### Scene 1 — The problem (0:00–0:30)
+### Scene 1 — The supply gap (0:00–0:20)
 
-> Voiceover: *"Agents make poor decisions because their knowledge layer is broken. RAG returns stale data. ChatGPT hallucinates DeFi strategies. There's no incentive system for humans who've actually compiled the expertise to share it."*
+> Voiceover: *"Every AI agent today buys its knowledge from one of three big APIs. There's no marketplace where humans can sell the specialty knowledge they've already organised in their notes. Brainpedia is that marketplace."*
 
-Visuals:
-- (0:00) ChatGPT giving wrong DeFi advice screenshot
-- (0:15) "Bridge exploit / liquidation event" headline
-- (0:25) Cut to: *"agents need access to compiled human expertise."*
+Visuals: split screen showing OpenAI / Anthropic / Google logos on the left, an Obsidian vault on the right with a `?` between them.
 
-### Scene 2 — Brain creation (0:30–1:15)
+### Scene 2 — Mint a Brain in two minutes (0:20–1:20)
 
-> Voiceover: *"Here's how I made my Brain in 30 seconds."*
+> Voiceover: *"This is Karpathy's actual LLM-Wiki gist, compiled into a paid AI brain in Claude Code. One npm install, one MCP config, one prompt."*
 
-Visuals — screen recording inside Claude Desktop:
-1. User says: *"Set up my Brain from my Obsidian vault at /Users/yudhi/Documents/SecondBrain."*
-2. Brainpedia MCP fires `setup_brain` → Claude reads back: *"Found 612 notes, 38 tags, 1248 wikilinks across 4 topic clusters."*
-3. *"Compile a wiki article per cluster."* → Claude generates 6 articles inline.
-4. `upload_articles` → progress: *"Uploading 6 articles to 0G Storage… root hash 0xde0ebac7…"*
-5. `finalize_brain` → Claude streams: *"Minting Brain iNFT (tokenId 1) on 0G Galileo… registering yudhi.bpedia.eth on Sepolia… writing 8 brain.* text records…"*
-6. Confirmation: chainscan link to the iNFT mint, ENS link to the registered subname.
+Visuals — split: terminal + Claude Code:
 
-Caption overlay: *"All on testnet. Real merkle root, real iNFT, real ENS subname."*
+1. (0:20) `claude mcp add-json brainpedia '{...}' --scope user` — show the env block being pasted (private key + ENS + 0G + Obsidian REST plugin URL).
+2. (0:30) Open Claude Code session: *"Set up my Brain from my Obsidian vault as `karpathy` with specialty `llm-wiki-pattern`."*
+3. (0:40) Claude calls `setup_brain` → reads back: *"Found 16 notes, 4 cross-link clusters. Loaded the Brainpedia compile schema (Karpathy LLM-Wiki pattern)."* — the key thing here is the LLM is being constrained by a schema we ship.
+4. (0:50) Claude compiles wiki articles inline (visible in chat).
+5. (1:00) `upload_articles` — progress: *"Pushing snapshot to 0G Storage… root `0x43121ee8…`"*
+6. (1:10) `finalize_brain` — *"Minting via BrainMinter (permissionless self-mint)… registering `karpathy.bpedia.eth`… writing 8 brain.* text records."*
+7. (1:18) Confirmation: chainscan link to the iNFT mint, ENS link to the registered subname.
 
-### Scene 3 — The Brain page (1:15–1:45)
+Caption overlay: *"Real iNFT, real merkle root, real ENS. The schema makes every Brain on the network composable."*
 
-> Voiceover: *"Every Brain has a public page at brainpedia.up.railway.app/{name}."*
+### Scene 3 — The Brain page (1:20–1:40)
 
-Visuals:
-1. Browser → https://brainpedia.up.railway.app/yudhi.
-2. Page renders the 8 text records read live from ENS Sepolia.
-3. Hover over `brain.inft` → tooltip: "0x4E5c6DC8…:1 — click to view on chainscan-galileo.0g.ai".
-4. Hover over `brain.storage_root` → "0xde0ebac7…".
-5. Side panel: *"Querying agents have spent 0.0042 OG in the last hour."* (mocked metric for v1.)
-
-### Scene 4 — Mixture-of-Brains query (1:45–3:15) — the WOW
-
-> Voiceover: *"A Bundie agent submits a real query."*
+> Voiceover: *"Every Brain has a public page. No wallet, no signup."*
 
 Visuals:
-1. Terminal showing the agent: `query_brain --target yudhi.bpedia.eth --prompt "what's the safest 8% stablecoin yield given Malaysian regulatory exposure?"`
-2. **D3 force-directed graph** on screen:
-   - Querying agent node lights up (cyan pulse)
-   - Edge to orchestrator (animated pulse)
-   - Orchestrator fans out to 3 Brain nodes (defi, malaysia, mushroom)
-   - Each Brain processes (green glow) and replies in parallel
-   - Synthesis node merges the answers
-3. Sidebar shows live event stream:
-   - `ENS resolved: yudhi.bpedia.eth → peer cb4cc722…`
-   - `iNFT.authorizeUsage(1, agent, 900) → BrainPayment 0.001 OG`
-   - `AccessTokenRegistrar.issue("agent7af2", agent, 0xbdff…) → expires_at=…`
-   - `AXL POST /mcp/cb4cc722…/brainpedia.brain → 200`
-   - `0G Compute call: qwen-2.5-7b-instruct → answer`
-4. Final overlay: synthesized answer with citations to specific Brain articles ("see `stablecoin-yield-overview` and `malaysian-regulatory-context`").
 
-### Scene 5 — Flywheel close (3:15–3:45)
+1. Browser → https://brainpedia.up.railway.app/karpathy.
+2. The page renders the 8 `brain.*` text records read live from ENS Sepolia. Click `brain.inft` → opens chainscan.
+3. Scroll to "Compiled articles" — show the wiki structure (entity/concept/source pages with citations).
 
-> Voiceover: *"This is the supply side. We're building the agent economy's knowledge layer. Brain by Brain."*
+### Scene 4 — Mixture-of-Brains query (1:40–2:30) — the WOW
+
+> Voiceover: *"Now I'll ask the network a question. The orchestrator fans out to every Brain registered under the topic, in parallel, on a real P2P mesh. Each one returns a TEE-attested cited answer. The royalty splits settle in one tx."*
 
 Visuals:
-- Earnings dashboard showing per-Brain queries-served + 0G earned.
-- Cut to product framing: *"Demand-side: agents pay for compiled expertise. Supply-side: humans monetize their wikis as iNFTs."*
-- End card: *"brainpedia.up.railway.app · github.com/0xYudhishthra/brainpedia"*
 
-## Things to highlight per track
+1. (1:40) Terminal: `curl -X POST 'https://brainpedia.up.railway.app/api/query?mode=mixture' -d '{"prompt":"safest stablecoin yield given Malaysian regulatory exposure"}'`
+2. (1:45) Loading state — D3 graph on screen pulses: querying agent → orchestrator → fan-out to `yudhi.bpedia.eth` and `karpathy.bpedia.eth` in parallel.
+3. (2:00) Each Brain returns `verified: true` with citations. Sidebar shows event stream:
+   - `ENS resolved yudhi.bpedia.eth → tokenId 7, peer cb4cc722…`
+   - `0G Compute call → answer (TEE attestation OK)`
+   - `Citation-weighted split: yudhi 0.001 OG, karpathy 0.001 OG`
+4. (2:15) Switch terminals: `bun run scripts/setup/settle-royalties.ts` → one tx settles both Brains. Show the `Distributed` events on chainscan.
+5. (2:25) Final overlay: synthesised answer with linked citations.
 
-### 0G — Best Autonomous Agents, Swarms & iNFT
+### Scene 5 — Composition close (2:30–3:00)
 
-- **Live iNFT**: `Brain.sol` tokenId 1 on chainscan-galileo. `intelligenceOf(1)` returns IntelligentData with the storage root.
-- **Storage**: snapshot manifest hashed (KV+Log wrappers in `packages/storage-0g`; Indexer.upload integration ready, blocked on SDK ABI bump — see deployment.md).
-- **Compute**: provider `0xa48f0128…7836` pinned in env, broker initialized successfully, model `qwen-2.5-7b-instruct`. Live inference ready when ledger is funded (3 OG min).
-- **Swarm**: orchestrator AXL daemon + per-Brain AXL daemons + ENS-based discovery (no central broker). See `docs/axl-integration.md`.
+> Voiceover: *"Karpathy's vault is now an iNFT that earns him money every time another agent queries it. Anyone can mint their own. Anyone can compose them. The supply side of the agent economy."*
 
-### ENS — Best Integration + Most Creative Use
+Visuals:
 
-- **No hardcoded values**: every ENS value flows through env. Verify with `git grep -nE '0x[a-fA-F0-9]{40}' packages/ens/src/` (zero hits in source).
-- **Discovery layer**: agents resolve `<topic>.discover.bpedia.eth` for shortcut lookups, individual `<name>.bpedia.eth` for Brains.
-- **Subnames-as-access-tokens** (the creative angle): `agenta5b68322.client.bpedia.eth` exists on chain right now. AccessTokenRegistrar enforces TTL on chain — no off-chain auth service.
+- Show the 2-Brain network graph on https://brainpedia.up.railway.app/.
+- Cut to the full submission stack: `npx -y brainpedia-mcp`, `bpedia.eth`, `RoyaltyDistributor` on chainscan, the github repo URL.
+- End card: *"brainpedia.up.railway.app · npm/brainpedia-mcp · github.com/0xYudhishthra/brainpedia"*
 
-### Gensyn AXL
+## Things to highlight per bounty track
 
-- **Per-Brain separate daemons**: `scripts/demo/axl_demo.py` spins up 4 separate Yggdrasil daemons (orchestrator + 3 Brains), each with its own Ed25519 key + port. No shared in-process queue.
-- **Live bootstrap peer** on Railway: peer id `cb4cc722…3b8`.
-- **MCP router registration**: `apps/brain` registers itself with the local AXL MCP router via `POST /register {service:"brainpedia.brain", endpoint:"http://127.0.0.1:7100/mcp"}`.
+### 0G — Best Autonomous Agents, Swarms & iNFT Innovations ($7,500)
 
-## What to actually run during the recording
+- **Live iNFTs**: 7 minted on `Brain.sol` ([`0x4E5c…b08F`](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F)). `currentStorageRoot(7)` for yudhi or `currentStorageRoot(6)` for karpathy returns roots that resolve to article snapshots on the 0G Storage indexer.
+- **Permissionless mint**: `BrainMinter` ([`0xcca5…a2e7`](https://chainscan-galileo.0g.ai/address/0xcca5e8c639505dd6f1d4ebf2f0c138ddc9aca2e7)) owns Brain.sol; any wallet can self-mint with `mintToSender`.
+- **Royalty splits on usage**: `RoyaltyDistributor` ([`0x44ea…0649`](https://chainscan-galileo.0g.ai/address/0x44eaad4fdb7d509cd3fe7624ce512cc97b910649)) settles citation-weighted splits in one tx — proven live on tx [`0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e) (2 brains paid, 2 `Distributed` events).
+- **Storage**: KV layer for live edits, Log layer for snapshots. `Flow.submit` ABI workaround documented in `docs/0g-integration.md`.
+- **Compute**: TEE-attested Qwen 2.5 7B; every `verified: true` in API responses is real attestation.
+- **Swarm coordination**: ENS discovery + AXL transport + on-chain settlement, no central broker. See `docs/architecture.md`.
+
+### ENS — Best Integration for AI Agents ($2,500)
+
+- ENS subnames ARE the agent identity — `yourname.bpedia.eth`. 8 `brain.*` text records drive every brain interaction (iNFT ref, peer id, price, specialty, etc.).
+- Discovery shortcuts route agents by practice: [`research.discover.bpedia.eth`](https://sepolia.app.ens.domains/research.discover.bpedia.eth), [`frameworks.discover.bpedia.eth`](https://sepolia.app.ens.domains/frameworks.discover.bpedia.eth), [`all.discover.bpedia.eth`](https://sepolia.app.ens.domains/all.discover.bpedia.eth).
+- No hardcoded values: `git grep -nE '0x[a-fA-F0-9]{40}' packages/ens/src/` returns zero hits.
+
+### ENS — Most Creative Use ($2,500)
+
+- **Subnames as access tokens** — the angle. `AccessTokenRegistrar.issue(label, agent, brainNameHash, ttl)` mints `agent<hash>.client.bpedia.eth` with on-chain TTL. The Brain calls `isValid(label, agent)` at query time. No JWTs, no off-chain auth, no API keys. A capability token IS a first-class on-chain identity.
+- Live token to inspect: `agentf14abfb4.client.bpedia.eth` — verified `isValid` returns `true` for the granted agent and `false` for any other.
+
+### Gensyn AXL ($5,000)
+
+- **Multi-node demo**: `scripts/demo/axl_demo.py` spins up 4 separate Yggdrasil daemons (orchestrator + 3 brain stubs), each with its own Ed25519 key + port. No shared in-process queue.
+- **MCP-tool path uses AXL**: `apps/mcp-server/src/tools/query-brain.ts` uses `AxlClient` to `POST /mcp/{peer_id}/brainpedia.brain` over the encrypted mesh.
+- **Web `/api/query` opt-in AXL**: `transport: "axl" | "https"` in mixture-mode response surfaces which transport handled each call.
+- **Persistent bootstrap peer** on Railway: `cb4cc72222a27f577ac28d6a963ec95ce4b02e924ba05f17e700bd8a2e6b33b8`.
+
+## What to actually run during recording
 
 ```bash
-# Terminal 1: tail the AXL bootstrap logs (for the Mixture-of-Brains scene)
-railway logs --service axl-bootstrap --deployment
+# 1. Open Obsidian (in browser via VNC for demo continuity)
+open https://brainpedia-obsidian-production.up.railway.app
 
-# Terminal 2: tail Brain page in browser
-open https://brainpedia.up.railway.app/yudhi
+# 2. Open Claude Code in another window with brainpedia-mcp configured
 
-# Terminal 3: live ENS resolution (proves no hardcoded values)
-bun run --cwd /tmp/zg-test resolve-yudhi.ts   # or use ensjs CLI
+# 3. Tail the brain logs (watch the inference happen)
+railway logs --service brainpedia-brain --lines 50
 
-# Terminal 4: prepare the agent query — e.g. via the MCP server
+# 4. Browser tab open to the Brain network graph
+open https://brainpedia.up.railway.app
+
+# 5. Terminal ready for the curl mixture call
 ```
 
-## Known limitations to mention upfront (or skip)
+## Notes on what's real vs prop
 
-- **Lost-key recovery**: original `brainpedia.eth` deployer key was lost mid-build. Everything was redeployed under `bpedia.eth` with a fresh deployer (`0xD24e06f0…`). The orphaned `brainpedia.eth` parent + 3 old iNFTs are still on chain as historical artifacts.
-- **0G Storage SDK fix landed**: `@0glabs/0g-ts-sdk@0.3.3` encodes the wrong `submit()` ABI (omits the `submitter` field). We hand-roll Flow.submit via viem with the correct 2-field tuple (selector `0xbc8c11f8`) and push raw segments via `uploadSegmentsByTxSeq`. Storage root in the live iNFT is the real Flow merkle root, not a placeholder.
-- **0G Compute**: ledger funded + provider acknowledged for the new deployer. Live inference verified end-to-end (`POST /api/query` returns TEE-attested cited answers).
-- **Live Mixture-of-Brains**: 4 brains on chain (`yudhi/malaysia/rwa/vaultdemo.bpedia.eth`). One Railway brain serves all of them via multi-tenant ENS resolution (`req.target` → `readBrainRecords` → that brain's storage_root + specialty). `/api/query?mode=mixture` fans out across the discovery shortcut in parallel and returns per-brain answers + citation-weighted royalty splits + a `RoyaltyDistributor` address ready to settle on chain. The 4-node Yggdrasil-daemon variant (`scripts/demo/axl_demo.py`) is what runs on camera for the AXL bounty story.
-- **On-chain royalty settlement**: `RoyaltyDistributor` at `0x44eaad…0649` on Galileo. `scripts/setup/settle-royalties.ts` fetches the mixture payment plan and submits one `distribute` tx — proven live (`0x9637800e…`, 2 brains paid in one tx).
-- **AXL transport in /api/query**: when `AXL_API_URL` is set, the route uses `AxlClient.mcp(peerId, 'brainpedia.brain', request)` (peerId resolved live from each target's `brain.axl_peer_id` ENS record). On Railway today this isn't set (no AXL daemon co-located), so production prefers HTTPS — one sidecar away from full AXL.
+- **Real**: every contract address, every tx hash on chain, every TEE attestation, every ENS resolution, every Obsidian REST API call.
+- **Prop for demo continuity**: the hosted Obsidian on Railway runs the same Local REST API plugin a real user would run on their laptop. Real users run Obsidian + the plugin locally; the hosted version exists so the demo doesn't need to expose your personal vault on screen.
+- **Not yet wired in production**: the orchestrator role described in scene 4 is the web's `/api/query?mode=mixture` route running server-side fan-out, not a separate AXL orchestrator daemon. The 4-node Python variant in `scripts/demo/axl_demo.py` shows the daemon-per-Brain shape required by the AXL bounty's "separate AXL nodes" rule.
