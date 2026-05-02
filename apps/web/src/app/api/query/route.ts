@@ -63,9 +63,13 @@ interface PaymentSplit {
   brainEnsName: string;
   inft: string | null;
   brainOwner?: string;
+  /** Citations the brain returned (for transparency only — does NOT affect payment). */
   citationCount: number;
-  weight: number; // 0..1, normalised across successful brains
-  amountWei: string; // string because uint256 doesn't fit in JS number
+  /** This brain's share of the total bill, derived from amountWei/total. */
+  weight: number;
+  /** What the agent owes this brain, in wei. Equals priceQueryWei for sticker pricing. */
+  amountWei: string;
+  /** The brain's advertised brain.price_query ENS text record, in wei. */
   priceQueryWei: string | null;
 }
 
@@ -97,7 +101,7 @@ interface MixtureResponse {
    * `distributor` address in one tx — see contracts/src/RoyaltyDistributor.sol.
    */
   payments: PaymentSplit[];
-  /** Total wei to be distributed across `payments`, computed from the calling agent's optional `value` (defaults to sum of priceQueryWei across responding brains). */
+  /** Sum of priceQueryWei across responding brains. Pay-per-brain at sticker. */
   totalAmountWei: string;
   /** RoyaltyDistributor contract address on the Brain.sol chain — caller
    *  sends `totalAmountWei` and the same arrays of tokenIds + amounts to
@@ -112,11 +116,13 @@ const BRAIN_TIMEOUT_MS = 90_000;
  * brain (over AXL when AXL_API_URL is set, otherwise direct HTTPS to
  * BRAINPEDIA_BRAIN_URL).
  *
- * GET /api/query?mode=mixture&topic=defi
- *   → kicks the multi-brain fan-out path: resolves
- *     `<topic>.discover.<parent>`'s brainpedia.brains text record, calls each
- *     brain in parallel, returns per-brain results + a synthesised summary
- *     line + citation-weighted payment splits ready for on-chain settlement.
+ * POST /api/query?mode=mixture&topic=auto
+ *   → kicks the multi-brain fan-out path: LLM router picks the discovery
+ *     shortcut (or pass an explicit topic), resolves the shortcut's
+ *     brainpedia.brains text record, calls each brain in parallel, and
+ *     returns per-brain results + a synthesised summary + a pay-per-brain
+ *     plan (each responder paid its advertised brain.price_query) ready
+ *     for on-chain settlement via RoyaltyDistributor.
  */
 export async function POST(req: NextRequest) {
   let body: {
@@ -126,9 +132,6 @@ export async function POST(req: NextRequest) {
     target?: string;
     mixture?: boolean;
     topic?: string;
-    /** Optional total (in wei) to split across responding brains. Defaults to
-     *  sum of each brain's brain.price_query text record. */
-    valueWei?: string;
   };
   try {
     body = await req.json();
@@ -152,7 +155,7 @@ export async function POST(req: NextRequest) {
   const wantsMixture = body.mixture === true || url.searchParams.get('mode') === 'mixture';
   if (wantsMixture) {
     const rawTopic = (body.topic ?? url.searchParams.get('topic') ?? 'auto').toString();
-    return mixtureFanOut(prompt, rawTopic, transport, body.valueWei);
+    return mixtureFanOut(prompt, rawTopic, transport);
   }
 
   return singleBrainQuery(prompt, body, transport);
@@ -186,7 +189,6 @@ async function mixtureFanOut(
   prompt: string,
   rawTopic: string,
   transport: 'axl' | 'https',
-  valueWei: string | undefined,
 ): Promise<NextResponse> {
   // Resolve topic. `auto` (or empty) → call the LLM router to pick from the
   // discovery registry. Anything else is taken at face value.
@@ -252,12 +254,7 @@ async function mixtureFanOut(
     : `Synthesised from ${successful.length} brain${successful.length === 1 ? '' : 's'}: `
       + successful.map((b) => `${b.brainEnsName.split('.')[0]} cites [${(b.citations ?? []).join(', ')}]`).join(' · ');
 
-  const payments = await computePayments(
-    ensClient,
-    cfg,
-    successful,
-    valueWei,
-  );
+  const payments = await computePayments(ensClient, cfg, successful);
   const totalAmountWei = payments
     .reduce((acc, p) => acc + BigInt(p.amountWei), 0n)
     .toString();
@@ -389,36 +386,29 @@ async function callBrainViaHttps(rpcBody: object): Promise<BrainCall> {
 }
 
 /**
- * Citation-weighted royalty splits. For each successful brain:
+ * Pay-per-brain at sticker. Each responding brain receives exactly its
+ * advertised brain.price_query — no citation-based redistribution. The agent's
+ * total bill is the sum of those prices across brains that returned a usable
+ * answer. Brains that errored are not included; brains with no price record
+ * get 0 (free).
  *
- *   weight_i = max(citation_count_i, 1) / Σ max(citation_count, 1)
- *   amount_i = floor(totalAmountWei * weight_i)
+ * Citations are still surfaced in the response for transparency, but they do
+ * not affect amounts. `weight` is the brain's share of the total bill purely
+ * for display.
  *
- * The "max(_, 1)" floor means a brain that responded but cited nothing still
- * gets a baseline share for showing up — otherwise a brain with cleaner
- * answer-without-citations would get 0, which under-rewards conciseness.
- *
- * If the caller didn't pass valueWei, we default to the sum of each
- * responding brain's brain.price_query text record (so the agent pays exactly
- * what each brain advertised). When prices are missing we fall back to 0 for
- * that brain — the on-chain settlement just won't forward anything for it.
- *
- * The output is *not* settled here; the orchestrator (or a payment-relayer
- * agent with funds) calls RoyaltyDistributor.distribute(tokenIds, amounts)
- * in a single tx to forward shares on chain. Keeping it as a payment plan in
- * the response means the web service doesn't need a hot wallet.
+ * This is a payment *plan* — settlement happens via
+ * RoyaltyDistributor.distribute(tokenIds, amounts, reason) called by the
+ * agent (or the query_mixture MCP tool) in a single tx, so the web service
+ * never needs a hot wallet.
  */
 async function computePayments(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ensClient: any,
   cfg: ReturnType<typeof loadEnsConfig>,
   successful: MixtureBrainResult[],
-  valueWei: string | undefined,
 ): Promise<PaymentSplit[]> {
   if (successful.length === 0) return [];
 
-  // Resolve brain.inft + brain.price_query for each successful brain in
-  // parallel. inft text record format is "<contract>:<tokenId>".
   const enriched = await Promise.all(
     successful.map(async (b) => {
       let inft: string | null = null;
@@ -437,43 +427,25 @@ async function computePayments(
     }),
   );
 
-  // Total to split. Caller wins if explicit; otherwise sum of advertised
-  // per-query prices.
-  let total: bigint;
-  if (valueWei) {
-    total = BigInt(valueWei);
-  } else {
-    total = enriched.reduce((acc, e) => acc + BigInt(e.priceQueryWei ?? '0'), 0n);
-  }
-
-  const weightOf = (b: MixtureBrainResult) => Math.max((b.citations ?? []).length, 1);
-  const weightSum = enriched.reduce((acc, e) => acc + weightOf(e.brain), 0);
+  const total = enriched.reduce(
+    (acc, e) => acc + BigInt(e.priceQueryWei ?? '0'),
+    0n,
+  );
 
   const splits: PaymentSplit[] = enriched.map((e) => {
-    const w = weightOf(e.brain);
-    const amount = weightSum === 0
-      ? 0n
-      : (total * BigInt(w * 1_000_000)) / BigInt(weightSum * 1_000_000);
+    const amount = BigInt(e.priceQueryWei ?? '0');
+    const weight = total === 0n ? 0 : Number((amount * 10_000n) / total) / 10_000;
     return {
       brainEnsName: e.brain.brainEnsName,
       inft: e.inft,
       citationCount: (e.brain.citations ?? []).length,
-      weight: w / weightSum,
+      weight,
       amountWei: amount.toString(),
       priceQueryWei: e.priceQueryWei,
     };
   });
 
-  // Round-off correction: ensure Σ amountWei == total (avoid losing wei to floor).
-  if (splits.length > 0) {
-    const summed = splits.reduce((acc, s) => acc + BigInt(s.amountWei), 0n);
-    const diff = total - summed;
-    if (diff !== 0n) {
-      splits[0]!.amountWei = (BigInt(splits[0]!.amountWei) + diff).toString();
-    }
-  }
-
-  void getTextRecord; // imported for future per-record reads if needed
+  void getTextRecord;
   void BRAIN_TEXT_KEYS;
   return splits;
 }

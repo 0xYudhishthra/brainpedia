@@ -27,9 +27,11 @@ export const queryMixtureTool: Tool = {
   description:
     'Ask a free-form question to the Brainpedia network. The orchestrator routes ' +
     'across brains (LLM-picked discovery shortcut by default), each brain answers ' +
-    'with citations, and the agent settles citation-weighted royalty splits in one ' +
-    'tx via RoyaltyDistributor. Returns the synthesis, per-brain answers, payment ' +
-    'breakdown, and the settlement tx hash.',
+    'with citations, and the agent pays each responding brain its advertised ' +
+    'brain.price_query in a single RoyaltyDistributor.distribute tx. The agent ' +
+    'is only billed for brains that successfully responded, at sticker price per ' +
+    'brain. Returns the synthesis, per-brain answers, payment breakdown, and the ' +
+    'settlement tx hash.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -47,12 +49,6 @@ export const queryMixtureTool: Tool = {
           'Base URL of the Brainpedia web service. Defaults to ' +
           '$BRAINPEDIA_API_URL or https://brainpedia.up.railway.app.',
       },
-      valueWei: {
-        type: 'string',
-        description:
-          'Optional override for the total amount (in wei) to split across responding ' +
-          'brains. If omitted, the web service sums each brain\'s brain.price_query record.',
-      },
       skipSettlement: {
         type: 'boolean',
         description:
@@ -68,7 +64,6 @@ const inputSchema = z.object({
   prompt: z.string().min(1),
   topic: z.string().min(1).optional(),
   apiUrl: z.string().url().optional(),
-  valueWei: z.string().regex(/^\d+$/).optional(),
   skipSettlement: z.boolean().optional(),
 });
 
@@ -124,7 +119,7 @@ export async function handleQueryMixture(args: Record<string, unknown>) {
   if (!parsed.success) {
     return errorResp(`query_mixture: invalid args — ${parsed.error.message}`);
   }
-  const { prompt, valueWei, skipSettlement } = parsed.data;
+  const { prompt, skipSettlement } = parsed.data;
   const topic = parsed.data.topic ?? 'auto';
   const apiUrl =
     parsed.data.apiUrl ??
@@ -138,7 +133,7 @@ export async function handleQueryMixture(args: Record<string, unknown>) {
     const r = await fetch(planUrl, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ prompt, ...(valueWei ? { valueWei } : {}) }),
+      body: JSON.stringify({ prompt }),
     });
     if (!r.ok) {
       const text = await r.text().catch(() => '');

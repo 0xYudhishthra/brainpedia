@@ -189,7 +189,7 @@ export function MixtureDemo() {
             <div className="rounded-lg border border-current/10 p-4">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h3 className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)]">
-                  citation-weighted royalty splits
+                  pay-per-brain · sticker price × responders
                 </h3>
                 <p className="text-xs text-[var(--muted)]">
                   total{' '}
@@ -211,8 +211,8 @@ export function MixtureDemo() {
                       {p.brainEnsName} ↗
                     </a>
                     <span className="font-mono text-[var(--muted)]">
-                      {p.citationCount} cite{p.citationCount === 1 ? '' : 's'} · weight{' '}
-                      {(p.weight * 100).toFixed(0)}%
+                      {p.citationCount} cite{p.citationCount === 1 ? '' : 's'} · {(p.weight * 100).toFixed(0)}%
+                      of bill
                     </span>
                     <span className="font-mono">{formatOg(p.amountWei)} OG</span>
                   </li>
