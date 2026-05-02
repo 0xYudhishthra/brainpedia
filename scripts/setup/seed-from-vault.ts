@@ -49,7 +49,7 @@ import {
 import { privateKeyToAccount } from 'viem/accounts';
 import { sepolia, mainnet } from 'viem/chains';
 import { addEnsContracts } from '@ensdomains/ensjs';
-import { readVault, buildGraph } from '@brainpedia/obsidian-parser';
+import { readVault, readVaultFromRest, buildGraph } from '@brainpedia/obsidian-parser';
 import {
   loadZgConfig,
   buildSubmissionFromBytes,
@@ -90,19 +90,37 @@ const pk = must('PRIVATE_KEY') as Hex;
 const inftAddress = must('ZG_INFT_CONTRACT_ADDRESS');
 const ensRpcUrl = must('ENS_RPC_URL');
 const ensNetwork = (process.env.ENS_NETWORK ?? 'sepolia') as 'mainnet' | 'sepolia';
+const restUrl = process.env.OBSIDIAN_REST_API_URL;
+const restKey = process.env.OBSIDIAN_REST_API_KEY;
+const restRootPath = process.env.OBSIDIAN_VAULT_PATH;
 const vaultPath = values.vault ?? process.env.BRAINPEDIA_DEFAULT_VAULT_PATH;
-if (!vaultPath) {
-  console.error('seed-from-vault: --vault or BRAINPEDIA_DEFAULT_VAULT_PATH required');
+
+if (!restKey && !vaultPath) {
+  console.error(
+    'seed-from-vault: provide either OBSIDIAN_REST_API_KEY (with optional OBSIDIAN_REST_API_URL + OBSIDIAN_VAULT_PATH) ' +
+      'for REST mode, or --vault / BRAINPEDIA_DEFAULT_VAULT_PATH for filesystem mode.',
+  );
   process.exit(1);
 }
 
 console.log(`seed-from-vault: ${values.label}.${process.env.ENS_PARENT_NAME}`);
-console.log(`                 vault=${vaultPath}`);
+if (restKey) {
+  console.log(`                 source=rest ${restUrl ?? 'http://localhost:27123'} path=${restRootPath ?? '/'}`);
+} else {
+  console.log(`                 source=fs ${vaultPath}`);
+}
 console.log(`                 specialty=${values.specialty}`);
 
-// 1. Walk the vault.
+// 1. Walk the vault. REST takes precedence so the demo flow that uses the
+//    Railway-hosted Obsidian doesn't require a filesystem path.
 console.log('\n1. parsing vault');
-const notes = await readVault(vaultPath);
+const notes = restKey
+  ? await readVaultFromRest({
+      baseUrl: restUrl ?? 'http://localhost:27123',
+      apiKey: restKey,
+      rootPath: restRootPath,
+    })
+  : await readVault(vaultPath!);
 const graph = buildGraph(notes);
 console.log(`   ${notes.length} notes, ${Object.keys(graph.backlinks).length} backlink targets`);
 
