@@ -133,6 +133,7 @@
       "dependencies": {
         "@brainpedia/compute-0g": "workspace:*",
         "@brainpedia/ens": "workspace:*",
+        "@brainpedia/obsidian-parser": "workspace:*",
         "@brainpedia/storage-0g": "workspace:*",
         "@ensdomains/ensjs": "^4.2.2",
         "ethers": "^6.13.4",

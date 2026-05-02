@@ -82,3 +82,5 @@ tmp/
 # Obsidian vault paths or sample data — never commit user content
 sample-vault/
 *.vault-snapshot.json
+# Exception: the curated demo vault that ships with the repo.
+!scripts/demo/sample-vault/
