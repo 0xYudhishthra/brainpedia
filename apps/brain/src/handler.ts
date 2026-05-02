@@ -8,6 +8,7 @@ import {
   loadEnsConfig,
   createEnsPublicClient,
   isAccessTokenValid,
+  readBrainRecords,
   type EnsConfig,
 } from '@brainpedia/ens';
 import type { Address } from 'viem';
@@ -31,6 +32,14 @@ export interface BrainQueryRequest {
   accessToken?: string;
   /** Address of the agent making the call (for access-token lookup). */
   agent?: Address;
+  /**
+   * Optional target Brain ENS name (e.g. "malaysia.bpedia.eth"). When set, the
+   * handler resolves storage_root + specialty from ENS at query time instead
+   * of using the env defaults — enables a single brain process to serve any
+   * Brain registered under the parent (multi-tenant). Falls back to env
+   * defaults if absent or resolution fails.
+   */
+  target?: string;
 }
 
 export interface BrainQueryResult {
@@ -61,11 +70,14 @@ export function createBrainHandler(opts: BrainOptions, signerPrivateKey: string)
   const inference = createBrainInferenceClient(compute, signerPrivateKey);
   const ensClient = createEnsPublicClient(ens);
 
-  const systemPrompt =
-    `You are ${opts.ensName} — a specialised Brain in the Brainpedia network. ` +
-    `Your specialty: ${opts.specialty}. Answer ONLY from the provided context articles. ` +
-    `Cite the slug of each article you use. If the context doesn't contain the answer, ` +
-    `say so explicitly — do not hallucinate.`;
+  function buildSystemPrompt(ensName: string, specialty: string): string {
+    return (
+      `You are ${ensName} — a specialised Brain in the Brainpedia network. ` +
+      `Your specialty: ${specialty}. Answer ONLY from the provided context articles. ` +
+      `Cite the slug of each article you use. If the context doesn't contain the answer, ` +
+      `say so explicitly — do not hallucinate.`
+    );
+  }
 
   return {
     async query(req: BrainQueryRequest): Promise<BrainQueryResult> {
@@ -85,11 +97,31 @@ export function createBrainHandler(opts: BrainOptions, signerPrivateKey: string)
         if (!ok) throw new Error(`brain.query: invalid access token "${req.accessToken}"`);
       }
 
-      // 2. Retrieve articles (top-K from the latest snapshot).
-      const manifest = await log.fetchSnapshot(opts.storageRoot);
+      // 2. Resolve target. If req.target is set, look up storage_root +
+      //    specialty from ENS (multi-tenant). Otherwise use the env defaults.
+      let resolvedEns = opts.ensName;
+      let resolvedRoot = opts.storageRoot;
+      let resolvedSpecialty = opts.specialty;
+      if (req.target && req.target !== opts.ensName) {
+        const records = await readBrainRecords(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          { publicClient: ensClient as any, config: ens },
+          req.target,
+        );
+        if (!records.storageRoot) {
+          throw new Error(`brain.query: ${req.target} has no brain.storage_root text record`);
+        }
+        resolvedEns = req.target;
+        resolvedRoot = records.storageRoot;
+        resolvedSpecialty = records.specialty ?? opts.specialty;
+      }
+
+      // 3. Retrieve articles (top-K from the latest snapshot).
+      const manifest = await log.fetchSnapshot(resolvedRoot);
       const articles = topKByPromptOverlap(req.prompt, manifest.payload, opts.topK ?? 4);
 
-      // 3. Run inference.
+      // 4. Run inference with the resolved specialty's system prompt.
+      const systemPrompt = buildSystemPrompt(resolvedEns, resolvedSpecialty);
       const result = await inference.query({
         systemPrompt,
         userPrompt: req.prompt,
@@ -100,8 +132,8 @@ export function createBrainHandler(opts: BrainOptions, signerPrivateKey: string)
         answer: result.answer,
         citations: result.citations,
         confidence: result.confidence,
-        brainEnsName: opts.ensName,
-        storageRoot: opts.storageRoot,
+        brainEnsName: resolvedEns,
+        storageRoot: resolvedRoot,
         verified: result.verified,
       };
     },

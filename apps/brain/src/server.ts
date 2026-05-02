@@ -22,7 +22,7 @@ interface JsonRpcRequest {
   jsonrpc: '2.0';
   id: number | string;
   method: string;
-  params?: { prompt?: string; accessToken?: string; agent?: string };
+  params?: { prompt?: string; accessToken?: string; agent?: string; target?: string };
 }
 
 interface JsonRpcResponse {
@@ -86,6 +86,7 @@ export function startBrainServer(opts: ServerOptions) {
         prompt: rpc.params?.prompt ?? '',
         accessToken: rpc.params?.accessToken,
         agent: rpc.params?.agent as Address | undefined,
+        target: rpc.params?.target,
       };
       const result = await handler.query(params);
       return jsonRpc(res, 200, { jsonrpc: '2.0', id: rpc.id, result });
