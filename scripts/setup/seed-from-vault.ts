@@ -178,7 +178,7 @@ const pricePerSector = await ogPublic.readContract({
 });
 let sectors = 0n;
 for (const n of built.nodes) sectors += 1n << BigInt(n.height);
-const fee = sectors * pricePerSector;
+const flowFee = sectors * pricePerSector;
 
 const submitTx = await ogWallet.writeContract({
   address: zg.flowContractAddress as Address, abi: flowAbi, functionName: 'submit',
@@ -186,7 +186,7 @@ const submitTx = await ogWallet.writeContract({
     data: { length: BigInt(built.length), tags: '0x' as Hex,
       nodes: built.nodes.map((n) => ({ root: n.root, height: BigInt(n.height) })) },
     submitter: ogAccount.address,
-  }], value: fee,
+  }], value: flowFee,
 });
 // Galileo's RPC frequently 404s on the first poll for ~30-60s after submit.
 // viem's default timeout (~30s) and 4s retry are too tight; bump generously.
@@ -219,21 +219,36 @@ if (upload.rootHash.toLowerCase() !== built.rootHash.toLowerCase()) {
   throw new Error(`rootHash mismatch: built=${built.rootHash}, pushed=${upload.rootHash}`);
 }
 
-// 5. Mint + setMinPayment.
-console.log('\n4. Brain.mint');
+// 5. Mint via BrainMinter (permissionless wrapper) + setMinPayment.
+//    BrainMinter owns Brain.sol; mintToSender(root, desc) lets ANY caller
+//    mint a Brain to themselves (msg.sender). No deployer privilege needed —
+//    your teammate runs the same script and gets their own iNFT.
+console.log('\n4. BrainMinter.mintToSender');
+const minterAddress = process.env.BRAIN_MINTER_ADDRESS;
+if (!minterAddress) {
+  console.error('seed-from-vault: BRAIN_MINTER_ADDRESS env var required');
+  process.exit(1);
+}
+const minterAbi = [
+  'function mintToSender(bytes32,string) payable returns (uint256)',
+  'function mintFeeWei() view returns (uint256)',
+] as const;
 const brainAbi = [
-  'function mint(address,bytes32,string) returns (uint256)',
   'function setMinPayment(uint256,uint256)',
   'event BrainMinted(uint256 indexed,address indexed,bytes32)',
 ] as const;
+const minter = new Contract(minterAddress, minterAbi, signer) as unknown as {
+  mintFeeWei: () => Promise<bigint>;
+  mintToSender: (root: string, desc: string, overrides?: { value?: bigint }) => Promise<{ wait: () => Promise<{ hash: string; logs: Log[] }> }>;
+};
 const brain = new Contract(inftAddress, brainAbi, signer) as unknown as {
-  mint: (to: string, root: string, desc: string) => Promise<{ wait: () => Promise<{ hash: string; logs: Log[] }> }>;
   setMinPayment: (id: bigint, amount: bigint) => Promise<{ wait: () => Promise<unknown> }>;
 };
-const mintTx = await brain.mint(
-  signer.address,
+const fee = await minter.mintFeeWei();
+const mintTx = await minter.mintToSender(
   built.rootHash,
   `${values.specialty} brain — ${notes.length} compiled vault notes`,
+  { value: fee },
 );
 const mintRcpt = await mintTx.wait();
 const mintTopic = ethersId('BrainMinted(uint256,address,bytes32)');

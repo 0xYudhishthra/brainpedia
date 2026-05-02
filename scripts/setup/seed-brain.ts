@@ -153,8 +153,14 @@ const SAMPLE_ARTICLES: ArticleRecord[] = [
   },
 ];
 
+// Mint goes through BrainMinter (permissionless wrapper that owns Brain.sol).
+// BRAIN_MINTER_ADDRESS env required. setMinPayment is still a Brain.sol call,
+// since only the token owner (= msg.sender from mintToSender) can call it.
+const minterAbi = [
+  'function mintToSender(bytes32,string) payable returns (uint256)',
+  'function mintFeeWei() view returns (uint256)',
+] as const;
 const brainAbi = [
-  'function mint(address to, bytes32 initialStorageRoot, string description) returns (uint256)',
   'function setMinPayment(uint256 tokenId, uint256 amount)',
   'event BrainMinted(uint256 indexed tokenId, address indexed owner, bytes32 storageRoot)',
 ] as const;
@@ -403,16 +409,25 @@ if (flowTxSeq !== undefined) {
   );
 }
 
-// 2. Mint Brain iNFT.
-console.log('\n2. minting Brain iNFT on 0G Galileo …');
+// 2. Mint Brain iNFT — via BrainMinter (permissionless self-mint).
+console.log('\n2. minting Brain iNFT via BrainMinter …');
+const minterAddress = process.env.BRAIN_MINTER_ADDRESS;
+if (!minterAddress) {
+  console.error('seed-brain: BRAIN_MINTER_ADDRESS env var required');
+  process.exit(1);
+}
+const minter = new Contract(minterAddress, minterAbi, signer) as unknown as {
+  mintFeeWei: () => Promise<bigint>;
+  mintToSender: (root: string, desc: string, overrides?: { value?: bigint }) => Promise<{ wait: () => Promise<{ hash: string; logs: Log[] }> }>;
+};
 const brain = new Contract(inftAddress, brainAbi, signer) as unknown as {
-  mint: (to: string, root: string, desc: string) => Promise<{ wait: () => Promise<{ hash: string; logs: Log[] }> }>;
   setMinPayment: (id: bigint, amount: bigint) => Promise<{ wait: () => Promise<unknown> }>;
 };
-const tx = await brain.mint(
-  signer.address,
+const fee = await minter.mintFeeWei();
+const tx = await minter.mintToSender(
   snapshot.rootHash,
   `${values.specialty} brain — ${SAMPLE_ARTICLES.length} articles`,
+  { value: fee },
 );
 const rcpt = await tx.wait();
 const topic = ethersId('BrainMinted(uint256,address,bytes32)');

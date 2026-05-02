@@ -71,8 +71,16 @@ const inputSchema = z.object({
   axlPeerId: z.string().optional(),
 });
 
+// We mint through BrainMinter (a permissionless wrapper that owns Brain.sol)
+// so any caller — not just the original deployer — can mint a Brain to
+// themselves. The minted iNFT is owned by msg.sender; the BrainMinted event
+// is emitted by Brain.sol itself.
+const minterAbi = [
+  'function mintToSender(bytes32 initialStorageRoot, string description) payable returns (uint256)',
+  'function mintFeeWei() view returns (uint256)',
+  'event Minted(uint256 indexed tokenId, address indexed minter, bytes32 storageRoot)',
+] as const;
 const brainAbi = [
-  'function mint(address to, bytes32 initialStorageRoot, string description) returns (uint256)',
   'event BrainMinted(uint256 indexed tokenId, address indexed owner, bytes32 storageRoot)',
 ] as const;
 
@@ -89,6 +97,13 @@ export async function handleFinalizeBrain(args: Record<string, unknown>) {
         'Deploy contracts first (see scripts/setup/prep-deploy.ts + contracts/script/Deploy.s.sol).',
     );
   }
+  const minterAddress = process.env.BRAIN_MINTER_ADDRESS;
+  if (!minterAddress) {
+    return errorResp(
+      'finalize_brain: BRAIN_MINTER_ADDRESS not set. ' +
+        'BrainMinter wraps Brain.sol and lets any wallet mint to itself permissionlessly.',
+    );
+  }
   const wallet = process.env.ZG_WALLET_PRIVATE_KEY;
   if (!wallet) {
     return errorResp('finalize_brain: ZG_WALLET_PRIVATE_KEY env var is required.');
@@ -97,20 +112,24 @@ export async function handleFinalizeBrain(args: Record<string, unknown>) {
   const zg = loadZgConfig();
   const ens = loadEnsConfig();
 
-  // 1. Mint the iNFT on 0G chain.
+  // 1. Mint the iNFT on 0G chain — via BrainMinter (permissionless).
   const provider = new JsonRpcProvider(zg.rpcUrl);
   const signer = new Wallet(wallet, provider);
-  const brain = new Contract(inftAddress, brainAbi, signer) as unknown as {
-    mint: (
-      to: string,
+  const minter = new Contract(minterAddress, minterAbi, signer) as unknown as {
+    mintFeeWei: () => Promise<bigint>;
+    mintToSender: (
       initialStorageRoot: string,
       description: string,
+      overrides?: { value?: bigint },
     ) => Promise<{ wait: () => Promise<TransactionReceipt> }>;
   };
-  const tx = await brain.mint(
-    parsed.data.brainOwner,
+  const fee = await minter.mintFeeWei();
+  // BrainMinter mints to msg.sender. The signer's address ends up owning the
+  // iNFT — no `to` argument; the Brain owner is the wallet that signed this tx.
+  const tx = await minter.mintToSender(
     parsed.data.storageRoot,
     parsed.data.description ?? `Brainpedia Brain: ${parsed.data.label}`,
+    { value: fee },
   );
   const receipt = (await tx.wait()) as TransactionReceipt;
   const tokenId = extractTokenId(receipt);

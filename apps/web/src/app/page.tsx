@@ -131,6 +131,7 @@ bun install && bun run --filter=@brainpedia/mcp-server build
       "env": {
         "ZG_WALLET_PRIVATE_KEY": "0x<your-testnet-pk>",
         "ZG_INFT_CONTRACT_ADDRESS": "0x4E5c6DC869F9B3220F01de9047031cEd1577b08F",
+        "BRAIN_MINTER_ADDRESS": "0xcca5e8c639505dd6f1d4ebf2f0c138ddc9aca2e7",
         "ZG_RPC_URL": "https://evmrpc-testnet.0g.ai",
         "ENS_NETWORK": "sepolia",
         "ENS_PARENT_NAME": "bpedia.eth",

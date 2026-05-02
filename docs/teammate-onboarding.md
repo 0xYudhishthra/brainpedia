@@ -1,0 +1,108 @@
+# Teammate onboarding — turn your Obsidian vault into a paid Brain
+
+A 5-step setup. Anyone with their own wallet can self-onboard end-to-end — no permission from the Brainpedia deployer needed since `Brain.mint` runs through the permissionless `BrainMinter` wrapper.
+
+## What you need
+
+1. A testnet wallet (MetaMask, Rabby — anything that exposes a private key)
+2. ~3 OG on **0G Galileo** — faucet at https://faucet.0g.ai (single request gives 1 OG, hit a few times to clear the 0G Compute ledger minimum)
+3. ~0.05 Sepolia ETH — any [Sepolia faucet](https://www.alchemy.com/faucets/ethereum-sepolia) works
+4. Claude Desktop installed locally
+5. Your Obsidian vault on disk (or a folder of Markdown files — the parser doesn't care if it's a "real" Obsidian vault)
+
+## Step 1 — clone + build
+
+```bash
+git clone https://github.com/0xYudhishthra/brainpedia
+cd brainpedia
+bun install
+bun run --filter=@brainpedia/mcp-server build
+```
+
+## Step 2 — drop your wallet config in Claude Desktop
+
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or the equivalent on your OS. Paste the snippet below — **the only fields you change are `<absolute-path>`, `<your-testnet-pk>`, and `BRAINPEDIA_DEFAULT_VAULT_PATH`.** Every other env var points at the live Brainpedia stack on `bpedia.eth` and works as-is.
+
+```json
+{
+  "mcpServers": {
+    "brainpedia": {
+      "command": "node",
+      "args": ["<absolute-path>/brainpedia/apps/mcp-server/dist/index.js"],
+      "env": {
+        "ZG_WALLET_PRIVATE_KEY": "0x<your-testnet-pk>",
+        "ZG_INFT_CONTRACT_ADDRESS": "0x4E5c6DC869F9B3220F01de9047031cEd1577b08F",
+        "BRAIN_MINTER_ADDRESS": "0xcca5e8c639505dd6f1d4ebf2f0c138ddc9aca2e7",
+        "ZG_RPC_URL": "https://evmrpc-testnet.0g.ai",
+        "ZG_COMPUTE_PROVIDER_ADDRESS": "0xa48f01287233509FD694a22Bf840225062E67836",
+        "ZG_COMPUTE_PROVIDER_URL": "https://compute-network-6.integratenetwork.work",
+        "ZG_COMPUTE_MODEL": "qwen/qwen-2.5-7b-instruct",
+        "ENS_NETWORK": "sepolia",
+        "ENS_PARENT_NAME": "bpedia.eth",
+        "ENS_RPC_URL": "https://ethereum-sepolia.publicnode.com",
+        "ENS_SUBNAME_REGISTRAR_ADDRESS": "0xBb921bFFBbbE2219D1EC365213a74097348F28F0",
+        "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x3e7D22150d6b883a89703d760d66743D2223456b",
+        "AXL_API_URL": "http://127.0.0.1:9012",
+        "BRAINPEDIA_DEFAULT_VAULT_PATH": "<absolute-path>/your-obsidian-vault"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop. Brainpedia should show up in the MCP tools list.
+
+## Step 3 — set up your Brain
+
+In Claude Desktop:
+
+> Set up my Brain from `/Users/me/Documents/SecondBrain`. Pick "yourname" as the subname and "your-specialty-here" as the brain.specialty.
+
+Claude will call:
+
+1. **`setup_brain`** → reads your vault, returns the parsed graph (notes + frontmatter + wikilinks). Costs nothing.
+2. **Compile step (Claude does this in-context)** → groups related notes into wiki-style articles per the Karpathy-LLM-Wiki pattern. This is real LLM work happening on Anthropic's side — no on-chain cost, just Claude tokens.
+3. **`upload_articles`** → pushes the compiled articles to **0G Storage** (KV layer for the live editable copy + Log layer for the merkle-rooted snapshot). Costs ~0.001 OG in `Flow.submit` fees.
+4. **`finalize_brain`** → calls `BrainMinter.mintToSender(rootHash, description)` on Galileo (~0.001 OG gas), then registers `<yourname>.bpedia.eth` on Sepolia (~0.005 ETH gas), then writes 8 brain.* text records (~0.005 ETH gas). The minted iNFT is owned by your wallet; the ENS subname is owned by your wallet.
+
+After this you own:
+- `tokenId N` on Brain.sol (`0x4E5c…b08F` on Galileo)
+- `<yourname>.bpedia.eth` on Sepolia ENS
+
+## Step 4 — make money on it
+
+Your Brain is now reachable to other agents. Each query pays you `brain.price_query` wei (default `0.001 OG`).
+
+```bash
+# Anyone with the access token can query your brain:
+curl -X POST https://brainpedia.up.railway.app/api/query \
+  -H 'content-type: application/json' \
+  -d '{"prompt": "...", "target": "yourname.bpedia.eth"}'
+```
+
+For multi-brain queries that include yours, the orchestrator computes citation-weighted splits and `RoyaltyDistributor` (`0x44eaad…0649`) settles them on chain — your share lands directly in the wallet that owns your tokenId.
+
+## Step 5 — iterate
+
+Edited your vault? In Claude Desktop:
+
+> Sync my Brain — re-read the vault and push a new snapshot.
+
+Calls `sync_vault` → diffs against the current snapshot → uploads the new one → `Brain.appendStorageRoot(yourTokenId, newRoot, "snapshot v2")` → updates your `brain.storage_root` ENS text record.
+
+Old snapshots stay on chain forever (the iNFT's `IntelligentData[]` is append-only) so callers can reference historical versions of your brain.
+
+---
+
+## What you don't need to do
+
+- Deploy any contract (Brain.sol + SubnameRegistrar + AccessTokenRegistrar + RoyaltyDistributor + BrainMinter all already live)
+- Ask anyone for permission (mint is permissionless via BrainMinter)
+- Pay rent for ENS (subnames under `bpedia.eth` are free — we own the parent and the registrar's `register` is unrestricted)
+- Run any infrastructure (Brainpedia's web + brain are on Railway, axl-bootstrap is up)
+
+## What we don't handle yet
+
+- **Wallet provisioning.** You bring your own wallet. Privy / Magic embedded wallets are a v2 add — for now the wallet management story is "use whatever you already have."
+- **Mainnet.** Everything is testnet (Galileo + Sepolia). Mainnet payments would need `bpedia.eth` registered on Ethereum mainnet (~$5/yr) and a fresh deploy of all five contracts.
+- **Vault re-sync from a hosted vault.** `sync_vault` reads your local filesystem only — no Obsidian Sync / iCloud / Notion integration yet.
