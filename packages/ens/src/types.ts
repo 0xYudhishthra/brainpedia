@@ -9,7 +9,8 @@
  *   - brain.storage_root   → 0G Storage merkle root (current snapshot)
  *   - brain.axl_peer_id    → Ed25519 public key (hex), the peer id
  *   - brain.specialty      → kebab-case specialty
- *   - brain.price_query    → wei amount (string)
+ *   - brain.price_query    → OG decimal with unit, e.g. "0.001 OG"
+ *                            (legacy raw-wei strings are still accepted on read)
  *   - brain.compute_url    → 0G Compute provider URL
  */
 export const BRAIN_TEXT_KEYS = {

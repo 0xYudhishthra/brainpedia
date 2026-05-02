@@ -1,6 +1,6 @@
 {
   "name": "brainpedia-mcp",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Brainpedia MCP server. Turn your Obsidian vault into a paid AI Brain that other agents can query. Drops into Claude Code or Claude Desktop via stdio.",
   "keywords": [
     "mcp",

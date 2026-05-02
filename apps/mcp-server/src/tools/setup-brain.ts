@@ -36,7 +36,9 @@ export const setupBrainTool: Tool = {
       },
       pricePerQuery: {
         type: 'string',
-        description: 'Price per query in wei (used as ENS text record brain.price_query).',
+        description:
+          'Price per query in OG. Examples: "0.001 OG", "0.5 OG", "1 OG". ' +
+          'Stored as ENS text record brain.price_query.',
       },
     },
     required: ['name'],

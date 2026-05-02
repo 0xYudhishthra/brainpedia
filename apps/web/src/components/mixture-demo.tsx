@@ -18,7 +18,7 @@ interface PaymentSplit {
   citationCount: number;
   weight: number;
   amountWei: string;
-  priceQueryWei: string | null;
+  priceQuery: string | null;
 }
 
 interface RouterInfo {

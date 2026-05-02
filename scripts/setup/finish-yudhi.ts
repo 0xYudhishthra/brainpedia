@@ -62,7 +62,7 @@ const records = {
   storageRoot: STORAGE_ROOT,
   axlPeerId: AXL_PEER_ID,
   specialty: SPECIALTY,
-  priceQuery: '1000000000000000', // 0.001 OG in wei
+  priceQuery: '0.001 OG',
   computeUrl: '',
 };
 

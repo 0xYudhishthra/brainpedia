@@ -15,6 +15,8 @@ import {
   createEnsPublicClient,
   registerSubname,
   viemChainForNetwork,
+  parsePriceQuery,
+  formatPriceQuery,
   BRAIN_TEXT_KEYS,
 } from '@brainpedia/ens';
 import { addEnsContracts } from '@ensdomains/ensjs';
@@ -43,11 +45,16 @@ export const finalizeBrainTool: Tool = {
       specialty: { type: 'string' },
       pricePerQuery: {
         type: 'string',
-        description: 'Wei amount, used as ENS brain.price_query text record.',
+        description:
+          'Price per query, in OG with 18-decimal notation. Examples: "0.001 OG", ' +
+          '"0.5 OG", "1 OG". Stored as the brain.price_query ENS text record.',
       },
       computeUrl: {
         type: 'string',
-        description: '0G Compute provider URL — will be set as brain.compute_url.',
+        description:
+          '0G Compute provider URL — stored as brain.compute_url so other agents ' +
+          'can verify which TEE-attested provider this Brain uses for inference. ' +
+          'If omitted, defaults to $ZG_COMPUTE_PROVIDER_URL from the environment.',
       },
       axlPeerId: {
         type: 'string',
@@ -112,6 +119,26 @@ export async function handleFinalizeBrain(args: Record<string, unknown>) {
   const zg = loadZgConfig();
   const ens = loadEnsConfig();
 
+  // Canonicalise the price input: accept "0.001 OG", "0.001", or legacy raw
+  // wei integer; always write the canonical "0.001 OG" form on chain.
+  let canonicalPrice: string | undefined;
+  if (parsed.data.pricePerQuery) {
+    const wei = parsePriceQuery(parsed.data.pricePerQuery);
+    if (wei === null) {
+      return errorResp(
+        `finalize_brain: pricePerQuery "${parsed.data.pricePerQuery}" is not a valid OG amount (e.g. "0.001 OG")`,
+      );
+    }
+    canonicalPrice = formatPriceQuery(wei);
+  }
+
+  // Auto-fill compute provider URL from env when the caller didn't pass one,
+  // so the brain.compute_url ENS record is never empty by accident — the same
+  // provider the Brain runtime uses for inference is stored as its public
+  // attestation surface.
+  const resolvedComputeUrl =
+    parsed.data.computeUrl ?? process.env.ZG_COMPUTE_PROVIDER_URL ?? undefined;
+
   // 1. Mint the iNFT on 0G chain — via BrainMinter (permissionless).
   const provider = new JsonRpcProvider(zg.rpcUrl);
   const signer = new Wallet(wallet, provider);
@@ -162,8 +189,8 @@ export async function handleFinalizeBrain(args: Record<string, unknown>) {
         storageRoot: parsed.data.storageRoot,
         axlPeerId: parsed.data.axlPeerId,
         specialty: parsed.data.specialty,
-        priceQuery: parsed.data.pricePerQuery,
-        computeUrl: parsed.data.computeUrl,
+        priceQuery: canonicalPrice,
+        computeUrl: resolvedComputeUrl,
       },
     },
   );
@@ -189,7 +216,8 @@ export async function handleFinalizeBrain(args: Record<string, unknown>) {
               [BRAIN_TEXT_KEYS.inft]: inftPair,
               [BRAIN_TEXT_KEYS.storageRoot]: parsed.data.storageRoot,
               [BRAIN_TEXT_KEYS.specialty]: parsed.data.specialty ?? null,
-              [BRAIN_TEXT_KEYS.priceQuery]: parsed.data.pricePerQuery ?? null,
+              [BRAIN_TEXT_KEYS.priceQuery]: canonicalPrice ?? null,
+              [BRAIN_TEXT_KEYS.computeUrl]: resolvedComputeUrl ?? null,
             },
           },
           null,

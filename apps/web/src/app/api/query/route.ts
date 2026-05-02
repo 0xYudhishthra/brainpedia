@@ -4,6 +4,7 @@ import {
   createEnsPublicClient,
   listBrainsForTopic,
   readBrainRecords,
+  parsePriceQuery,
   BRAIN_TEXT_KEYS,
 } from '@brainpedia/ens';
 import { AxlClient, BRAIN_MCP_SERVICE_NAME, type McpResponse } from '@brainpedia/axl';
@@ -67,10 +68,11 @@ interface PaymentSplit {
   citationCount: number;
   /** This brain's share of the total bill, derived from amountWei/total. */
   weight: number;
-  /** What the agent owes this brain, in wei. Equals priceQueryWei for sticker pricing. */
+  /** What the agent owes this brain, in wei (always wei for on-chain settlement). */
   amountWei: string;
-  /** The brain's advertised brain.price_query ENS text record, in wei. */
-  priceQueryWei: string | null;
+  /** The brain's advertised brain.price_query ENS text record, as stored
+   *  (canonical: "0.001 OG"; legacy raw-wei integers are still accepted on read). */
+  priceQuery: string | null;
 }
 
 interface MixtureResponse {
@@ -412,28 +414,27 @@ async function computePayments(
   const enriched = await Promise.all(
     successful.map(async (b) => {
       let inft: string | null = null;
-      let priceQueryWei: string | null = null;
+      let priceWei: bigint | null = null;
+      let priceRecord: string | null = null;
       try {
         const records = await readBrainRecords(
           { publicClient: ensClient, config: cfg },
           b.brainEnsName,
         );
         inft = records.inft ?? null;
-        priceQueryWei = records.priceQuery ?? null;
+        priceRecord = records.priceQuery ?? null;
+        priceWei = parsePriceQuery(priceRecord);
       } catch {
         // tolerate ENS read failures — payment plan just won't include this brain
       }
-      return { brain: b, inft, priceQueryWei };
+      return { brain: b, inft, priceWei, priceRecord };
     }),
   );
 
-  const total = enriched.reduce(
-    (acc, e) => acc + BigInt(e.priceQueryWei ?? '0'),
-    0n,
-  );
+  const total = enriched.reduce((acc, e) => acc + (e.priceWei ?? 0n), 0n);
 
   const splits: PaymentSplit[] = enriched.map((e) => {
-    const amount = BigInt(e.priceQueryWei ?? '0');
+    const amount = e.priceWei ?? 0n;
     const weight = total === 0n ? 0 : Number((amount * 10_000n) / total) / 10_000;
     return {
       brainEnsName: e.brain.brainEnsName,
@@ -441,7 +442,7 @@ async function computePayments(
       citationCount: (e.brain.citations ?? []).length,
       weight,
       amountWei: amount.toString(),
-      priceQueryWei: e.priceQueryWei,
+      priceQuery: e.priceRecord,
     };
   });
 

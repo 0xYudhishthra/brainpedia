@@ -26,3 +26,5 @@ export {
   listBrainsForTopic,
   DISCOVERY_BRAINS_KEY,
 } from './discovery.js';
+
+export { parsePriceQuery, formatPriceQuery } from './price.js';

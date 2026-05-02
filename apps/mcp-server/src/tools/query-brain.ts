@@ -5,6 +5,7 @@ import {
   loadEnsConfig,
   createEnsPublicClient,
   resolveBrain,
+  parsePriceQuery,
   BRAIN_TEXT_KEYS,
 } from '@brainpedia/ens';
 import { AxlClient, loadAxlConfig, BRAIN_MCP_SERVICE_NAME } from '@brainpedia/axl';
@@ -79,9 +80,7 @@ export async function handleQueryBrain(args: Record<string, unknown>) {
   }
   const [inftAddr, tokenIdStr] = inftRef.split(':');
   const tokenId = BigInt(tokenIdStr!);
-  const priceWei = resolved.records.priceQuery
-    ? BigInt(resolved.records.priceQuery)
-    : 0n;
+  const priceWei = parsePriceQuery(resolved.records.priceQuery) ?? 0n;
 
   // 2. Authorize agent on the iNFT (one tx, payable to Brain owner).
   const provider = new JsonRpcProvider(zg.rpcUrl);

@@ -62,6 +62,7 @@ import {
   registerSubname,
   writeBrainRecords,
   subnameRegistrarAbi,
+  formatPriceQuery,
 } from '@brainpedia/ens';
 
 const { values } = parseArgs({
@@ -316,7 +317,7 @@ const records = {
   storageRoot: built.rootHash,
   axlPeerId: values['axl-peer-id']!,
   specialty: values.specialty!,
-  priceQuery: priceWei.toString(),
+  priceQuery: formatPriceQuery(priceWei),
   computeUrl: process.env.ZG_COMPUTE_PROVIDER_URL ?? '',
 };
 const result = await writeBrainRecords(

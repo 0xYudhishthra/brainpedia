@@ -48,6 +48,7 @@ import {
   registerSubname,
   writeBrainRecords,
   subnameRegistrarAbi,
+  formatPriceQuery,
 } from '@brainpedia/ens';
 import { keccak256 as viemKeccak256, stringToBytes } from 'viem';
 
@@ -489,7 +490,7 @@ const records = {
     values['axl-peer-id'] ||
     'cb4cc72222a27f577ac28d6a963ec95ce4b02e924ba05f17e700bd8a2e6b33b8',
   specialty: values.specialty,
-  priceQuery: priceWei.toString(),
+  priceQuery: formatPriceQuery(priceWei),
   computeUrl: values['compute-url'] || '',
 };
 
