@@ -30,12 +30,16 @@ interface RouterInfo {
 
 interface MixtureResponse {
   mode: 'mixture';
+  status: 'awaiting-payment' | 'paid';
+  sessionId: string;
+  expiresAt: number;
   topic: string;
   router?: RouterInfo;
   prompt: string;
   transport: 'axl' | 'https';
   brains: BrainResult[];
   synthesis: string;
+  synthesisSource: 'llm' | 'fallback' | 'none';
   payments: PaymentSplit[];
   totalAmountWei: string;
   distributor: string | null;
@@ -172,12 +176,31 @@ export function MixtureDemo() {
               </p>
             </div>
           )}
-          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-emerald-700">
-              synthesis · transport={response.transport}
-            </p>
-            <p className="mt-1 text-sm leading-relaxed">{response.synthesis}</p>
-          </div>
+          {response.status === 'awaiting-payment' ? (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-amber-700">
+                synthesis gated · awaiting on-chain settlement
+              </p>
+              <p className="mt-1 text-sm leading-relaxed">
+                Each Brain has answered (you can see citations + verification below) but the
+                synthesised answer is locked until the agent settles the payment plan on chain.
+                In the MCP flow (<code className="font-mono">brainpedia-mcp</code>{' '}
+                <code className="font-mono">query_mixture</code> tool in Claude Code) the
+                agent&apos;s wallet auto-settles and unlocks the synthesis. From the browser,
+                use the npm package above to run it end-to-end.
+              </p>
+              <p className="mt-2 font-mono text-[10px] text-[var(--muted)]">
+                session={response.sessionId} · expires {new Date(response.expiresAt).toLocaleTimeString()}
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-emerald-700">
+                synthesis · transport={response.transport} · synthesis={response.synthesisSource}
+              </p>
+              <p className="mt-1 text-sm leading-relaxed whitespace-pre-line">{response.synthesis}</p>
+            </div>
+          )}
 
           <div className="grid gap-3 md:grid-cols-2">
             {response.brains.map((b) => (

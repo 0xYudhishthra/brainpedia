@@ -8,8 +8,20 @@ import {
   BRAIN_TEXT_KEYS,
 } from '@brainpedia/ens';
 import { AxlClient, BRAIN_MCP_SERVICE_NAME, type McpResponse } from '@brainpedia/axl';
-import { loadComputeConfig, pickTopic, type RouterChoice } from '@brainpedia/compute-0g';
+import {
+  loadComputeConfig,
+  pickTopic,
+  createBrainInferenceClient,
+  type RouterChoice,
+} from '@brainpedia/compute-0g';
 import { getTextRecord } from '@ensdomains/ensjs/public';
+import {
+  newSessionId,
+  putSession,
+  getSession,
+  SESSION_TTL_MS,
+} from './sessions';
+import { verifySettlement } from './verify-settlement';
 
 /**
  * Discovery shortcuts the orchestrator can route to. The web service ships
@@ -77,6 +89,28 @@ interface PaymentSplit {
 
 interface MixtureResponse {
   mode: 'mixture';
+  /**
+   * `awaiting-payment`: phase-1 response; the synthesis + per-brain answers
+   * are gated until the agent settles the plan and re-calls with sessionId
+   * + txHash. `paid`: phase-2 response after the on-chain Distributed events
+   * matched the plan; full synthesis + answers are unlocked.
+   */
+  status: 'awaiting-payment' | 'paid';
+  /** Opaque handle the agent posts back with txHash to claim the answer. */
+  sessionId: string;
+  /** Wall-clock deadline by which the session expires (epoch ms). */
+  expiresAt: number;
+  /**
+   * Settlement metadata, present on phase-2 responses only. The agent uses
+   * this to confirm to the user which on-chain event chain unlocked the
+   * answer.
+   */
+  settlement?: {
+    txHash: string;
+    payer: string;
+    blockNumber: number;
+    explorer: string;
+  };
   /** The shortcut actually used to fan out (post-routing). */
   topic: string;
   /**
@@ -97,10 +131,17 @@ interface MixtureResponse {
   brains: MixtureBrainResult[];
   synthesis: string;
   /**
-   * Per-brain payment shares for an N-brain query, citation-weighted. The
-   * orchestrator (or a payment-relayer agent) settles these by calling
-   * RoyaltyDistributor.distribute(tokenIds, amounts, reason) on the
+   * 'llm' = TEE-attested synthesis call fused per-brain answers into one
+   * coherent response. 'fallback' = compute env unavailable or call failed,
+   * served the legacy template ("Synthesised from N brains: ..."). 'none' =
+   * no brain returned a usable answer to fuse.
+   */
+  synthesisSource: 'llm' | 'fallback' | 'none';
+  /**
+   * Per-brain payment plan. The agent (or a payment-relayer) settles by
+   * calling RoyaltyDistributor.distribute(tokenIds, amounts, reason) on the
    * `distributor` address in one tx — see contracts/src/RoyaltyDistributor.sol.
+   * Each brain receives exactly its advertised brain.price_query.
    */
   payments: PaymentSplit[];
   /** Sum of priceQueryWei across responding brains. Pay-per-brain at sticker. */
@@ -134,12 +175,26 @@ export async function POST(req: NextRequest) {
     target?: string;
     mixture?: boolean;
     topic?: string;
+    /** Phase-2 unlock: opaque session handle from the phase-1 response. */
+    sessionId?: string;
+    /** Phase-2 unlock: RoyaltyDistributor.distribute tx hash to verify against
+     *  the cached plan before releasing the synthesis. */
+    txHash?: string;
   };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'invalid JSON body' }, { status: 400 });
   }
+
+  const url = new URL(req.url);
+  const wantsMixture = body.mixture === true || url.searchParams.get('mode') === 'mixture';
+
+  // Phase-2 mixture unlock: agent has settled and is reclaiming the synthesis.
+  if (wantsMixture && body.sessionId && body.txHash) {
+    return claimMixture(body.sessionId, body.txHash);
+  }
+
   const prompt = (body?.prompt ?? '').toString().trim();
   if (!prompt) {
     return NextResponse.json({ error: 'prompt is required' }, { status: 400 });
@@ -153,8 +208,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const url = new URL(req.url);
-  const wantsMixture = body.mixture === true || url.searchParams.get('mode') === 'mixture';
   if (wantsMixture) {
     const rawTopic = (body.topic ?? url.searchParams.get('topic') ?? 'auto').toString();
     return mixtureFanOut(prompt, rawTopic, transport);
@@ -251,29 +304,119 @@ async function mixtureFanOut(
   });
 
   const successful = brains.filter((b) => b.ok);
-  const synthesis = successful.length === 0
-    ? 'No brain in the discovery shortcut returned a usable answer.'
-    : `Synthesised from ${successful.length} brain${successful.length === 1 ? '' : 's'}: `
-      + successful.map((b) => `${b.brainEnsName.split('.')[0]} cites [${(b.citations ?? []).join(', ')}]`).join(' · ');
+  const { synthesis, synthesisSource } = await synthesise(prompt, successful);
 
   const payments = await computePayments(ensClient, cfg, successful);
   const totalAmountWei = payments
     .reduce((acc, p) => acc + BigInt(p.amountWei), 0n)
     .toString();
 
-  const response: MixtureResponse = {
+  const distributor = process.env.ROYALTY_DISTRIBUTOR_ADDRESS ?? null;
+  const sessionId = newSessionId();
+  const expiresAt = Date.now() + SESSION_TTL_MS;
+
+  const fullResponse: MixtureResponse = {
     mode: 'mixture',
+    status: 'paid', // when surfaced via cache after settlement
+    sessionId,
+    expiresAt,
     topic,
     ...(routerInfo ? { router: routerInfo } : {}),
     prompt,
     transport,
     brains,
     synthesis,
+    synthesisSource,
     payments,
     totalAmountWei,
-    distributor: process.env.ROYALTY_DISTRIBUTOR_ADDRESS ?? null,
+    distributor,
   };
-  return NextResponse.json(response, { status: 200 });
+
+  putSession(sessionId, {
+    createdAt: Date.now(),
+    topic,
+    prompt,
+    full: fullResponse,
+    plan: {
+      distributor,
+      splits: payments.map((p) => ({ inft: p.inft, amountWei: p.amountWei })),
+      totalAmountWei,
+    },
+  });
+
+  // Phase-1 response: REDACT answers + synthesis. Surface enough metadata
+  // for the agent to understand what they're paying for (which brains
+  // responded, how many citations each returned, the per-brain price) but
+  // not the actual content.
+  const phaseOne: MixtureResponse = {
+    mode: 'mixture',
+    status: 'awaiting-payment',
+    sessionId,
+    expiresAt,
+    topic,
+    ...(routerInfo ? { router: routerInfo } : {}),
+    prompt,
+    transport,
+    brains: brains.map((b) => ({
+      brainEnsName: b.brainEnsName,
+      ok: b.ok,
+      verified: b.verified,
+      citations: b.citations ? b.citations : undefined,
+      ...(b.errorMessage ? { errorMessage: b.errorMessage } : {}),
+      // answer + storageRoot are intentionally omitted until paid.
+    })),
+    synthesis: 'Synthesis is gated until the agent settles the payment plan and re-calls /api/query?mode=mixture with sessionId + txHash.',
+    synthesisSource,
+    payments,
+    totalAmountWei,
+    distributor,
+  };
+  return NextResponse.json(phaseOne, { status: 200 });
+}
+
+async function claimMixture(
+  sessionId: string,
+  txHash: string,
+): Promise<NextResponse> {
+  const cached = getSession(sessionId);
+  if (!cached) {
+    return NextResponse.json(
+      { error: `mixture: sessionId not found or expired (TTL ${Math.round(SESSION_TTL_MS / 60_000)} min)` },
+      { status: 404 },
+    );
+  }
+  if (!cached.plan.distributor) {
+    return NextResponse.json(
+      { error: 'mixture: cached plan has no distributor address; ROYALTY_DISTRIBUTOR_ADDRESS env was missing at fan-out time' },
+      { status: 500 },
+    );
+  }
+
+  const verdict = await verifySettlement({
+    txHash,
+    expectedDistributor: cached.plan.distributor,
+    expectedSplits: cached.plan.splits,
+  });
+  if (!verdict.ok) {
+    return NextResponse.json(
+      { error: `mixture: settlement verification failed: ${verdict.reason}` },
+      { status: 402 },
+    );
+  }
+
+  const full = cached.full as MixtureResponse;
+  const explorerBase = process.env.ZG_EXPLORER_URL ?? 'https://chainscan-galileo.0g.ai';
+  const settled: MixtureResponse = {
+    ...full,
+    status: 'paid',
+    settlement: {
+      txHash,
+      payer: verdict.payer,
+      blockNumber: verdict.blockNumber,
+      explorer: `${explorerBase}/tx/${txHash}`,
+    },
+  };
+  return NextResponse.json(settled, { status: 200 });
 }
 
 interface BrainCallSuccess {
@@ -385,6 +528,66 @@ async function callBrainViaHttps(rpcBody: object): Promise<BrainCall> {
     return { ok: false, errorMessage: 'brain returned no result' };
   }
   return { ok: true, value: payload.result };
+}
+
+/**
+ * Real synthesis: feed the per-brain answers + their citations into a
+ * TEE-attested 0G Compute call, ask it to fuse them into one coherent answer
+ * the agent can act on. Falls back to the legacy template synthesis when
+ * compute env is missing or the inference call errors — the legacy form is
+ * still useful for debugging routing/citations even without a fused answer.
+ */
+async function synthesise(
+  prompt: string,
+  successful: MixtureBrainResult[],
+): Promise<{ synthesis: string; synthesisSource: 'llm' | 'fallback' | 'none' }> {
+  if (successful.length === 0) {
+    return {
+      synthesis: 'No brain in the discovery shortcut returned a usable answer.',
+      synthesisSource: 'none',
+    };
+  }
+  const fallback = `Synthesised from ${successful.length} brain${successful.length === 1 ? '' : 's'}: `
+    + successful
+        .map((b) => `${b.brainEnsName.split('.')[0]} cites [${(b.citations ?? []).join(', ')}]`)
+        .join(' · ');
+
+  const cfg = loadComputeConfig();
+  const wallet = process.env.ZG_WALLET_PRIVATE_KEY;
+  if (!wallet || !cfg.providerAddress) {
+    return { synthesis: fallback, synthesisSource: 'fallback' };
+  }
+
+  const sources = successful
+    .map((b, i) => {
+      const cites = (b.citations ?? []).length > 0
+        ? `cited: ${(b.citations ?? []).join(', ')}`
+        : 'cited: (none)';
+      return `--- Brain ${i + 1}: ${b.brainEnsName} (${cites}) ---\n${b.answer ?? ''}`;
+    })
+    .join('\n\n');
+
+  const systemPrompt =
+    'You are the Brainpedia orchestrator. You receive a user prompt and 1-N answers ' +
+    'from specialised Brains, each with the slugs they cited. Fuse them into ONE ' +
+    'coherent answer for the user — synthesise, do not just concatenate. Acknowledge ' +
+    'when brains disagree. Quote brain ENS names inline when crediting a specific ' +
+    'point. Keep it under ~6 sentences. Do NOT invent facts not present in the ' +
+    'inputs. End with a single line listing the brains you drew on, in this exact ' +
+    'format: Sources: yudhi.bpedia.eth, karpathy.bpedia.eth';
+
+  try {
+    const client = createBrainInferenceClient(cfg, wallet);
+    const result = await client.query({
+      systemPrompt,
+      userPrompt: `User prompt: ${prompt}\n\nBrain answers:\n\n${sources}`,
+    });
+    const text = result.answer.trim();
+    if (!text) return { synthesis: fallback, synthesisSource: 'fallback' };
+    return { synthesis: text, synthesisSource: 'llm' };
+  } catch {
+    return { synthesis: fallback, synthesisSource: 'fallback' };
+  }
 }
 
 /**
