@@ -14,11 +14,11 @@ Targets:
 
 | Contract | Network | Address | Explorer |
 |---|---|---|---|
-| `Brain.sol` (ERC-7857) | 0G Galileo (16602) | `0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6` | [chainscan-galileo](https://chainscan-galileo.0g.ai/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6) |
-| `SubnameRegistrar.sol` | Sepolia (11155111) | `0xC22c0F1Dd48cE1370B588ec24eB683a17540B227` | [sepolia.etherscan](https://sepolia.etherscan.io/address/0xC22c0F1Dd48cE1370B588ec24eB683a17540B227) |
-| `AccessTokenRegistrar.sol` | Sepolia (11155111) | `0x8fAC641752b239b422bf668A4C329d9Fe629a299` | [sepolia.etherscan](https://sepolia.etherscan.io/address/0x8fAC641752b239b422bf668A4C329d9Fe629a299) |
+| `Brain.sol` (ERC-7857) | 0G Galileo (16602) | `0x4E5c6DC869F9B3220F01de9047031cEd1577b08F` | [chainscan-galileo](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F) |
+| `SubnameRegistrar.sol` | Sepolia (11155111) | `0xBb921bFFBbbE2219D1EC365213a74097348F28F0` | [sepolia.etherscan](https://sepolia.etherscan.io/address/0xBb921bFFBbbE2219D1EC365213a74097348F28F0) |
+| `AccessTokenRegistrar.sol` | Sepolia (11155111) | `0x3e7D22150d6b883a89703d760d66743D2223456b` | [sepolia.etherscan](https://sepolia.etherscan.io/address/0x3e7D22150d6b883a89703d760d66743D2223456b) |
 
-Deployer for both: `0x0a9a3BB8E921c7983ea2C75f13B8F502d349dE64`.
+Deployer for all three: `0xD24e06f0DBadA268314DbcB97F48f87b85b6Dd30`. (The original `0x0a9a3BB8…` was lost mid-build; everything was redeployed under the new key. Old contracts at `0x928940c1…3Ef6` and `0x36ce746e…4fd9` remain on chain as historical artifacts.)
 
 ## Railway project
 
@@ -55,7 +55,7 @@ NEXT_PUBLIC_ZG_RPC_URL       = https://evmrpc-testnet.0g.ai
 NEXT_PUBLIC_ZG_CHAIN_ID      = 16602
 NEXT_PUBLIC_ZG_EXPLORER_URL  = https://chainscan-galileo.0g.ai
 ENS_NETWORK                  = sepolia
-ENS_PARENT_NAME              = brainpedia.eth
+ENS_PARENT_NAME              = bpedia.eth
 ENS_ACCESS_TOKEN_TTL_SECONDS = 900
 ```
 

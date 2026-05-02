@@ -9,9 +9,9 @@ Confirmed working (verifiable by anyone, anytime):
 | Check | URL |
 |---|---|
 | Brain page renders live ENS records | https://brainpedia.up.railway.app/yudhi |
-| `brainpedia.eth` exists on Sepolia | https://app.ens.domains/brainpedia.eth?chain=sepolia |
-| `yudhi.brainpedia.eth` resolves | https://app.ens.domains/yudhi.brainpedia.eth?chain=sepolia |
-| `Brain.sol` tokenId 1 deployed | https://chainscan-galileo.0g.ai/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6 |
+| `bpedia.eth` exists on Sepolia | https://app.ens.domains/bpedia.eth?chain=sepolia |
+| `yudhi.bpedia.eth` resolves | https://app.ens.domains/yudhi.bpedia.eth?chain=sepolia |
+| `Brain.sol` tokenId 1 deployed | https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F |
 | AXL bootstrap peer up | Railway service `axl-bootstrap`, peer id `cb4cc722…3b8` |
 
 ## Demo script (3:45 target)
@@ -33,8 +33,8 @@ Visuals — screen recording inside Claude Desktop:
 1. User says: *"Set up my Brain from my Obsidian vault at /Users/yudhi/Documents/SecondBrain."*
 2. Brainpedia MCP fires `setup_brain` → Claude reads back: *"Found 612 notes, 38 tags, 1248 wikilinks across 4 topic clusters."*
 3. *"Compile a wiki article per cluster."* → Claude generates 6 articles inline.
-4. `upload_articles` → progress: *"Uploading 6 articles to 0G Storage… root hash 0xa1418d3a…"*
-5. `finalize_brain` → Claude streams: *"Minting Brain iNFT (tokenId 1) on 0G Galileo… registering yudhi.brainpedia.eth on Sepolia… writing 8 brain.* text records…"*
+4. `upload_articles` → progress: *"Uploading 6 articles to 0G Storage… root hash 0xde0ebac7…"*
+5. `finalize_brain` → Claude streams: *"Minting Brain iNFT (tokenId 1) on 0G Galileo… registering yudhi.bpedia.eth on Sepolia… writing 8 brain.* text records…"*
 6. Confirmation: chainscan link to the iNFT mint, ENS link to the registered subname.
 
 Caption overlay: *"All on testnet. Real merkle root, real iNFT, real ENS subname."*
@@ -46,8 +46,8 @@ Caption overlay: *"All on testnet. Real merkle root, real iNFT, real ENS subname
 Visuals:
 1. Browser → https://brainpedia.up.railway.app/yudhi.
 2. Page renders the 8 text records read live from ENS Sepolia.
-3. Hover over `brain.inft` → tooltip: "0x928940c1…:1 — click to view on chainscan-galileo.0g.ai".
-4. Hover over `brain.storage_root` → "0xa1418d3a…".
+3. Hover over `brain.inft` → tooltip: "0x4E5c6DC8…:1 — click to view on chainscan-galileo.0g.ai".
+4. Hover over `brain.storage_root` → "0xde0ebac7…".
 5. Side panel: *"Querying agents have spent 0.0042 OG in the last hour."* (mocked metric for v1.)
 
 ### Scene 4 — Mixture-of-Brains query (1:45–3:15) — the WOW
@@ -55,7 +55,7 @@ Visuals:
 > Voiceover: *"A Bundie agent submits a real query."*
 
 Visuals:
-1. Terminal showing the agent: `query_brain --target yudhi.brainpedia.eth --prompt "what's the safest 8% stablecoin yield given Malaysian regulatory exposure?"`
+1. Terminal showing the agent: `query_brain --target yudhi.bpedia.eth --prompt "what's the safest 8% stablecoin yield given Malaysian regulatory exposure?"`
 2. **D3 force-directed graph** on screen:
    - Querying agent node lights up (cyan pulse)
    - Edge to orchestrator (animated pulse)
@@ -63,7 +63,7 @@ Visuals:
    - Each Brain processes (green glow) and replies in parallel
    - Synthesis node merges the answers
 3. Sidebar shows live event stream:
-   - `ENS resolved: yudhi.brainpedia.eth → peer cb4cc722…`
+   - `ENS resolved: yudhi.bpedia.eth → peer cb4cc722…`
    - `iNFT.authorizeUsage(1, agent, 900) → BrainPayment 0.001 OG`
    - `AccessTokenRegistrar.issue("agent7af2", agent, 0xbdff…) → expires_at=…`
    - `AXL POST /mcp/cb4cc722…/brainpedia.brain → 200`
@@ -91,8 +91,8 @@ Visuals:
 ### ENS — Best Integration + Most Creative Use
 
 - **No hardcoded values**: every ENS value flows through env. Verify with `git grep -nE '0x[a-fA-F0-9]{40}' packages/ens/src/` (zero hits in source).
-- **Discovery layer**: agents resolve `<topic>.discover.brainpedia.eth` for shortcut lookups, individual `<name>.brainpedia.eth` for Brains.
-- **Subnames-as-access-tokens** (the creative angle): `agenta5b68322.client.brainpedia.eth` exists on chain right now. AccessTokenRegistrar enforces TTL on chain — no off-chain auth service.
+- **Discovery layer**: agents resolve `<topic>.discover.bpedia.eth` for shortcut lookups, individual `<name>.bpedia.eth` for Brains.
+- **Subnames-as-access-tokens** (the creative angle): `agenta5b68322.client.bpedia.eth` exists on chain right now. AccessTokenRegistrar enforces TTL on chain — no off-chain auth service.
 
 ### Gensyn AXL
 
@@ -117,5 +117,7 @@ bun run --cwd /tmp/zg-test resolve-yudhi.ts   # or use ensjs CLI
 
 ## Known limitations to mention upfront (or skip)
 
-- **0G Storage upload**: SDK 0.3.3 encodes a 4-field `submit()` struct; the live Flow contract takes a 3-field struct. Storage root in the demo is `keccak256(manifest)` until a matching SDK release lands. The ENS / iNFT / discovery / payment / AXL layers all use real chain state.
-- **0G Compute inference**: ledger needs 3 OG minimum to create. As of recording, deployer wallet is at 0.09 OG. Top up the wallet and the live inference path completes end-to-end.
+- **Lost-key recovery**: original `brainpedia.eth` deployer key was lost mid-build. Everything was redeployed under `bpedia.eth` with a fresh deployer (`0xD24e06f0…`). The orphaned `brainpedia.eth` parent + 3 old iNFTs are still on chain as historical artifacts.
+- **0G Storage SDK fix landed**: `@0glabs/0g-ts-sdk@0.3.3` encodes the wrong `submit()` ABI (omits the `submitter` field). We hand-roll Flow.submit via viem with the correct 2-field tuple (selector `0xbc8c11f8`) and push raw segments via `uploadSegmentsByTxSeq`. Storage root in the live iNFT is the real Flow merkle root, not a placeholder.
+- **0G Compute**: ledger funded + provider acknowledged for the new deployer. Live inference verified end-to-end (`POST /api/query` returns TEE-attested cited answers).
+- **Multi-brain serving**: 3 brains registered on chain (`yudhi/malaysia/rwa.bpedia.eth`) but the single Railway brain instance serves yudhi only. The Mixture-of-Brains fan-out is demonstrated in `scripts/demo/axl_demo.py` (4-node Yggdrasil mesh) on camera; the live `/api/query` path is single-brain.

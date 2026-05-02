@@ -38,31 +38,36 @@ No private state lives in the orchestrator — it's transparent and can be repla
 
 | What | Address / link |
 |---|---|
-| `Brain.sol` (ERC-7857) | [`0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6`](https://chainscan-galileo.0g.ai/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6) |
-| Sample Brain mint tx | [`0x5ab3363a…1d4e509`](https://chainscan-galileo.0g.ai/tx/0x5ab3363ac12352b2c74e5da318c0cf4e2a1dcb463e4e97bc5cb6445ad1d4e509) |
-| `tokenId 1` storage root | `0xa1418d3a60e882b4a5cf4a08d28f333ef3d22c21168bea2d927f14e4499a3c54` |
+| `Brain.sol` (ERC-7857) | [`0x4E5c6DC869F9B3220F01de9047031cEd1577b08F`](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F) |
+| `tokenId 1` storage root (yudhi, segments live) | `0xde0ebac78dd387969c8aba6c9ce5ef149a9e726685207c0026ae1c0c155ca37f` |
+| `tokenId 2` storage root (malaysia) | placeholder — RPC flake during seed; iNFT registered, segments not pushed |
+| `tokenId 3` storage root (rwa, segments live) | `0x09616944759e09d98d84de4f63ba1c47d8f49b902a3177181b5d570bf7a23bc7` |
 | `tokenId 1` minPayment | `0.001 OG / query` |
 | 0G Compute provider | `0xa48f01287233509FD694a22Bf840225062E67836` (qwen-2.5-7b-instruct) |
 
 Verify intelligence is embedded:
 
 ```bash
-cast call 0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6 "currentStorageRoot(uint256)(bytes32)" 1 \
+cast call 0x4E5c6DC869F9B3220F01de9047031cEd1577b08F "currentStorageRoot(uint256)(bytes32)" 1 \
   --rpc-url https://evmrpc-testnet.0g.ai
-# returns: 0xa1418d3a60e882b4a5cf4a08d28f333ef3d22c21168bea2d927f14e4499a3c54
+# returns: 0xde0ebac78dd387969c8aba6c9ce5ef149a9e726685207c0026ae1c0c155ca37f
 ```
 
 ## Submission checklist
 
 - [x] Project name: Brainpedia
-- [x] iNFT contract address on 0G testnet 16602 — `0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6`
+- [x] iNFT contract address on 0G testnet 16602 — `0x4E5c6DC869F9B3220F01de9047031cEd1577b08F` (3 brains minted: yudhi/malaysia/rwa)
 - [x] GitHub repo with README
 - [ ] Demo video < 3 mins
 - [x] Live demo: https://brainpedia.up.railway.app
 - [x] Architecture diagram → [architecture.md](architecture.md)
 - [x] Swarm coordination explanation → above
-- [x] Link to minted iNFT — [tokenId 1 mint tx](https://chainscan-galileo.0g.ai/tx/0x5ab3363ac12352b2c74e5da318c0cf4e2a1dcb463e4e97bc5cb6445ad1d4e509)
+- [x] Link to minted iNFT — Brain.sol [`0x4E5c6DC8…b08F`](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F) holds tokenIds 1 (yudhi), 2 (malaysia), 3 (rwa)
 
 ## Note on 0G Storage upload
 
-The `@0glabs/0g-ts-sdk@0.3.3` (current latest on npm) encodes `submit()` with a 4-field struct, but the Flow contract on Galileo at `0x22E03a6A89B950F1c82ec5e74F8eCa321a105296` takes a 3-field struct on chain — the SDK is one ABI version behind. Until a matching SDK release lands, the storage root we put in the iNFT is `keccak256(JSON.stringify(snapshotManifest))` instead of the indexer-returned merkle root. Every other layer (KV reads, Brain.appendStorageRoot, ENS resolution) uses the same hash, so the contract chain is internally consistent — only the `Indexer.upload` step is bypassed.
+`@0glabs/0g-ts-sdk@0.3.3` encodes the wrong ABI selector (`0xef3e12dc`, missing the `submitter` field). The deployed Flow at `0x22E03a6A89B950F1c82ec5e74F8eCa321a105296` takes the 2-field outer `Submission { SubmissionData data; address submitter; }` (selector `0xbc8c11f8`).
+
+Workaround landed in `scripts/setup/seed-brain.ts` and `packages/storage-0g/src/submission.ts`: we reuse the SDK's `MemData` to compute the merkle tree, then hand-roll `Flow.submit` via viem with the correct tuple. Raw segments are then pushed via `StorageNode.uploadSegmentsByTxSeq()` (`uploadSegments` helper) so the indexer can serve `Indexer.download(rootHash)` round-trips. Storage root in the live iNFT is the real Flow merkle root.
+
+Important txSeq gotcha: the deployed Flow's `Submit` event has only 3 indexed topics — `submissionIndex` lives in `data[0:32]`, not `topics[3]`. The first version of the seed script read `topics[3]` and silently produced `txSeq=undefined`, skipping the segment push. Fixed in commit history.

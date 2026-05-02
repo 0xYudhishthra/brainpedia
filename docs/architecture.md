@@ -7,7 +7,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Layer 4 — Discovery & Identity (ENS)                       │
-│  *.brainpedia.eth subnames + text records + access tokens   │
+│  *.bpedia.eth subnames + text records + access tokens   │
 ├─────────────────────────────────────────────────────────────┤
 │  Layer 3 — Communication (AXL)                              │
 │  Encrypted P2P mesh, MCP/A2A envelopes, Ed25519 peer IDs    │
@@ -59,16 +59,16 @@ concurrent `POST /mcp/{brain_peer_id}/brainpedia.brain` calls.
    - Streams compiled articles to 0G Storage **KV layer** (mutable working copy)
    - On finalize, takes a **Log layer** snapshot → merkle root
    - Mints `Brain.sol` with `initialStorageRoot = merkleRoot`
-   - Calls `SubnameRegistrar.register(label, owner)` → `<name>.brainpedia.eth`
+   - Calls `SubnameRegistrar.register(label, owner)` → `<name>.bpedia.eth`
    - Writes ENS text records: `brain.inft`, `brain.storage_root`, `brain.axl_peer_id`, `brain.specialty`, `brain.price_query`, `brain.compute_url`, plus standard `description`/`avatar`/`url`.
 
 ## Discovery: agent → Brain
 
-1. Agent resolves a topic shortcut, e.g. `defi.discover.brainpedia.eth`, to a list of Brain ENS names (text record `brainpedia.brains`).
+1. Agent resolves a topic shortcut, e.g. `defi.discover.bpedia.eth`, to a list of Brain ENS names (text record `brainpedia.brains`).
 2. For each Brain, agent reads text records → gets peer ID, price, iNFT address.
 3. Agent calls `Brain.authorizeUsage{value: pricePerQuery}(tokenId, agent, ttl)` — payment forwards to Brain owner, `UsageAuthorized` event fires.
-4. (Optional) `AccessTokenRegistrar.issue("agent7af2", agent, brainNameHash, ttl)` mints a one-time-use subname `agent7af2.client.brainpedia.eth` for the session.
-5. Agent calls `POST /mcp/{brain_peer_id}/brainpedia.brain` with `{prompt, accessToken: "agent7af2.client.brainpedia.eth"}`.
+4. (Optional) `AccessTokenRegistrar.issue("agent7af2", agent, brainNameHash, ttl)` mints a one-time-use subname `agent7af2.client.bpedia.eth` for the session.
+5. Agent calls `POST /mcp/{brain_peer_id}/brainpedia.brain` with `{prompt, accessToken: "agent7af2.client.bpedia.eth"}`.
 6. Brain validates the access token (ENS resolution + `AccessTokenRegistrar.isValid`), retrieves articles from 0G Storage, runs inference on 0G Compute, returns `{answer, citations, confidence}`.
 
 ## Royalty splits

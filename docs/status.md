@@ -62,7 +62,7 @@ Deployer for all three: `0xD24e06f0DBadA268314DbcB97F48f87b85b6Dd30`.
 
 ### Web
 
-* https://brainpedia.up.railway.app — homepage with D3 force-directed network viz; **graph is now live ENS-backed** (server-renders from `defi.discover.brainpedia.eth`'s `brainpedia.brains` text record on every request)
+* https://brainpedia.up.railway.app — homepage with D3 force-directed network viz; **graph is now live ENS-backed** (server-renders from `defi.discover.bpedia.eth`'s `brainpedia.brains` text record on every request — currently 3 brains: yudhi, malaysia, rwa)
 * https://brainpedia.up.railway.app/yudhi — sample Brain page (live ENS resolution + article list + animated query demo)
 * https://brainpedia.up.railway.app/status — 7 read-only system health checks
 
@@ -113,13 +113,13 @@ ZG_WALLET_PRIVATE_KEY=… ZG_RPC_URL=https://evmrpc-testnet.0g.ai \
   ZG_COMPUTE_PROVIDER_ADDRESS=0xa48f01287233509FD694a22Bf840225062E67836 \
   ZG_COMPUTE_PROVIDER_URL=https://compute-network-6.integratenetwork.work \
   ZG_COMPUTE_MODEL=qwen/qwen-2.5-7b-instruct \
-  ZG_INFT_CONTRACT_ADDRESS=0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6 \
+  ZG_INFT_CONTRACT_ADDRESS=0x4E5c6DC869F9B3220F01de9047031cEd1577b08F \
   ENS_RPC_URL=https://ethereum-sepolia.publicnode.com ENS_NETWORK=sepolia \
-  ENS_PARENT_NAME=brainpedia.eth \
-  ENS_SUBNAME_REGISTRAR_ADDRESS=0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6 \
-  ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS=0x36ce746e88b9098899fc8d0ab274c45748d04fd9 \
-  BRAIN_ENS_NAME=yudhi.brainpedia.eth \
-  BRAIN_STORAGE_ROOT=0x4e50c0447d3d837d0a6930ceb3345346aa17100d6cfee46785ad3b782c9c799b \
+  ENS_PARENT_NAME=bpedia.eth \
+  ENS_SUBNAME_REGISTRAR_ADDRESS=0xBb921bFFBbbE2219D1EC365213a74097348F28F0 \
+  ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS=0x3e7D22150d6b883a89703d760d66743D2223456b \
+  BRAIN_ENS_NAME=yudhi.bpedia.eth \
+  BRAIN_STORAGE_ROOT=0xde0ebac78dd387969c8aba6c9ce5ef149a9e726685207c0026ae1c0c155ca37f \
   BRAIN_SPECIALTY=defi-yield-strategies BRAIN_ENFORCE_ACCESS_TOKENS=false \
   bun run --cwd apps/brain start &
 ```

@@ -34,7 +34,7 @@ A traditional API key system requires a separate auth service, secret distributi
 - **Verification** — anyone can resolve and check `isValid` on chain.
 - **Revocation** — owner calls `revoke(label)` or the TTL elapses.
 
-The Brain treats `agent7af2.client.brainpedia.eth` as a session capability — it can read the brain it's authorized for via the on-chain Token struct, no off-chain database required.
+The Brain treats `agent7af2.client.bpedia.eth` as a session capability — it can read the brain it's authorized for via the on-chain Token struct, no off-chain database required.
 
 ## Verifying "no hardcoded values"
 
@@ -51,22 +51,22 @@ git grep -nE '\.eth' -- packages/ens/src/
 
 | Name | Resolves to |
 |---|---|
-| [`brainpedia.eth`](https://app.ens.domains/brainpedia.eth?chain=sepolia) | Deployer-owned parent name |
-| [`yudhi.brainpedia.eth`](https://app.ens.domains/yudhi.brainpedia.eth?chain=sepolia) | Sample Brain — 8 brain.* text records, all live |
-| [`defi.discover.brainpedia.eth`](https://app.ens.domains/defi.discover.brainpedia.eth?chain=sepolia) | Topic discovery shortcut → list of relevant Brains |
-| `agenta5b68322.client.brainpedia.eth` | Sample one-time-use access-token subname (TTL-bounded) |
+| [`bpedia.eth`](https://app.ens.domains/bpedia.eth?chain=sepolia) | Deployer-owned parent name |
+| [`yudhi.bpedia.eth`](https://app.ens.domains/yudhi.bpedia.eth?chain=sepolia) | Sample Brain — 8 brain.* text records, all live |
+| [`defi.discover.bpedia.eth`](https://app.ens.domains/defi.discover.bpedia.eth?chain=sepolia) | Topic discovery shortcut → list of relevant Brains |
+| `agenta5b68322.client.bpedia.eth` | Sample one-time-use access-token subname (TTL-bounded) |
 
 Contracts:
 
 | Contract | Sepolia address |
 |---|---|
-| `SubnameRegistrar` | [`0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6`](https://sepolia.etherscan.io/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6) |
-| `AccessTokenRegistrar` | [`0x36ce746e88b9098899fc8d0ab274c45748d04fd9`](https://sepolia.etherscan.io/address/0x36ce746e88b9098899fc8d0ab274c45748d04fd9) |
+| `SubnameRegistrar` | [`0xBb921bFFBbbE2219D1EC365213a74097348F28F0`](https://sepolia.etherscan.io/address/0xBb921bFFBbbE2219D1EC365213a74097348F28F0) |
+| `AccessTokenRegistrar` | [`0x3e7D22150d6b883a89703d760d66743D2223456b`](https://sepolia.etherscan.io/address/0x3e7D22150d6b883a89703d760d66743D2223456b) |
 
 ## Submission checklist
 
 - [x] Functional demo, no hard-coded values — every ENS value flows through env + the grep recipe above proves no addresses inline
-- [x] Obvious how ENS improves agent identity/discoverability — `<topic>.discover.brainpedia.eth` shortcuts + per-Brain `brain.*` text records make Brains queryable by capability, not 0x address
-- [x] Creative angle: subnames-as-access-tokens — `agent<hash>.client.brainpedia.eth` issued by AccessTokenRegistrar with on-chain TTL, no off-chain auth service
+- [x] Obvious how ENS improves agent identity/discoverability — `<topic>.discover.bpedia.eth` shortcuts + per-Brain `brain.*` text records make Brains queryable by capability, not 0x address
+- [x] Creative angle: subnames-as-access-tokens — `agent<hash>.client.bpedia.eth` issued by AccessTokenRegistrar with on-chain TTL, no off-chain auth service
 - [x] Live demo: https://brainpedia.up.railway.app/yudhi reads all 8 brain.* records on every render
 - [ ] Video
