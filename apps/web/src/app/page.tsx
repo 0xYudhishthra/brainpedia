@@ -13,8 +13,11 @@ import {
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-/** Topic used as the discovery shortcut for the homepage graph. */
-const HOMEPAGE_DISCOVERY_TOPIC = 'defi';
+/** Topic used as the discovery shortcut for the homepage graph.
+ *  `all.discover.bpedia.eth` lists every Brain — agents searching by topic
+ *  use the narrower shortcuts (`defi.discover…`, `agentic-web.discover…`),
+ *  but the homepage shows the union so visitors see the whole network. */
+const HOMEPAGE_DISCOVERY_TOPIC = 'all';
 
 interface GraphData {
   nodes: NetworkNode[];

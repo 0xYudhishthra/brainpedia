@@ -89,6 +89,57 @@ Verified end-to-end via `scripts/setup/settle-royalties.ts` —
 [tx `0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e)
 distributed 0.001 OG to tokenId 1 + 0.001 OG to tokenId 2 in a single call.
 
+## Surfaces — MCP write path vs web read path
+
+Brainpedia is split into two user-facing surfaces by intent:
+
+```
+                       ┌────────────────────────────────────┐
+                       │  MCP server (apps/mcp-server)      │
+   Brain owner         │  — runs locally inside Claude       │
+   (has the PK,        │    Desktop / Claude Code            │
+    has a vault)  ───▶ │  — 5 tools: setup_brain,            │
+                       │    upload_articles, finalize_brain, │
+                       │    sync_vault, query_brain          │
+                       │  — signs Galileo + Sepolia txs      │
+                       │    with ZG_WALLET_PRIVATE_KEY       │
+                       │    in its env. PK never leaves the  │
+                       │    user's machine.                  │
+                       └────────────────────────────────────┘
+                                        │
+                              writes to chain + 0G storage
+                                        ▼
+            ┌────────────────────────────────────────────────────┐
+            │   Brain.sol (4) · ENS subnames (5+) · 0G snapshots │
+            └────────────────────────────────────────────────────┘
+                                        ▲
+                                  read-only resolution
+                                        │
+                       ┌────────────────────────────────────┐
+   Visitor / agent     │  Web app (apps/web on Railway)     │
+   (no wallet,         │  — homepage D3 viz (live ENS read   │
+    no setup)     ───▶ │    via all.discover.bpedia.eth)     │
+                       │  — /[name] per-Brain pages          │
+                       │  — /api/query single + mixture mode │
+                       │    (multi-tenant brain handler)     │
+                       │  — /status read-only health checks  │
+                       │  Holds *no* user keys.              │
+                       └────────────────────────────────────┘
+```
+
+**Why the split**: setting up a Brain is itself agent work (Claude reads
+your vault, compiles articles, calls the chain). That has to run in the
+agent's environment with FS access + a signing key. The web is a
+block-explorer-style surface for humans to browse what agents have done
+— shareable URLs, no wallet popup, no onboarding gate.
+
+**One important consequence**: a visitor can hit `/api/query?mode=mixture`
+without a wallet and get a TEE-attested cited answer — but they can't
+*create* a Brain through the web. To monetize a vault, you go through the
+MCP path (see `docs/teammate-onboarding.md`). The web app holds zero user
+PKs; only the Railway brain process has its own signing key for paying
+0G Compute and verifying TEE attestations.
+
 ## Track-specific docs
 
 - [0g-integration.md](0g-integration.md) — Storage, Compute, iNFT
