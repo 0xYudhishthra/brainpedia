@@ -170,9 +170,9 @@ export default async function HomePage() {
         <DemoLink
           href="/yudhi"
           label="Sample Brain"
-          detail="defi-yield-strategies, 6 articles, 0.001 OG/query"
+          detail="defi-yield-strategies, 7 articles, 0.001 OG/query"
         />
-        <DemoLink href="/status" label="Live status" detail="7 read-only checks against on-chain state" />
+        <DemoLink href="/status" label="Live status" detail="11 read-only checks against on-chain state" />
         <DemoLink
           external
           href="https://sepolia.app.ens.domains/bpedia.eth"
@@ -187,15 +187,15 @@ export default async function HomePage() {
         />
         <DemoLink
           external
-          href="https://sepolia.app.ens.domains/defi.discover.bpedia.eth"
-          label="defi.discover…"
-          detail="discovery shortcut → 3 brains"
+          href="https://sepolia.app.ens.domains/all.discover.bpedia.eth"
+          label="all.discover…"
+          detail="discovery shortcut → 2 brains (homepage graph reads this)"
         />
         <DemoLink
           external
           href="https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F"
           label="Brain.sol on 0G"
-          detail="ERC-7857 iNFT, 4 tokens minted"
+          detail="ERC-7857 iNFT, 7 tokens minted"
         />
         <DemoLink
           external
