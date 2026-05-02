@@ -9,6 +9,7 @@ import {
   type NetworkNode,
   type NetworkLink,
 } from '@/components/network-viz';
+import { MixtureDemo } from '@/components/mixture-demo';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -115,6 +116,8 @@ export default async function HomePage() {
           )}
         </p>
       </section>
+
+      <MixtureDemo />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm uppercase tracking-wider text-[var(--muted)]">Get started</h2>
