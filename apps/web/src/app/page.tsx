@@ -96,7 +96,7 @@ export default async function HomePage() {
             <>
               Live from Sepolia ENS — {brainNames.length} brain
               {brainNames.length === 1 ? '' : 's'} listed under{' '}
-              <code className="font-mono">{HOMEPAGE_DISCOVERY_TOPIC}.discover.brainpedia.eth</code>.
+              <code className="font-mono">{HOMEPAGE_DISCOVERY_TOPIC}.discover.bpedia.eth</code>.
               Agent → orchestrator (AXL <code className="font-mono">/mcp</code>) → fan-out to
               specialty Brains → synthesized response. Each Brain runs its own AXL daemon
               with its own Ed25519 peer id.
@@ -104,7 +104,7 @@ export default async function HomePage() {
           ) : (
             <>
               No brains registered yet under{' '}
-              <code className="font-mono">{HOMEPAGE_DISCOVERY_TOPIC}.discover.brainpedia.eth</code>
+              <code className="font-mono">{HOMEPAGE_DISCOVERY_TOPIC}.discover.bpedia.eth</code>
               . Once a Brain ENS name is added to the discovery shortcut&apos;s{' '}
               <code className="font-mono">brainpedia.brains</code> text record, it shows up
               here automatically.
@@ -130,13 +130,13 @@ bun install && bun run --filter=@brainpedia/mcp-server build
       "args": ["<absolute-path>/brainpedia/apps/mcp-server/dist/index.js"],
       "env": {
         "ZG_WALLET_PRIVATE_KEY": "0x<your-testnet-pk>",
-        "ZG_INFT_CONTRACT_ADDRESS": "0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6",
+        "ZG_INFT_CONTRACT_ADDRESS": "0x4E5c6DC869F9B3220F01de9047031cEd1577b08F",
         "ZG_RPC_URL": "https://evmrpc-testnet.0g.ai",
         "ENS_NETWORK": "sepolia",
-        "ENS_PARENT_NAME": "brainpedia.eth",
+        "ENS_PARENT_NAME": "bpedia.eth",
         "ENS_RPC_URL": "https://ethereum-sepolia.publicnode.com",
-        "ENS_SUBNAME_REGISTRAR_ADDRESS": "0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6",
-        "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x36ce746e88b9098899fc8d0ab274c45748d04fd9",
+        "ENS_SUBNAME_REGISTRAR_ADDRESS": "0xBb921bFFBbbE2219D1EC365213a74097348F28F0",
+        "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x3e7D22150d6b883a89703d760d66743D2223456b",
         "AXL_API_URL": "http://127.0.0.1:9012",
         "BRAINPEDIA_DEFAULT_VAULT_PATH": "<absolute-path>/your-obsidian-vault"
       }
@@ -168,27 +168,33 @@ bun install && bun run --filter=@brainpedia/mcp-server build
         <DemoLink href="/status" label="Live status" detail="7 read-only checks against on-chain state" />
         <DemoLink
           external
-          href="https://app.ens.domains/brainpedia.eth?chain=sepolia"
-          label="brainpedia.eth on ENS"
+          href="https://app.ens.domains/bpedia.eth?chain=sepolia"
+          label="bpedia.eth on ENS"
           detail="parent name, deployer-owned"
         />
         <DemoLink
           external
-          href="https://app.ens.domains/yudhi.brainpedia.eth?chain=sepolia"
-          label="yudhi.brainpedia.eth"
-          detail="all 8 brain.* records"
+          href="https://app.ens.domains/yudhi.bpedia.eth?chain=sepolia"
+          label="yudhi.bpedia.eth"
+          detail="all brain.* records, live"
         />
         <DemoLink
           external
-          href="https://app.ens.domains/defi.discover.brainpedia.eth?chain=sepolia"
+          href="https://app.ens.domains/defi.discover.bpedia.eth?chain=sepolia"
           label="defi.discover…"
-          detail="topic discovery shortcut"
+          detail="discovery shortcut → 3 brains"
         />
         <DemoLink
           external
-          href="https://chainscan-galileo.0g.ai/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6"
+          href="https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F"
           label="Brain.sol on 0G"
-          detail="ERC-7857 iNFT, tokenId 1 minted"
+          detail="ERC-7857 iNFT, 4 tokens minted"
+        />
+        <DemoLink
+          external
+          href="https://chainscan-galileo.0g.ai/address/0x44eaad4fdb7d509cd3fe7624ce512cc97b910649"
+          label="RoyaltyDistributor"
+          detail="single-tx multi-Brain payment"
         />
       </section>
 
