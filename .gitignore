@@ -84,3 +84,6 @@ sample-vault/
 *.vault-snapshot.json
 # Exception: the curated demo vault that ships with the repo.
 !scripts/demo/sample-vault/
+
+# Local Claude Code agent state
+.claude/
