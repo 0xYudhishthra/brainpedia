@@ -11,6 +11,7 @@ A 5-step setup. Anyone with their own wallet can self-onboard end-to-end — no 
 5. Your Obsidian vault, reachable one of two ways:
    - **(a) Filesystem**: any folder of Markdown files (works for vaults, plain notes folders, anything the parser can read).
    - **(b) Obsidian Local REST API plugin** (recommended for the demo): install the [Local REST API plugin](https://github.com/coddingtonbear/obsidian-local-rest-api), grab the API key from its settings tab, paste it into the MCP config as `OBSIDIAN_REST_API_KEY`. No filesystem path needed; Brainpedia auto-discovers the active vault from your running Obsidian instance.
+   - **(c) Hosted Obsidian on Railway** (for demo continuity): point at `tramway.proxy.rlwy.net:12789` (the Brainpedia-hosted Obsidian) and set `OBSIDIAN_VAULT_PATH=users/<your-handle>` to scope reads to your subfolder of the shared vault. One container, N independent per-user "vaults" as folders.
 
 ## Step 1 — install the MCP server
 
@@ -51,12 +52,15 @@ claude mcp add-json brainpedia '{
     "ENS_SUBNAME_REGISTRAR_ADDRESS": "0xBb921bFFBbbE2219D1EC365213a74097348F28F0",
     "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x3e7D22150d6b883a89703d760d66743D2223456b",
     "AXL_API_URL": "http://127.0.0.1:9012",
-    "OBSIDIAN_REST_API_KEY": "<paste-from-Local-REST-API-plugin-settings>"
+    "OBSIDIAN_REST_API_KEY": "<paste-from-Local-REST-API-plugin-settings>",
+    "OBSIDIAN_VAULT_PATH": "users/<your-handle>"
   }
 }' --scope user
 ```
 
 **Note**: the env block above uses the **Local REST API plugin path** (recommended). If you'd rather point at a filesystem folder instead, drop `OBSIDIAN_REST_API_KEY` and add `"BRAINPEDIA_DEFAULT_VAULT_PATH": "<absolute-path>/your-obsidian-vault"`. If both are set, the REST API path wins (auto-syncs with whatever vault Obsidian has open).
+
+**`OBSIDIAN_VAULT_PATH`** is optional. Use it when you're sharing one Obsidian instance across multiple users (e.g. Brainpedia's hosted demo Obsidian on Railway). Set it to a folder prefix like `users/yudhi` and only notes under that path are read; slugs are computed relative to the prefix so wikilinks stay portable. Leave it unset for a personal vault.
 
 Verify with `claude mcp list` — `brainpedia` should appear with `✓ Connected`.
 
@@ -93,7 +97,8 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
         "ENS_SUBNAME_REGISTRAR_ADDRESS": "0xBb921bFFBbbE2219D1EC365213a74097348F28F0",
         "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x3e7D22150d6b883a89703d760d66743D2223456b",
         "AXL_API_URL": "http://127.0.0.1:9012",
-        "OBSIDIAN_REST_API_KEY": "<paste-from-Local-REST-API-plugin-settings>"
+        "OBSIDIAN_REST_API_KEY": "<paste-from-Local-REST-API-plugin-settings>",
+    "OBSIDIAN_VAULT_PATH": "users/<your-handle>"
       }
     }
   }

@@ -1,15 +1,16 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { readVault, readVaultFromRest, buildGraph } from '@brainpedia/obsidian-parser';
+import { BRAIN_COMPILE_SCHEMA } from '../schema.js';
 
 export const setupBrainTool: Tool = {
   name: 'setup_brain',
   description:
-    'Bootstrap a new Brain from a local note source (Obsidian vault). Two modes: ' +
+    "Bootstrap a new Brain from the user's Obsidian vault. Two modes: " +
     '(1) filesystem read via vaultPath / BRAINPEDIA_DEFAULT_VAULT_PATH, ' +
-    "(2) Obsidian Local REST API plugin via OBSIDIAN_REST_API_URL + OBSIDIAN_REST_API_KEY (no path needed; the user's running Obsidian instance is the source). " +
-    'Returns a parsed article graph for the host LLM to compile. ' +
-    'After compilation the host LLM should call upload_articles to push to 0G ' +
+    "(2) Obsidian Local REST API plugin via OBSIDIAN_REST_API_URL + OBSIDIAN_REST_API_KEY (no path needed, reads from the user's running Obsidian instance). Optional OBSIDIAN_VAULT_PATH scopes reads to a per-user folder when sharing a hosted Obsidian instance (e.g. users/yourname). " +
+    "Returns a parsed article graph PLUS Brainpedia's compile schema (Karpathy LLM-Wiki pattern). " +
+    'The host LLM must read the schema and follow it when producing wiki pages, then call upload_articles to push to 0G ' +
     'Storage and finalize_brain to mint the iNFT and register the ENS subname.',
   inputSchema: {
     type: 'object',
@@ -67,14 +68,17 @@ export async function handleSetupBrain(args: Record<string, unknown>) {
   // Otherwise fall back to FS read via vaultPath / BRAINPEDIA_DEFAULT_VAULT_PATH.
   const restUrl = parsed.data.vaultUrl ?? process.env.OBSIDIAN_REST_API_URL;
   const restKey = process.env.OBSIDIAN_REST_API_KEY;
+  const restRootPath = process.env.OBSIDIAN_VAULT_PATH;
   const vaultPath = parsed.data.vaultPath ?? process.env.BRAINPEDIA_DEFAULT_VAULT_PATH;
 
   let notes: Awaited<ReturnType<typeof readVault>>;
-  let source: { kind: 'fs'; path: string } | { kind: 'rest'; baseUrl: string };
+  let source:
+    | { kind: 'fs'; path: string }
+    | { kind: 'rest'; baseUrl: string; rootPath: string | null };
   if (restKey) {
     const baseUrl = restUrl ?? 'http://localhost:27123';
-    notes = await readVaultFromRest({ baseUrl, apiKey: restKey });
-    source = { kind: 'rest', baseUrl };
+    notes = await readVaultFromRest({ baseUrl, apiKey: restKey, rootPath: restRootPath });
+    source = { kind: 'rest', baseUrl, rootPath: restRootPath ?? null };
   } else if (vaultPath) {
     notes = await readVault(vaultPath);
     source = { kind: 'fs', path: vaultPath };
@@ -112,18 +116,23 @@ export async function handleSetupBrain(args: Record<string, unknown>) {
     })),
     truncated: notes.length > 50,
     nextSteps: [
-      'Read the notes you need from the slugs above (use the slug to derive the path).',
-      'Cluster related notes and write a wiki article per cluster (entity / concept / comparison).',
-      'Call upload_articles with the compiled list to push them to 0G Storage.',
-      'Call finalize_brain when ready to snapshot, mint the iNFT, and register the ENS subname.',
+      'READ THE SCHEMA BELOW — it is the framework Brainpedia compiles every Brain with.',
+      'Read the raw notes you need (use the slugs above to derive paths).',
+      'Cluster notes by entity and concept; write the wiki pages per the schema.',
+      'Call upload_articles with the compiled wiki to push it to 0G Storage.',
+      'Call finalize_brain to mint the iNFT and register the ENS subname.',
     ],
   };
   // graph not exposed in summary to keep payload small; available on demand.
   void graph;
 
+  // Return both the vault summary AND the compile schema. Claude reads the
+  // schema before compiling so every Brain on the network has the same shape
+  // (entity/concept/source pages + wikilinks + index.md + log.md).
   return {
     content: [
       { type: 'text', text: JSON.stringify(summary, null, 2) },
+      { type: 'text', text: BRAIN_COMPILE_SCHEMA },
     ],
   };
 }

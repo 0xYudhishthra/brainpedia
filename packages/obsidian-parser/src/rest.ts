@@ -27,22 +27,36 @@ export interface RestVaultClientOptions {
   baseUrl?: string;
   /** Bearer token from the plugin's settings tab. */
   apiKey: string;
+  /**
+   * Optional path inside the Obsidian vault to scope reads to. Use to carve
+   * a per-user namespace out of a shared hosted vault, e.g. `users/yudhi`
+   * means only files under that folder are walked + parsed, and slugs are
+   * computed relative to the rootPath (so a note at
+   * `users/yudhi/curve.md` becomes slug `curve`, not `users/yudhi/curve`).
+   * Empty / undefined = read the whole vault.
+   */
+  rootPath?: string;
   /** AbortSignal for cancelling listings/reads. Optional. */
   signal?: AbortSignal;
 }
 
 export async function readVaultFromRest(opts: RestVaultClientOptions): Promise<ObsidianNote[]> {
   const baseUrl = (opts.baseUrl ?? 'http://localhost:27123').replace(/\/+$/, '');
+  const root = (opts.rootPath ?? '').replace(/^\/+|\/+$/g, '');
   const headers = {
     Authorization: `Bearer ${opts.apiKey}`,
     Accept: 'application/json',
   };
 
-  const filePaths = await listAllFiles('', baseUrl, headers, opts.signal);
+  const filePaths = await listAllFiles(root, baseUrl, headers, opts.signal);
   const notes: ObsidianNote[] = [];
-  for (const relPath of filePaths) {
-    if (!relPath.toLowerCase().endsWith('.md')) continue;
-    const raw = await readFile(relPath, baseUrl, opts.apiKey, opts.signal);
+  for (const absPath of filePaths) {
+    if (!absPath.toLowerCase().endsWith('.md')) continue;
+    const raw = await readFile(absPath, baseUrl, opts.apiKey, opts.signal);
+    // Re-base the path relative to rootPath so wikilinks + slugs don't
+    // include the per-user prefix. A vault carved into users/yudhi/ should
+    // produce the same slugs as a standalone vault would.
+    const relPath = root && absPath.startsWith(`${root}/`) ? absPath.slice(root.length + 1) : absPath;
     notes.push(parseNote(relPath, raw));
   }
   return notes;

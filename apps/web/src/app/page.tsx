@@ -141,7 +141,8 @@ export default async function HomePage() {
         "ENS_SUBNAME_REGISTRAR_ADDRESS": "0xBb921bFFBbbE2219D1EC365213a74097348F28F0",
         "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x3e7D22150d6b883a89703d760d66743D2223456b",
         "AXL_API_URL": "http://127.0.0.1:9012",
-        "OBSIDIAN_REST_API_KEY": "<paste-from-Local-REST-API-plugin-settings>"
+        "OBSIDIAN_REST_API_KEY": "<paste-from-Local-REST-API-plugin-settings>",
+        "OBSIDIAN_VAULT_PATH": "users/<your-handle>"
       }
     }
   }
