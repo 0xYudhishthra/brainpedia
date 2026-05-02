@@ -21,9 +21,17 @@ interface PaymentSplit {
   priceQueryWei: string | null;
 }
 
+interface RouterInfo {
+  auto: true;
+  reason: string;
+  source: 'llm' | 'fallback';
+  available: string[];
+}
+
 interface MixtureResponse {
   mode: 'mixture';
   topic: string;
+  router?: RouterInfo;
   prompt: string;
   transport: 'axl' | 'https';
   brains: BrainResult[];
@@ -40,7 +48,7 @@ const KNOWN_BRAINS = ['yudhi.bpedia.eth', 'karpathy.bpedia.eth'];
 
 export function MixtureDemo() {
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
-  const [topic, setTopic] = useState('all');
+  const [topic, setTopic] = useState('auto');
   const [response, setResponse] = useState<MixtureResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
@@ -100,12 +108,17 @@ export function MixtureDemo() {
               disabled={running}
               className="rounded border border-current/10 bg-transparent px-2 py-1 font-mono text-xs"
             >
+              <option value="auto">auto (LLM router)</option>
               <option value="all">all (every brain)</option>
               <option value="research">research</option>
               <option value="frameworks">frameworks</option>
             </select>
             <span className="opacity-70">
-              → resolves <code className="font-mono">{topic}.discover.bpedia.eth</code>
+              {topic === 'auto'
+                ? '→ orchestrator picks the shortcut'
+                : (
+                  <>→ resolves <code className="font-mono">{topic}.discover.bpedia.eth</code></>
+                )}
             </span>
           </div>
           <button
@@ -148,6 +161,17 @@ export function MixtureDemo() {
 
       {response && (
         <div className="flex flex-col gap-3">
+          {response.router && (
+            <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-blue-700">
+                orchestrator routed → {response.topic} · source={response.router.source}
+              </p>
+              <p className="mt-1 text-sm leading-relaxed">{response.router.reason}</p>
+              <p className="mt-2 font-mono text-[10px] text-[var(--muted)]">
+                considered: {response.router.available.join(', ')}
+              </p>
+            </div>
+          )}
           <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4">
             <p className="font-mono text-[10px] uppercase tracking-wider text-emerald-700">
               synthesis · transport={response.transport}

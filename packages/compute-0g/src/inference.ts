@@ -141,10 +141,37 @@ function composePrompt(req: InferenceRequest): string {
   return `Context:\n\n${ctx}\n\n---\n\nQuestion: ${req.userPrompt}`;
 }
 
+/**
+ * Citation extraction. The brain handler instructs the LLM to emit a final
+ * line `Citations: slug-1, slug-2`. We parse that first (high signal). If the
+ * LLM ignored the format, fall back to substring matching slugs/titles in the
+ * answer body.
+ */
 function extractCitations(
   answer: string,
   context: Array<{ slug: string; title: string }>,
 ): string[] {
+  const slugSet = new Set(context.map((c) => c.slug.toLowerCase()));
+  const validSlugs: string[] = [];
+
+  // 1. Look for the trailing `Citations:` line (case-insensitive). Take the
+  //    last match so a stray "citations:" earlier in prose doesn't win.
+  const matches = [...answer.matchAll(/citations\s*:\s*([^\n]+)/gi)];
+  if (matches.length > 0) {
+    const raw = matches[matches.length - 1]![1]!.trim();
+    if (raw.toLowerCase() !== 'none') {
+      const claimed = raw
+        .split(/[,\s]+/)
+        .map((s) => s.trim().replace(/^[`'"]+|[`'".,;]+$/g, '').toLowerCase())
+        .filter(Boolean);
+      for (const c of claimed) {
+        if (slugSet.has(c) && !validSlugs.includes(c)) validSlugs.push(c);
+      }
+    }
+    if (validSlugs.length > 0) return validSlugs;
+  }
+
+  // 2. Substring fallback — scan the body for slugs and titles.
   const found = new Set<string>();
   for (const c of context) {
     if (answer.includes(c.slug) || answer.includes(c.title)) found.add(c.slug);

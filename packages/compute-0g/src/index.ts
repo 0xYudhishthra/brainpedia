@@ -9,3 +9,5 @@ export type {
   InferenceRequest,
   InferenceResponse,
 } from './inference.js';
+export { pickTopic } from './router.js';
+export type { RouterCandidate, RouterChoice } from './router.js';

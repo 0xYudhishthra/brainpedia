@@ -10,6 +10,7 @@ import { uploadArticlesTool, handleUploadArticles } from './tools/upload-article
 import { finalizeBrainTool, handleFinalizeBrain } from './tools/finalize-brain.js';
 import { syncVaultTool, handleSyncVault } from './tools/sync-vault.js';
 import { queryBrainTool, handleQueryBrain } from './tools/query-brain.js';
+import { queryMixtureTool, handleQueryMixture } from './tools/query-mixture.js';
 
 const server = new Server(
   {
@@ -30,6 +31,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     finalizeBrainTool,
     syncVaultTool,
     queryBrainTool,
+    queryMixtureTool,
   ],
 }));
 
@@ -46,6 +48,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return handleSyncVault(args ?? {});
     case 'query_brain':
       return handleQueryBrain(args ?? {});
+    case 'query_mixture':
+      return handleQueryMixture(args ?? {});
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

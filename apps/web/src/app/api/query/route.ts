@@ -7,7 +7,32 @@ import {
   BRAIN_TEXT_KEYS,
 } from '@brainpedia/ens';
 import { AxlClient, BRAIN_MCP_SERVICE_NAME, type McpResponse } from '@brainpedia/axl';
+import { loadComputeConfig, pickTopic, type RouterChoice } from '@brainpedia/compute-0g';
 import { getTextRecord } from '@ensdomains/ensjs/public';
+
+/**
+ * Discovery shortcuts the orchestrator can route to. The web service ships
+ * this registry so the LLM router knows the menu of `<topic>.discover.<parent>`
+ * options without having to enumerate ENS. Keep in sync with whatever
+ * shortcuts have been issued via `scripts/setup/issue-discovery-shortcut.ts`.
+ */
+const DISCOVERY_REGISTRY: Array<{ topic: string; description: string }> = [
+  {
+    topic: 'research',
+    description:
+      'Long-form research notes by an individual: DeFi yield strategies, RWA analysis, market structure, on-chain finance. Currently: yudhi.bpedia.eth.',
+  },
+  {
+    topic: 'frameworks',
+    description:
+      'Methodology and framework knowledge: how to organise notes, build wikis, design AI agents, knowledge-management patterns. Currently: karpathy.bpedia.eth.',
+  },
+  {
+    topic: 'all',
+    description:
+      'Every Brain in the network. Use this when the prompt clearly spans multiple specialties or none match cleanly.',
+  },
+];
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -46,7 +71,15 @@ interface PaymentSplit {
 
 interface MixtureResponse {
   mode: 'mixture';
+  /** The shortcut actually used to fan out (post-routing). */
   topic: string;
+  /**
+   * Set when topic was 'auto' (or omitted): how the orchestrator picked a
+   * shortcut. `source: 'llm'` means a TEE-attested compute call classified
+   * the prompt; `source: 'fallback'` means routing was skipped (no compute
+   * key on the web service or the model output was unparseable).
+   */
+  router?: { auto: true; reason: string; source: RouterChoice['source']; available: string[] };
   prompt: string;
   /**
    * Underlying transport for each brain call: 'axl' if we routed through the
@@ -118,8 +151,8 @@ export async function POST(req: NextRequest) {
   const url = new URL(req.url);
   const wantsMixture = body.mixture === true || url.searchParams.get('mode') === 'mixture';
   if (wantsMixture) {
-    const topic = (body.topic ?? url.searchParams.get('topic') ?? 'defi').toString();
-    return mixtureFanOut(prompt, topic, transport, body.valueWei);
+    const rawTopic = (body.topic ?? url.searchParams.get('topic') ?? 'auto').toString();
+    return mixtureFanOut(prompt, rawTopic, transport, body.valueWei);
   }
 
   return singleBrainQuery(prompt, body, transport);
@@ -151,10 +184,30 @@ async function singleBrainQuery(
 
 async function mixtureFanOut(
   prompt: string,
-  topic: string,
+  rawTopic: string,
   transport: 'axl' | 'https',
   valueWei: string | undefined,
 ): Promise<NextResponse> {
+  // Resolve topic. `auto` (or empty) → call the LLM router to pick from the
+  // discovery registry. Anything else is taken at face value.
+  let topic = rawTopic;
+  let routerInfo: MixtureResponse['router'] | undefined;
+  if (rawTopic === 'auto' || rawTopic === '') {
+    const choice = await pickTopic({
+      prompt,
+      candidates: DISCOVERY_REGISTRY,
+      signerPrivateKey: process.env.ZG_WALLET_PRIVATE_KEY,
+      config: loadComputeConfig(),
+    });
+    topic = choice.topic;
+    routerInfo = {
+      auto: true,
+      reason: choice.reason,
+      source: choice.source,
+      available: DISCOVERY_REGISTRY.map((c) => c.topic),
+    };
+  }
+
   let brainNames: string[];
   const cfg = loadEnsConfig();
   const ensClient = createEnsPublicClient(cfg);
@@ -212,6 +265,7 @@ async function mixtureFanOut(
   const response: MixtureResponse = {
     mode: 'mixture',
     topic,
+    ...(routerInfo ? { router: routerInfo } : {}),
     prompt,
     transport,
     brains,
