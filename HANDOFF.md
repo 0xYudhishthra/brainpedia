@@ -11,105 +11,107 @@ bun install
 bun run --cwd scripts verify-live   # 11 read-only on-chain checks; should be 11/11 green
 git log --oneline -20               # what was shipped
 cat docs/status.md                  # full state snapshot
-cat ~/.claude/projects/-mnt-storage/memory/project_brainpedia.md
+cat ~/.claude/projects/-mnt-storage-brainpedia/memory/project_brainpedia.md
+curl -s -X POST https://brainpedia.up.railway.app/api/query \
+  -H 'content-type: application/json' \
+  -d '{"prompt":"safest stablecoin yield"}'  # live e2e — should return cited TEE-verified answer
 ```
 
-If `verify-live` is green you can trust everything below. If it isn't, something regressed — fix that first.
+If verify-live + the live `/api/query` are green, the stack is healthy.
 
-## What's already built
+## What's live RIGHT NOW (post-redeploy 2026-05-02)
 
-- **14 workspace packages**, all typecheck (`bun run typecheck`)
-- **Live web** at https://brainpedia.up.railway.app (homepage with D3 viz, `/yudhi` Brain page with article list + animated query demo, `/status` server-rendered health checks)
-- **Live AXL bootstrap** on Railway service `axl-bootstrap`, peer id `cb4cc72222a27f577ac28d6a963ec95ce4b02e924ba05f17e700bd8a2e6b33b8`
-- **Real iNFT minted** on 0G Galileo: `Brain.sol` at `0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6`, tokenId 1 owned by deployer, 0.001 OG/query, storage root `0xa1418d3a…`
-- **ENS infra on Sepolia**: `brainpedia.eth` registered (deployer-owned), `SubnameRegistrar` at `0x928940c1…3Ef6`, `AccessTokenRegistrar` at `0x36ce746e…4fd9`. Both approved on Registry + Public Resolver.
-- **Sample subnames**: `yudhi.brainpedia.eth` (8 brain.* records resolving), `defi.discover.brainpedia.eth` (topic shortcut), `agenta5b68322.client.brainpedia.eth` (TTL access token)
-- **5 MCP tools** wired (`setup_brain`, `upload_articles`, `finalize_brain`, `query_brain`, `sync_vault`)
-- **8 helper scripts**: `prep-deploy`, `register-parent`, `seed-brain`, `issue-token`, `issue-discovery`, `verify-live`, plus the AXL Python demo (`scripts/demo/axl_demo.py`)
+The original `brainpedia.eth` deployer key was lost mid-hackathon. Everything was redeployed under a fresh deployer to a new parent ENS name. The web URL stayed the same; only the on-chain identifiers changed.
+
+| Layer | Address / value |
+|---|---|
+| Deployer | `0xD24e06f0DBadA268314DbcB97F48f87b85b6Dd30` |
+| Parent ENS (Sepolia) | `bpedia.eth` |
+| `Brain.sol` (Galileo, ERC-7857 iNFT) | `0x4E5c6DC869F9B3220F01de9047031cEd1577b08F` |
+| `SubnameRegistrar` (Sepolia) | `0xBb921bFFBbbE2219D1EC365213a74097348F28F0` |
+| `AccessTokenRegistrar` (Sepolia) | `0x3e7D22150d6b883a89703d760d66743D2223456b` |
+| Sample brain | `yudhi.bpedia.eth` → tokenId 1 |
+| Storage root (segments live) | `0xde0ebac78dd387969c8aba6c9ce5ef149a9e726685207c0026ae1c0c155ca37f` |
+| Discovery shortcut | `defi.discover.bpedia.eth` → `["yudhi.bpedia.eth"]` |
+| Web | https://brainpedia.up.railway.app (unchanged) |
+| Brain runtime | Railway service `brainpedia-brain` (unchanged URL) |
+| 0G Compute provider | `0xa48f01287233509FD694a22Bf840225062E67836` (Qwen 2.5 7B, TEE) |
+
+`.env` in the repo root has every value above + `PRIVATE_KEY` for the new deployer. Never commit it (`.gitignore` covers it).
 
 ## What's pending — ordered by demo impact
 
-### 1. Faucet 0G wallet to ≥ 3 OG  (**user task**, blocks live 0G Compute)
+### 1. Mint malaysia + rwa brains  (**dev**, ~5 min each)
 
-Deployer is `0x0a9a3BB8E921c7983ea2C75f13B8F502d349dE64`. Currently ~0.09 OG. The 0G Compute broker requires a 3 OG minimum to call `addLedger` — without it `acknowledgeProviderSigner` reverts with `AccountNotExists`. Faucet at https://faucet.0g.ai (cap per request, hit it 3-4 times).
-
-Once funded, run an inference smoke test:
+Right now there's only `yudhi.bpedia.eth` registered. The original demo had three brains (`yudhi`/`malaysia`/`rwa`). To match:
 
 ```bash
-PK=<testnet-key-from-user-chat>
-PK=$PK bun run /tmp/zg-test/infer.ts   # see prior session's history; pattern is in apps/brain/src/handler.ts
+bun run scripts/setup/seed-brain.ts --label malaysia --specialty malaysian-defi-regulatory
+bun run scripts/setup/seed-brain.ts --label rwa      --specialty real-world-assets
+# Then: scripts/setup/issue-discovery-shortcut.ts --topic defi --brains yudhi.bpedia.eth,malaysia.bpedia.eth,rwa.bpedia.eth
 ```
 
-### 2. 0G Storage upload SDK gap
+Caveat — `seed-brain.ts` aborts at step 4 with `NotLabelOwner` because it doesn't call `SubnameRegistrar.register(label, owner)` before `setTextRecords`. Either:
 
-`@0glabs/0g-ts-sdk@0.3.3` (npm latest) encodes `Flow.submit(...)` with a 4-field struct; the deployed Flow at `0x22E03a6A89B950F1c82ec5e74F8eCa321a105296` takes 3 fields. Every upload reverts with no data. Verified the dRPC endpoint isn't the cause.
+- patch `seed-brain.ts` to call `registerSubname` first (~5 lines), or
+- after the abort, call `scripts/setup/finish-yudhi.ts`-style follow-up (re-purpose with the new label).
 
-Workaround in place: `seed-brain.ts` falls back to `keccak256(JSON.stringify(manifest))` as the storage root. Other layers all use the same hash so the chain is internally consistent — only `Indexer.upload` is bypassed.
+Also: the script's `submitSnapshotToFlow` extracts txSeq from `topics[3]` but the deployed Flow event has only 3 topics — txSeq is in `data[0:32]`. See `push-segments.ts` for the corrected pattern.
 
-To unblock for real: either bump the SDK when 0.4+ ships, or hand-roll the 3-field struct with viem and call `submit()` directly. Either way, after fixing, re-seed yudhi: `bun run --cwd scripts seed-brain --label yudhi --specialty defi-yield-strategies`.
-
-### 3. MCP server install on user's machine  (**user task**)
+### 2. Install MCP server in Claude Desktop  (**user**)
 
 ```bash
 bun run --filter=@brainpedia/mcp-server build
-# Then add to claude_desktop_config.json or claude code mcp config
-# Snippet on https://brainpedia.up.railway.app homepage shows the exact env vars
+# Add to claude_desktop_config.json — snippet on https://brainpedia.up.railway.app
 ```
 
-User decided **Claude Desktop > Claude Code** for the demo (better visual chat UI for judges). Same MCP server binary either way.
+### 3. Demo video  (**user**)
 
-### 4. AXL Brain runtime stack  (**only needed for live e2e query**)
-
-`apps/brain` is the production-shape TS implementation. To actually serve queries it needs:
-1. `axl` daemon (built from gensyn-ai/axl) running locally on the same host
-2. The AXL Python MCP router (`gensyn-ai/axl/integrations/mcp_routing/mcp_router.py`) on `:9003`
-3. `bun run --cwd apps/brain start` with `BRAIN_*` env vars set — registers itself via `POST /register {service:"brainpedia.brain", endpoint:"http://127.0.0.1:7100/mcp"}`
-
-For the demo we have `scripts/demo/axl_demo.py` which spins up 4 separate Yggdrasil daemons + brain stubs (not full inference) — that's the on-camera Mixture-of-Brains scene.
-
-### 5. Demo video  (**user task**)
-
-Runbook: `docs/demo.md`. 3:45 plan, 5 scenes, what to show per track. The Brain page's animated `QueryDemo` component is the centerpiece for Scene 4 if live AXL routing isn't ready.
+Runbook: `docs/demo.md`. Update screen-cap'd ENS name from `*.brainpedia.eth` → `*.bpedia.eth`.
 
 ## Critical context / gotchas
 
-- **Deployer private key**: testnet-only wallet, user shared it in the prior chat. Funded on 0G Galileo + Sepolia ETH. Never commit it to the repo — local env only.
-- **Forge predicted CREATE addresses**: a re-run of `forge script ... DeployRegistrars.s.sol` *without* `--broadcast` prints addresses based on the *current* nonce, which drifts from the original broadcast nonce. **Always read deployed addresses from `contracts/broadcast/.../run-latest.json`**, never from a re-simulated stdout. Burned ~15 min on this.
-- **ENS Public Resolver maintains a separate operator allowlist** from the ENS Registry. To call `setText` through SubnameRegistrar, the deployer must `setApprovalForAll(registrar, true)` on **both** the Registry (for `setSubnodeRecord`) and the Public Resolver (for `setText`). Both are set; if you redeploy the registrar, redo both approvals.
-- **Yggdrasil/AXL config is PascalCase**: `PrivateKey`, `Listen`, `Peers`. Snake_case (`private_key_hex`, `listen_addr`, `bootstrap_peers`) is silently ignored — Yggdrasil falls back to a fresh random keypair, which is why the daemon's logged public key won't match `AXL_PUBLIC_KEY_HEX` if the entrypoint script uses the wrong schema. `PrivateKey` is **128 hex chars** (32-byte seed concat with 32-byte public key).
-- **Bun workspace + Next.js Docker build**: workspace deps (`@brainpedia/ens` etc.) export from `dist/`, so the web build must `bun run build --filter=@brainpedia/web` (turbo walks `dependsOn:["^build"]`) — not just `next build`. Single-stage Dockerfile preserves bun's symlinks.
-- **Custom domain `brainpedia.xyz`**: dropped on user's call. The canonical URL is `brainpedia.up.railway.app`. Don't re-add custom domains.
+- **Lost deployer (`0x0a9a3BB8…`)** — owns `brainpedia.eth` parent + the previous Brain.sol + the `client.brainpedia.eth` registrar subnode + 3 orphan iNFTs (tokenIds 1-3 on the old contract). All permanently inaccessible. Local brain process pid 726835 still has its key in memory but cannot be restarted.
+- **`bpedia.eth` is unwrapped on the Registry** (deployer owns the node directly). The `setApprovalForAll` flow on the Registry + Public Resolver works as-is — no NameWrapper unwrap step needed because we registered straight (the controller wrapped it but ensjs's `commitName/registerName` call left it unwrapped on this run).
+- **The Public Resolver maintains a separate operator allowlist** from the Registry. Approvals must be set on **both** for the registrars to work. `wire-ens.ts` does both.
+- **0G Storage SDK gap**: `@0glabs/0g-ts-sdk@0.3.3` encodes a wrong ABI selector (`0xef3e12dc`, missing `submitter` field). We hand-roll `Flow.submit` with the 2-field tuple (selector `0xbc8c11f8`). Then segments are pushed via `uploadSegments` (fork of `StorageNode.uploadSegmentsByTxSeq()`). Without the segment push, `Indexer.download(rootHash)` returns 404 and the brain handler errors with `"file not found"`.
+- **Forge predicted CREATE addresses**: a re-run of `forge script ... DeployRegistrars.s.sol` *without* `--broadcast` prints addresses based on the current nonce, which drifts. Always read deployed addresses from `contracts/broadcast/.../run-latest.json`, never from a re-simulated stdout.
+- **Custom domain**: dropped on user's call. Canonical URL is `brainpedia.up.railway.app`.
+- **Railway brain has `BRAIN_ENFORCE_ACCESS_TOKENS=false`** — that's why public `/api/query` works without an access token. Toggle to `true` if/when the demo wants to show the access-token gating live.
 
 ## Where to look for details
 
 | File | What |
 |---|---|
 | `docs/status.md` | Full snapshot of live state + commit log |
-| `docs/demo.md` | 3:45 video runbook, scene by scene |
+| `docs/demo.md` | Demo video runbook (needs label updates `*.brainpedia.eth` → `*.bpedia.eth`) |
 | `docs/architecture.md` | Four-layer system + Mixture-of-Brains query flow |
 | `docs/0g-integration.md` | 0G features used, swarm coordination, SDK gap |
-| `docs/ens-integration.md` | Why no hardcoded values, subnames-as-access-tokens, live state |
+| `docs/ens-integration.md` | Subnames-as-access-tokens design |
 | `docs/axl-integration.md` | Per-Brain daemons, MCP router registration |
-| `docs/deployment.md` | Railway services, env vars, contract deploys |
-| `~/.claude/projects/-mnt-storage/memory/project_brainpedia.md` | Cross-session memory for the project |
-| `scripts/setup/*.ts` | Every chain operation we ran (deploy, register, seed, issue, verify) |
-| `scripts/setup/verify-live.ts` | The 11 read-only checks — run anytime |
+| `~/.claude/projects/-mnt-storage-brainpedia/memory/project_brainpedia.md` | Cross-session memory |
+| `scripts/setup/wire-ens.ts` | Approvals + subnode setup (run once per parent ENS deploy) |
+| `scripts/setup/setup-compute.ts` | 0G Compute ledger + provider ack (run once per deployer) |
+| `scripts/setup/finish-yudhi.ts` | Reference: register subname + write text records (workaround for seed-brain bug) |
+| `scripts/setup/push-segments.ts` | Reference: correct txSeq extraction from Submit event |
+| `scripts/setup/update-storage-root.ts` | Reference: `appendStorageRoot` + ENS update flow |
+| `scripts/setup/verify-live.ts` | The 11 read-only checks |
 
 ## Railway
 
 Project: `brainpedia` (id `941699b4-511f-4e87-a65e-48d67a9f37dc`) on workspace `Bundie`.
 
-Services:
-- `brainpedia-web` (id `1d499176-…`) — Next.js, env wired with all contract addresses + 0G Compute provider
-- `axl-bootstrap` (id `11e504a7-…`) — Yggdrasil daemon
+Services (3, all SUCCESS):
+- `brainpedia-web` (id `1d499176-…`) — Next.js, env points at all new contract addresses + `bpedia.eth`
+- `brainpedia-brain` (id `72507906-…`) — apps/brain, `BRAIN_ENS_NAME=yudhi.bpedia.eth`, new key, `BRAIN_ENFORCE_ACCESS_TOKENS=false`
+- `axl-bootstrap` (id `11e504a7-…`) — Yggdrasil daemon (unaffected by the redeploy)
 
-The dRPC endpoint with the user's API key lives on `brainpedia-web`'s `ZG_RPC_URL` — never commit it; it's only in Railway env.
+The dRPC endpoint with the user's API key lives on Railway's `ZG_RPC_URL` — never commit it.
 
 ## Tasks open in the prior session's tracker
 
 ```
-#31 Test Brain query end-to-end                       (blocked on 0G Compute funding)
-#36 User faucets 0G wallet to 3+ OG                   (user action)
+none — full e2e is live. Optional: mint malaysia/rwa brains for graph richness.
 ```
 
-Everything else is completed. If you pick this up, start by running `verify-live` to confirm nothing regressed overnight, then act on whichever pending item the user prioritizes.
+Start by running `verify-live` to confirm nothing regressed overnight, then act on whichever pending item the user prioritizes.

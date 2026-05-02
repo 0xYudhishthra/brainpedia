@@ -1,6 +1,6 @@
 # Final status — what's live, what's next
 
-> Last updated: 2026-04-30. **Full app live.** Three brains registered, real e2e queries from the public web, access-token enforcement verified, axl daemon up, MCP server config snippet ready for Claude Desktop. Demo video is the only remaining user task.
+> Last updated: 2026-05-02. **Full redeploy under a new parent ENS name** (`bpedia.eth`) after the original `brainpedia.eth` deployer key was lost. Web URL unchanged. Live e2e query through Railway brain returns cited TEE-verified answer from `yudhi.bpedia.eth`. The "Live state" section below reflects post-redeploy addresses; the "What's left" table is unchanged at the bottom (most items still done — what was already shipped is shipped, just under new contracts). The orphaned `brainpedia.eth` parent + 3 old iNFTs (tokenIds 1-3 on the old Brain.sol) remain visible on chain as historical artifacts.
 
 ## TL;DR
 
@@ -14,36 +14,33 @@ bun install && bun run --cwd scripts verify-live
 
 ## Live state
 
-### Deployed contracts
+### Deployed contracts (post-redeploy)
 
 | Contract | Network | Address | Verify |
 |---|---|---|---|
-| `Brain.sol` (ERC-7857) | 0G Galileo (16602) | `0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6` | [chainscan-galileo](https://chainscan-galileo.0g.ai/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6) |
-| `SubnameRegistrar` | Sepolia | `0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6` | [sepolia.etherscan](https://sepolia.etherscan.io/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6) |
-| `AccessTokenRegistrar` | Sepolia | `0x36ce746e88b9098899fc8d0ab274c45748d04fd9` | [sepolia.etherscan](https://sepolia.etherscan.io/address/0x36ce746e88b9098899fc8d0ab274c45748d04fd9) |
+| `Brain.sol` (ERC-7857) | 0G Galileo (16602) | `0x4E5c6DC869F9B3220F01de9047031cEd1577b08F` | [chainscan-galileo](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F) |
+| `SubnameRegistrar` | Sepolia | `0xBb921bFFBbbE2219D1EC365213a74097348F28F0` | [sepolia.etherscan](https://sepolia.etherscan.io/address/0xBb921bFFBbbE2219D1EC365213a74097348F28F0) |
+| `AccessTokenRegistrar` | Sepolia | `0x3e7D22150d6b883a89703d760d66743D2223456b` | [sepolia.etherscan](https://sepolia.etherscan.io/address/0x3e7D22150d6b883a89703d760d66743D2223456b) |
 
-Deployer for all three: `0x0a9a3BB8E921c7983ea2C75f13B8F502d349dE64`.
+Deployer for all three: `0xD24e06f0DBadA268314DbcB97F48f87b85b6Dd30`.
 
 ### ENS (Sepolia)
 
 | Name | What |
 |---|---|
-| `brainpedia.eth` | Parent name, deployer-owned, both registrars approved on Registry + Public Resolver |
-| `client.brainpedia.eth` | Subnode owned by AccessTokenRegistrar (one-time setup) |
-| `discover.brainpedia.eth` | Subnode owned by deployer for topic shortcuts |
-| `yudhi.brainpedia.eth` | DeFi-yield-strategies Brain (tokenId 1, root `0x4e50c044…799b`) |
-| `malaysia.brainpedia.eth` | Malaysia-defi-regulatory Brain (tokenId 2, root `0x49493459…e128`) |
-| `rwa.brainpedia.eth` | Real-world-assets Brain (tokenId 3, root `0xe4999c4b…3e4f`) |
-| `defi.discover.brainpedia.eth` | Topic discovery shortcut → 3 brains |
-| `agenta5b68322.client.brainpedia.eth` | Sample one-time-use access-token subname |
+| `bpedia.eth` | Parent name, deployer-owned (unwrapped on Registry), both registrars approved on Registry + Public Resolver |
+| `client.bpedia.eth` | Subnode owned by AccessTokenRegistrar (one-time setup) |
+| `discover.bpedia.eth` | Subnode owned by deployer for topic shortcuts |
+| `yudhi.bpedia.eth` | DeFi-yield-strategies Brain (tokenId 1, root `0xde0ebac7…ca37f`, 7/9 brain.* records resolving) |
+| `defi.discover.bpedia.eth` | Topic discovery shortcut → 1 brain (yudhi) |
 
-### iNFT — sample Brain
+> Orphaned (lost-key state, on-chain forever): `brainpedia.eth`, `client.brainpedia.eth`, `discover.brainpedia.eth`, `yudhi.brainpedia.eth`, `malaysia.brainpedia.eth`, `rwa.brainpedia.eth`, `defi.discover.brainpedia.eth`, `agenta5b68322.client.brainpedia.eth`. Plus the old Brain.sol at `0x928940c1…3Ef6` and old registrars.
 
-* `Brain.intelligenceOf(1)` returns a single IntelligentData entry:
-  * `storageRoot` = `0xa1418d3a60e882b4a5cf4a08d28f333ef3d22c21168bea2d927f14e4499a3c54`
-  * `description` = "defi-yield-strategies brain — 6 articles"
-* `Brain.minPaymentOf(1)` = `1000000000000000` wei (0.001 OG)
-* `Brain.ownerOf(1)` = deployer
+### iNFT — sample Brain (new)
+
+* `Brain.currentStorageRoot(1)` = `0xde0ebac78dd387969c8aba6c9ce5ef149a9e726685207c0026ae1c0c155ca37f` (segments live on the indexer at txSeq=70884)
+* `Brain.ownerOf(1)` = deployer (`0xD24e06f0…`)
+* Min payment: 0.001 OG/query (set during seed)
 
 ### Compute
 
@@ -88,7 +85,7 @@ Deployer for all three: `0x0a9a3BB8E921c7983ea2C75f13B8F502d349dE64`.
 | 0G Compute ledger + provider acknowledgment | — | **Done** (Galileo txs `0x936473…`, `0xe98f69…`, `0x12e4f1…`) |
 | Live e2e Brain query (ENS → storage → top-K → 0G Compute) | — | **Done** |
 | Brain on Railway + `/api/query` proxy + `QueryDemo` wires to live | — | **Done** (`338c462`) |
-| Mint 2 additional brains (malaysia, rwa) and add to discovery | — | **Done** |
+| Mint 2 additional brains (malaysia, rwa) and add to discovery | — | Pending post-redeploy (only yudhi re-minted under bpedia.eth) |
 | Local axl daemon up, configured at `:9012` API forwarding to MCP router on `:9003` | — | **Done** |
 | MCP server validated; Claude Desktop config snippet on homepage | — | **Done** (`5e31ecd`) |
 | Access-token enforcement re-enabled locally and confirmed (reject without, accept with) | — | **Done** |
