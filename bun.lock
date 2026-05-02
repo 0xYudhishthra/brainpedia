@@ -131,6 +131,7 @@
       "name": "@brainpedia/scripts",
       "version": "0.1.0",
       "dependencies": {
+        "@brainpedia/compute-0g": "workspace:*",
         "@brainpedia/ens": "workspace:*",
         "@brainpedia/storage-0g": "workspace:*",
         "@ensdomains/ensjs": "^4.2.2",
