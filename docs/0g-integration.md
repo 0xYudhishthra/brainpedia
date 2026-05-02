@@ -12,6 +12,7 @@
 | **Compute** OpenAI-compat client | Brain inference + synthesis | `@brainpedia/compute-0g` |
 | **Chain** (Galileo, 16602) | Brain.sol deployment | `contracts/` |
 | **iNFT** (ERC-7857) | One token per Brain, append-only `IntelligentData[]` | `contracts/src/Brain.sol` |
+| **Royalty splits on usage** | Multi-Brain query → citation-weighted per-owner payment in one tx | `contracts/src/RoyaltyDistributor.sol` |
 
 ## How memory is "embedded" in the iNFT
 
@@ -40,10 +41,12 @@ No private state lives in the orchestrator — it's transparent and can be repla
 |---|---|
 | `Brain.sol` (ERC-7857) | [`0x4E5c6DC869F9B3220F01de9047031cEd1577b08F`](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F) |
 | `tokenId 1` storage root (yudhi, segments live) | `0xde0ebac78dd387969c8aba6c9ce5ef149a9e726685207c0026ae1c0c155ca37f` |
-| `tokenId 2` storage root (malaysia) | placeholder — RPC flake during seed; iNFT registered, segments not pushed |
+| `tokenId 2` storage root (malaysia, segments live) | `0xde0ebac78dd387969c8aba6c9ce5ef149a9e726685207c0026ae1c0c155ca37f` (shared with yudhi — same article bytes) |
 | `tokenId 3` storage root (rwa, segments live) | `0x09616944759e09d98d84de4f63ba1c47d8f49b902a3177181b5d570bf7a23bc7` |
-| `tokenId 1` minPayment | `0.001 OG / query` |
-| 0G Compute provider | `0xa48f01287233509FD694a22Bf840225062E67836` (qwen-2.5-7b-instruct) |
+| `tokenId 4` storage root (vaultdemo, segments live) | `0x6ae520246cf343fe6d59f2f35fdc5cb4908d20f1b4d6a47b099ac414c3371c60` (real Obsidian vault: 11 cross-linked notes) |
+| `tokenId 1-4` minPayment | `0.001 OG / query` each |
+| 0G Compute provider | `0xa48f01287233509FD694a22Bf840225062E67836` (qwen-2.5-7b-instruct, TEE-attested) |
+| `RoyaltyDistributor` | [`0x44eaad4fdb7d509cd3fe7624ce512cc97b910649`](https://chainscan-galileo.0g.ai/address/0x44eaad4fdb7d509cd3fe7624ce512cc97b910649) — single-tx multi-Brain settlement |
 
 Verify intelligence is embedded:
 
@@ -62,7 +65,23 @@ cast call 0x4E5c6DC869F9B3220F01de9047031cEd1577b08F "currentStorageRoot(uint256
 - [x] Live demo: https://brainpedia.up.railway.app
 - [x] Architecture diagram → [architecture.md](architecture.md)
 - [x] Swarm coordination explanation → above
-- [x] Link to minted iNFT — Brain.sol [`0x4E5c6DC8…b08F`](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F) holds tokenIds 1 (yudhi), 2 (malaysia), 3 (rwa)
+- [x] Link to minted iNFT — Brain.sol [`0x4E5c6DC8…b08F`](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F) holds tokenIds 1-4 (yudhi, malaysia, rwa, vaultdemo)
+- [x] Automatic royalty splits on usage — citation-weighted per-Brain shares computed per query in `/api/query?mode=mixture`, settled via `RoyaltyDistributor.distribute(tokenIds[], amounts[], reason)`. Verified live: tx [`0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e) settled 0.001 OG to tokenId 1 + 0.001 OG to tokenId 2 in one call, two `Distributed` events emitted on chain.
+
+## Royalty splits on multi-Brain queries
+
+When `/api/query?mode=mixture` fans out to N brains, the orchestrator computes citation-weighted shares per responding brain:
+
+```
+weight_i = max(citation_count_i, 1) / Σ max(citation_count, 1)
+amount_i = floor(totalAmountWei * weight_i)
+```
+
+The `max(_, 1)` floor means a brain that responded but cited nothing still gets a baseline share — otherwise concise no-citation answers would be punished. `totalAmountWei` defaults to the sum of each brain's advertised `brain.price_query` text record; the calling agent can override via the request body's `valueWei`.
+
+`RoyaltyDistributor.distribute(tokenIds[], amounts[], reason)` (`0x44eaad…0649` on Galileo) settles all shares in a single tx — looks up each `Brain.ownerOf(tokenId)` and forwards via raw `.call`. Surplus `msg.value` refunded to the orchestrator. `reason = keccak256("mixture:<prompt>")` so off-chain analytics can group settlements by query.
+
+End-to-end demo: `bun run scripts/setup/settle-royalties.ts --prompt "..."` fetches the mixture payment plan, parses it, and submits one `distribute` tx — proves the spec's "automatic royalty splits on usage" line.
 
 ## Note on 0G Storage upload
 

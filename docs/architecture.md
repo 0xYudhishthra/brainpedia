@@ -73,11 +73,21 @@ concurrent `POST /mcp/{brain_peer_id}/brainpedia.brain` calls.
 
 ## Royalty splits
 
-When the orchestrator synthesizes a multi-Brain answer, it computes
-per-Brain contribution weights (citation count + confidence-weighted
-share) and emits one `BrainPayment` event per contributing Brain. v1
-demo logs splits; v2 wires actual on-chain forwards through
-`Brain.authorizeUsage` with weighted amounts.
+When `/api/query?mode=mixture` fans out to N brains, the orchestrator
+computes citation-weighted per-brain shares and returns them as a
+`payments[]` array in the response (each entry has the brain's iNFT
+ref, citation count, normalised weight, and amount in wei).
+
+`RoyaltyDistributor.distribute(tokenIds[], amounts[], reason)` settles
+every share in **one tx** — looks up `Brain.ownerOf(tokenId)` for each
+brain and forwards via raw `.call`, emitting a `Distributed` event per
+recipient. Surplus `msg.value` refunded to the orchestrator.
+
+Live on Galileo at
+[`0x44eaad…0649`](https://chainscan-galileo.0g.ai/address/0x44eaad4fdb7d509cd3fe7624ce512cc97b910649).
+Verified end-to-end via `scripts/setup/settle-royalties.ts` —
+[tx `0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e)
+distributed 0.001 OG to tokenId 1 + 0.001 OG to tokenId 2 in a single call.
 
 ## Track-specific docs
 

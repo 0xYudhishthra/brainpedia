@@ -30,42 +30,29 @@ The original `brainpedia.eth` deployer key was lost mid-hackathon. Everything wa
 | `Brain.sol` (Galileo, ERC-7857 iNFT) | `0x4E5c6DC869F9B3220F01de9047031cEd1577b08F` |
 | `SubnameRegistrar` (Sepolia) | `0xBb921bFFBbbE2219D1EC365213a74097348F28F0` |
 | `AccessTokenRegistrar` (Sepolia) | `0x3e7D22150d6b883a89703d760d66743D2223456b` |
-| Sample brain | `yudhi.bpedia.eth` → tokenId 1 |
-| Storage root (segments live) | `0xde0ebac78dd387969c8aba6c9ce5ef149a9e726685207c0026ae1c0c155ca37f` |
-| Discovery shortcut | `defi.discover.bpedia.eth` → `["yudhi.bpedia.eth"]` |
+| `RoyaltyDistributor` (Galileo) | `0x44eaad4fdb7d509cd3fe7624ce512cc97b910649` (citation-weighted multi-Brain payment in one tx) |
+| Brains live (4) | `yudhi.bpedia.eth` (token 1), `malaysia.bpedia.eth` (token 2), `rwa.bpedia.eth` (token 3), `vaultdemo.bpedia.eth` (token 4 — seeded from a real Obsidian vault) |
+| Storage root (yudhi/malaysia, segments live) | `0xde0ebac78dd…ca37f` |
+| Storage root (rwa, segments live) | `0x09616944759e09d…3bc7` |
+| Storage root (vaultdemo, segments live) | `0x6ae520246cf343fe…71c60` |
+| Discovery shortcut | `defi.discover.bpedia.eth` → `[yudhi, malaysia, rwa]` |
 | Web | https://brainpedia.up.railway.app (unchanged) |
-| Brain runtime | Railway service `brainpedia-brain` (unchanged URL) |
-| 0G Compute provider | `0xa48f01287233509FD694a22Bf840225062E67836` (Qwen 2.5 7B, TEE) |
+| Brain runtime | Railway service `brainpedia-brain` (single multi-tenant instance — resolves target's storage_root + specialty from ENS at query time) |
+| 0G Compute provider | `0xa48f01287233509FD694a22Bf840225062E67836` (Qwen 2.5 7B, TEE-attested) |
+| Sample access token | `agentf14abfb4.client.bpedia.eth` (issued for deployer, TTL 900s) |
 
 `.env` in the repo root has every value above + `PRIVATE_KEY` for the new deployer. Never commit it (`.gitignore` covers it).
 
 ## What's pending — ordered by demo impact
 
-### 1. Mint malaysia + rwa brains  (**dev**, ~5 min each)
-
-Right now there's only `yudhi.bpedia.eth` registered. The original demo had three brains (`yudhi`/`malaysia`/`rwa`). To match:
-
-```bash
-bun run scripts/setup/seed-brain.ts --label malaysia --specialty malaysian-defi-regulatory
-bun run scripts/setup/seed-brain.ts --label rwa      --specialty real-world-assets
-# Then: scripts/setup/issue-discovery-shortcut.ts --topic defi --brains yudhi.bpedia.eth,malaysia.bpedia.eth,rwa.bpedia.eth
-```
-
-Caveat — `seed-brain.ts` aborts at step 4 with `NotLabelOwner` because it doesn't call `SubnameRegistrar.register(label, owner)` before `setTextRecords`. Either:
-
-- patch `seed-brain.ts` to call `registerSubname` first (~5 lines), or
-- after the abort, call `scripts/setup/finish-yudhi.ts`-style follow-up (re-purpose with the new label).
-
-Also: the script's `submitSnapshotToFlow` extracts txSeq from `topics[3]` but the deployed Flow event has only 3 topics — txSeq is in `data[0:32]`. See `push-segments.ts` for the corrected pattern.
-
-### 2. Install MCP server in Claude Desktop  (**user**)
+### 1. Install MCP server in Claude Desktop  (**user**)
 
 ```bash
 bun run --filter=@brainpedia/mcp-server build
 # Add to claude_desktop_config.json — snippet on https://brainpedia.up.railway.app
 ```
 
-### 3. Demo video  (**user**)
+### 2. Demo video  (**user**)
 
 Runbook: `docs/demo.md`. Update screen-cap'd ENS name from `*.brainpedia.eth` → `*.bpedia.eth`.
 
@@ -92,6 +79,9 @@ Runbook: `docs/demo.md`. Update screen-cap'd ENS name from `*.brainpedia.eth` �
 | `~/.claude/projects/-mnt-storage-brainpedia/memory/project_brainpedia.md` | Cross-session memory |
 | `scripts/setup/wire-ens.ts` | Approvals + subnode setup (run once per parent ENS deploy) |
 | `scripts/setup/setup-compute.ts` | 0G Compute ledger + provider ack (run once per deployer) |
+| `scripts/setup/seed-from-vault.ts` | Seed a Brain from a real Obsidian vault (parser → 0G storage → mint → ENS) |
+| `scripts/setup/settle-royalties.ts` | Reference: fetch /api/query mixture plan + settle splits via RoyaltyDistributor |
+| `contracts/src/RoyaltyDistributor.sol` | Single-tx multi-Brain settlement contract (citation-weighted) |
 | `scripts/setup/finish-yudhi.ts` | Reference: register subname + write text records (workaround for seed-brain bug) |
 | `scripts/setup/push-segments.ts` | Reference: correct txSeq extraction from Submit event |
 | `scripts/setup/update-storage-root.ts` | Reference: `appendStorageRoot` + ENS update flow |
