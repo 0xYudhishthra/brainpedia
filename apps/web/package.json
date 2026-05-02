@@ -12,6 +12,7 @@
     "clean": "rm -rf .next .turbo dist"
   },
   "dependencies": {
+    "@brainpedia/axl": "workspace:*",
     "@brainpedia/ens": "workspace:*",
     "@brainpedia/storage-0g": "workspace:*",
     "@ensdomains/ensjs": "^4.2.2",
