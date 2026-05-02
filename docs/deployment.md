@@ -6,7 +6,7 @@ Targets:
 |---|---|---|
 | `apps/web` (Next.js) | **Railway** service `brainpedia-web` | Public site at brainpedia.up.railway.app |
 | AXL bootstrap node | **Railway** service `axl-bootstrap` (Dockerfile build) | Demo Brains need a stable bootstrap peer |
-| `apps/mcp-server` | **Not deployed** — runs locally on user machines via Claude Desktop | stdio MCP, no remote process needed |
+| `apps/mcp-server` | **Not deployed** — runs locally on user machines via Claude Code (`claude mcp add-json`) | stdio MCP, no remote process needed |
 | Contracts | 0G Galileo testnet (chain id 16602) via `forge script` | One-time deploy from local CLI |
 | ENS contracts | Sepolia (or mainnet) via `forge script` | One-time deploy from local CLI |
 

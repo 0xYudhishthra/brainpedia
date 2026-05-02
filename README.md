@@ -66,7 +66,7 @@ Surfaces split by intent: the **MCP server is the write path** (read your vault,
 
 | Read this if you want to… | Doc |
 |---|---|
-| **Set up your own Brain end to end** (5 min, `npx -y brainpedia-mcp` + Claude Code/Desktop) | [docs/teammate-onboarding.md](docs/teammate-onboarding.md) |
+| **Set up your own Brain end to end** (5 min, `npx -y brainpedia-mcp` + Claude Code) | [docs/teammate-onboarding.md](docs/teammate-onboarding.md) |
 | **Understand the four-layer architecture and the MCP-write / web-read split** | [docs/architecture.md](docs/architecture.md) |
 | **Understand how Brainpedia compiles every Brain** (Karpathy LLM-Wiki schema) | [docs/brain-compile-schema.md](docs/brain-compile-schema.md) |
 | **Audit our 0G integration** (iNFT, Storage KV+Log, Compute, swarm coordination, royalty splits) — bounty doc | [docs/0g-integration.md](docs/0g-integration.md) |
@@ -82,7 +82,7 @@ Surfaces split by intent: the **MCP server is the write path** (read your vault,
 brainpedia/
 ├── apps/                       deployable applications
 │   ├── web/                    Next.js 15 — public site, D3 viz, /api/query (single + two-phase mixture w/ pay-gate)
-│   ├── mcp-server/             stdio MCP for Claude Code/Desktop, published as `brainpedia-mcp` (6 tools)
+│   ├── mcp-server/             stdio MCP for Claude Code, published as `brainpedia-mcp` (6 tools)
 │   └── brain/                  Brain-side service (multi-tenant), runs on Railway
 ├── packages/                   shared libraries (consumed by apps; no app→app deps)
 │   ├── obsidian-parser/        Vault → article graph (FS + Local REST API plugin)
@@ -120,7 +120,7 @@ Why apps and packages are separate: standard Bun workspace / Turborepo conventio
 
 See [docs/demo.md](docs/demo.md) for the full walkthrough. The TL;DR:
 
-1. **Create a Brain** — `npx -y brainpedia-mcp` + Claude Code/Desktop. Say *"set up my Brain from my Obsidian vault."* Claude calls `setup_brain` (reads vault, returns parsed graph + the [compile schema](docs/brain-compile-schema.md)) → compiles wiki pages following the schema → `upload_articles` (push to 0G Storage) → `finalize_brain` (mint via `BrainMinter` + register `<yourname>.bpedia.eth` + write all `brain.*` text records). The minted iNFT is owned by your wallet.
+1. **Create a Brain** — `npx -y brainpedia-mcp` in Claude Code. Say *"set up my Brain from my Obsidian vault."* Claude calls `setup_brain` (reads vault, returns parsed graph + the [compile schema](docs/brain-compile-schema.md)) → compiles wiki pages following the schema → `upload_articles` (push to 0G Storage) → `finalize_brain` (mint via `BrainMinter` + register `<yourname>.bpedia.eth` + write all `brain.*` text records). The minted iNFT is owned by your wallet.
 2. **Discover** — agents resolve `<topic>.discover.bpedia.eth` (e.g. `research.discover.bpedia.eth`) → list of Brain ENS names → resolve each → get peer ID, iNFT ref, price.
 3. **Pay-per-query** — `Brain.authorizeUsage(tokenId, agent, ttl)` with payment forwards to the Brain owner; emits `BrainPayment`. Optionally an access-token subname (`agent<hash>.client.bpedia.eth`) is issued as a one-time capability with on-chain TTL.
 4. **Query** — agent's local AXL daemon forwards a JSON-RPC `query` to the Brain peer via the encrypted Yggdrasil mesh. The Brain validates the access token, fetches the article snapshot from 0G Storage, runs inference on 0G Compute, returns answer + citations + `verified: true` (TEE attestation).

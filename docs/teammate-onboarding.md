@@ -7,7 +7,7 @@ A 5-step setup. Anyone with their own wallet can self-onboard end-to-end — no 
 1. A testnet wallet (MetaMask, Rabby — anything that exposes a private key)
 2. ~3 OG on **0G Galileo** — faucet at https://faucet.0g.ai (single request gives 1 OG, hit a few times to clear the 0G Compute ledger minimum)
 3. ~0.05 Sepolia ETH — any [Sepolia faucet](https://www.alchemy.com/faucets/ethereum-sepolia) works
-4. **Either** Claude Desktop **or** Claude Code installed locally (Brainpedia's MCP server runs identically under both)
+4. **Claude Code** installed locally (the `claude` CLI). Brainpedia's MCP server is a stdio MCP wired in via `claude mcp add-json` — Claude Desktop is not a supported install target.
 5. Your Obsidian vault, reachable one of two ways:
    - **(a) Filesystem**: any folder of Markdown files (works for vaults, plain notes folders, anything the parser can read).
    - **(b) Obsidian Local REST API plugin** (recommended for the demo): install the [Local REST API plugin](https://github.com/coddingtonbear/obsidian-local-rest-api), grab the API key from its settings tab, paste it into the MCP config as `OBSIDIAN_REST_API_KEY`. No filesystem path needed; Brainpedia auto-discovers the active vault from your running Obsidian instance.
@@ -25,23 +25,19 @@ npx -y brainpedia-mcp --version   # downloads + caches the published bundle
 
 ## Step 2 — wire your wallet into the MCP server
 
-There's no "connect wallet" browser flow — Brainpedia's MCP server runs as a local CLI process and reads your private key from its own env. "Connecting your wallet" means putting `ZG_WALLET_PRIVATE_KEY` (and the other env vars) into the host's MCP config so the process inherits them at startup. The PK never leaves your machine.
-
-Pick whichever host you use:
-
-### Option A — Claude Code (the CLI)
+There's no "connect wallet" browser flow — Brainpedia's MCP server runs as a local CLI process and reads your private key from its own env. "Connecting your wallet" means putting `ZG_WALLET_PRIVATE_KEY` (and the other env vars) into Claude Code's MCP config so the process inherits them at startup. The PK never leaves your machine.
 
 One command (user-scope, so the config applies in every project you work in but stays out of any repo):
 
 ```bash
 claude mcp add-json brainpedia '{
-  "type": "stdio",
   "command": "npx",
-  "args": ["-y", "brainpedia-mcp"],
+  "args": ["-y", "brainpedia-mcp@latest"],
   "env": {
     "ZG_WALLET_PRIVATE_KEY": "0x<your-testnet-pk>",
     "ZG_INFT_CONTRACT_ADDRESS": "0x4E5c6DC869F9B3220F01de9047031cEd1577b08F",
     "BRAIN_MINTER_ADDRESS": "0xcca5e8c639505dd6f1d4ebf2f0c138ddc9aca2e7",
+    "ROYALTY_DISTRIBUTOR_ADDRESS": "0x44eaad4fdb7d509cd3fe7624ce512cc97b910649",
     "ZG_RPC_URL": "https://evmrpc-testnet.0g.ai",
     "ZG_COMPUTE_PROVIDER_ADDRESS": "0xa48f01287233509FD694a22Bf840225062E67836",
     "ZG_COMPUTE_PROVIDER_URL": "https://compute-network-6.integratenetwork.work",
@@ -51,12 +47,14 @@ claude mcp add-json brainpedia '{
     "ENS_RPC_URL": "https://ethereum-sepolia.publicnode.com",
     "ENS_SUBNAME_REGISTRAR_ADDRESS": "0xBb921bFFBbbE2219D1EC365213a74097348F28F0",
     "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x3e7D22150d6b883a89703d760d66743D2223456b",
-    "AXL_API_URL": "http://127.0.0.1:9012",
+    "BRAINPEDIA_API_URL": "https://brainpedia.up.railway.app",
     "OBSIDIAN_REST_API_KEY": "<paste-from-Local-REST-API-plugin-settings>",
     "OBSIDIAN_VAULT_PATH": "users/<your-handle>"
   }
 }' --scope user
 ```
+
+`query_brain` and `query_mixture` work as soon as the wallet is funded — no Obsidian creds needed for those (the latter goes through `BRAINPEDIA_API_URL`, settles via `ROYALTY_DISTRIBUTOR_ADDRESS`, and unlocks the synthesis after on-chain verification). `setup_brain` / `upload_articles` / `finalize_brain` need the Obsidian creds.
 
 **Note**: the env block above uses the **Local REST API plugin path** (recommended). If you'd rather point at a filesystem folder instead, drop `OBSIDIAN_REST_API_KEY` and add `"BRAINPEDIA_DEFAULT_VAULT_PATH": "<absolute-path>/your-obsidian-vault"`. If both are set, the REST API path wins (auto-syncs with whatever vault Obsidian has open).
 
@@ -73,40 +71,6 @@ If you'd rather not use the CLI, the same JSON object goes under `mcpServers.bra
 
 Then start Claude Code (`claude`) and ask it to set up your Brain — see Step 3.
 
-### Option B — Claude Desktop
-
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or the equivalent on your OS. Same JSON object, wrapped in the standard `mcpServers` block:
-
-```json
-{
-  "mcpServers": {
-    "brainpedia": {
-      "command": "npx",
-      "args": ["-y", "brainpedia-mcp"],
-      "env": {
-        "ZG_WALLET_PRIVATE_KEY": "0x<your-testnet-pk>",
-        "ZG_INFT_CONTRACT_ADDRESS": "0x4E5c6DC869F9B3220F01de9047031cEd1577b08F",
-        "BRAIN_MINTER_ADDRESS": "0xcca5e8c639505dd6f1d4ebf2f0c138ddc9aca2e7",
-        "ZG_RPC_URL": "https://evmrpc-testnet.0g.ai",
-        "ZG_COMPUTE_PROVIDER_ADDRESS": "0xa48f01287233509FD694a22Bf840225062E67836",
-        "ZG_COMPUTE_PROVIDER_URL": "https://compute-network-6.integratenetwork.work",
-        "ZG_COMPUTE_MODEL": "qwen/qwen-2.5-7b-instruct",
-        "ENS_NETWORK": "sepolia",
-        "ENS_PARENT_NAME": "bpedia.eth",
-        "ENS_RPC_URL": "https://ethereum-sepolia.publicnode.com",
-        "ENS_SUBNAME_REGISTRAR_ADDRESS": "0xBb921bFFBbbE2219D1EC365213a74097348F28F0",
-        "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x3e7D22150d6b883a89703d760d66743D2223456b",
-        "AXL_API_URL": "http://127.0.0.1:9012",
-        "OBSIDIAN_REST_API_KEY": "<paste-from-Local-REST-API-plugin-settings>",
-    "OBSIDIAN_VAULT_PATH": "users/<your-handle>"
-      }
-    }
-  }
-}
-```
-
-Restart Claude Desktop. Brainpedia will show up in the MCP tools list.
-
 ### Why this works (and why "connect wallet" doesn't apply)
 
 The "wallet" in this stack isn't a browser extension — it's just the PK that signs Galileo + Sepolia txs. The MCP server uses ethers/viem under the hood, sees `ZG_WALLET_PRIVATE_KEY` in its env, and signs whatever Claude asks it to (mint, registerSubname, setText, Flow.submit, ledger top-ups). No wallet popup, no SIWE, no signature requests in the chat — Claude orchestrates, the MCP server signs, you read the resulting tx hashes in the response.
@@ -115,7 +79,7 @@ This means your PK should be a *testnet-only key* you don't reuse anywhere — t
 
 ## Step 3 — set up your Brain
 
-In Claude Code (`claude`) or Claude Desktop:
+In Claude Code (`claude`):
 
 > Set up my Brain from `/Users/me/Documents/SecondBrain`. Pick "yourname" as the subname and "your-specialty-here" as the brain.specialty.
 
@@ -141,11 +105,11 @@ curl -X POST https://brainpedia.up.railway.app/api/query \
   -d '{"prompt": "...", "target": "yourname.bpedia.eth"}'
 ```
 
-For multi-brain queries that include yours, the orchestrator computes citation-weighted splits and `RoyaltyDistributor` (`0x44eaad…0649`) settles them on chain — your share lands directly in the wallet that owns your tokenId.
+For multi-brain queries that include yours, the orchestrator gates the synthesis behind on-chain settlement: the agent must call `RoyaltyDistributor.distribute(tokenIds, amounts, reason)` (`0x44eaad…0649`) and pay each responding brain its sticker `brain.price_query` before the web service unlocks the synthesised answer. Your share lands directly in the wallet that owns your tokenId.
 
 ## Step 5 — iterate
 
-Edited your vault? In Claude Code or Claude Desktop:
+Edited your vault? In Claude Code:
 
 > Sync my Brain — re-read the vault and push a new snapshot.
 

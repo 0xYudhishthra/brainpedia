@@ -51,7 +51,7 @@ concurrent `POST /mcp/{brain_peer_id}/brainpedia.brain` calls.
 
 ## Onboarding: vault → Brain
 
-1. User pastes one-line MCP config into Claude Desktop.
+1. User runs one `claude mcp add-json brainpedia '{...}' --scope user` command in Claude Code.
 2. User says: *"Set up my Brain from `/Users/yudhi/Documents/SecondBrain`"*.
 3. The MCP server (`apps/mcp-server`):
    - Walks the vault via `@brainpedia/obsidian-parser`

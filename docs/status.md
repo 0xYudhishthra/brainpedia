@@ -123,7 +123,7 @@ For karpathy (tokenId 6), `currentStorageRoot(6)` returns the root of the 16-pag
 
 ## MCP server distribution
 
-[`brainpedia-mcp@0.1.5` on npm](https://www.npmjs.com/package/brainpedia-mcp) — single bundled binary (1.5 MB), all workspace deps inlined. Install: `npx -y brainpedia-mcp`. Same tool surface in Claude Code and Claude Desktop. 6 tools shipped: `setup_brain`, `upload_articles`, `finalize_brain`, `sync_vault`, `query_brain`, `query_mixture` (the last one drives phase-1 → settle → phase-2 unlock end-to-end).
+[`brainpedia-mcp@0.1.5` on npm](https://www.npmjs.com/package/brainpedia-mcp) — single bundled binary (1.5 MB), all workspace deps inlined. Install in Claude Code via `claude mcp add-json brainpedia '{...}' --scope user` (see [docs/teammate-onboarding.md](teammate-onboarding.md)). 6 tools shipped: `setup_brain`, `upload_articles`, `finalize_brain`, `sync_vault`, `query_brain`, `query_mixture` (the last one drives phase-1 → settle → phase-2 unlock end-to-end).
 
 ## Code health
 

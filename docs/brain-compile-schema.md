@@ -1,6 +1,6 @@
 # Brain compile schema
 
-> Brainpedia compiles every Brain following Andrej Karpathy's [LLM-Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). This document instantiates that pattern as Brainpedia's operational schema, so the host LLM (Claude in Claude Code or Claude Desktop) follows the same discipline whenever a user calls `setup_brain`.
+> Brainpedia compiles every Brain following Andrej Karpathy's [LLM-Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). This document instantiates that pattern as Brainpedia's operational schema, so the host LLM (Claude in Claude Code) follows the same discipline whenever a user calls `setup_brain`.
 >
 > Credit where due: the pattern, three-layer architecture, and ingest/query/lint loop are all from Karpathy's gist. We're applying his framework to a specific domain (turning a personal vault into a queryable, monetisable, on-chain Brain) and codifying it as a tool prompt so the LLM doesn't drift.
 

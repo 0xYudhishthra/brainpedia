@@ -123,33 +123,30 @@ export default async function HomePage() {
         <h2 className="text-sm uppercase tracking-wider text-[var(--muted)]">Get started</h2>
         <div className="rounded-lg border border-current/10 p-5">
           <p className="mb-3 text-sm">
-            Install the MCP server in Claude Desktop or Claude Code and point it at
-            your Obsidian vault. The MCP server runs straight from npm (no clone, no build):
+            Install the MCP server in <strong>Claude Code</strong> with one
+            command (Claude Desktop is not a supported install target). The MCP
+            server runs straight from npm — no clone, no build:
           </p>
           <pre className="overflow-x-auto rounded bg-black/5 p-3 font-mono text-xs dark:bg-white/5">
-{`# claude_desktop_config.json (or via: claude mcp add-json)
-{
-  "mcpServers": {
-    "brainpedia": {
-      "command": "npx",
-      "args": ["-y", "brainpedia-mcp"],
-      "env": {
-        "ZG_WALLET_PRIVATE_KEY": "0x<your-testnet-pk>",
-        "ZG_INFT_CONTRACT_ADDRESS": "0x4E5c6DC869F9B3220F01de9047031cEd1577b08F",
-        "BRAIN_MINTER_ADDRESS": "0xcca5e8c639505dd6f1d4ebf2f0c138ddc9aca2e7",
-        "ZG_RPC_URL": "https://evmrpc-testnet.0g.ai",
-        "ENS_NETWORK": "sepolia",
-        "ENS_PARENT_NAME": "bpedia.eth",
-        "ENS_RPC_URL": "https://ethereum-sepolia.publicnode.com",
-        "ENS_SUBNAME_REGISTRAR_ADDRESS": "0xBb921bFFBbbE2219D1EC365213a74097348F28F0",
-        "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x3e7D22150d6b883a89703d760d66743D2223456b",
-        "AXL_API_URL": "http://127.0.0.1:9012",
-        "OBSIDIAN_REST_API_KEY": "<paste-from-Local-REST-API-plugin-settings>",
-        "OBSIDIAN_VAULT_PATH": "users/<your-handle>"
-      }
-    }
+{`claude mcp add-json brainpedia '{
+  "command": "npx",
+  "args": ["-y", "brainpedia-mcp@latest"],
+  "env": {
+    "ZG_WALLET_PRIVATE_KEY": "0x<your-testnet-pk>",
+    "ZG_INFT_CONTRACT_ADDRESS": "0x4E5c6DC869F9B3220F01de9047031cEd1577b08F",
+    "BRAIN_MINTER_ADDRESS": "0xcca5e8c639505dd6f1d4ebf2f0c138ddc9aca2e7",
+    "ROYALTY_DISTRIBUTOR_ADDRESS": "0x44eaad4fdb7d509cd3fe7624ce512cc97b910649",
+    "ZG_RPC_URL": "https://evmrpc-testnet.0g.ai",
+    "ENS_NETWORK": "sepolia",
+    "ENS_PARENT_NAME": "bpedia.eth",
+    "ENS_RPC_URL": "https://ethereum-sepolia.publicnode.com",
+    "ENS_SUBNAME_REGISTRAR_ADDRESS": "0xBb921bFFBbbE2219D1EC365213a74097348F28F0",
+    "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x3e7D22150d6b883a89703d760d66743D2223456b",
+    "BRAINPEDIA_API_URL": "https://brainpedia.up.railway.app",
+    "OBSIDIAN_REST_API_KEY": "<paste-from-Local-REST-API-plugin-settings>",
+    "OBSIDIAN_VAULT_PATH": "users/<your-handle>"
   }
-}`}
+}' --scope user`}
           </pre>
         </div>
       </section>
