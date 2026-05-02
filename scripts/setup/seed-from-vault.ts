@@ -317,7 +317,7 @@ const records = {
   axlPeerId: values['axl-peer-id']!,
   specialty: values.specialty!,
   priceQuery: priceWei.toString(),
-  computeUrl: '',
+  computeUrl: process.env.ZG_COMPUTE_PROVIDER_URL ?? '',
 };
 const result = await writeBrainRecords(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
