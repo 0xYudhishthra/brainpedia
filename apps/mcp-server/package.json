@@ -1,21 +1,49 @@
 {
-  "name": "@brainpedia/mcp-server",
+  "name": "brainpedia-mcp",
   "version": "0.1.0",
-  "description": "Brainpedia MCP server — invoked by Claude Desktop to compile vaults into Brains.",
-  "type": "module",
-  "main": "dist/index.js",
-  "bin": {
-    "brainpedia-mcp": "dist/index.js"
+  "description": "Brainpedia MCP server. Turn your Obsidian vault into a paid AI Brain that other agents can query. Drops into Claude Code or Claude Desktop via stdio.",
+  "keywords": [
+    "mcp",
+    "brainpedia",
+    "obsidian",
+    "ens",
+    "0g",
+    "axl",
+    "agentic-web",
+    "iNFT",
+    "erc-7857",
+    "claude"
+  ],
+  "homepage": "https://brainpedia.up.railway.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0xYudhishthra/brainpedia.git",
+    "directory": "apps/mcp-server"
   },
-  "files": ["dist"],
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/bundle.js",
+  "bin": {
+    "brainpedia-mcp": "dist/bundle.js"
+  },
+  "files": [
+    "dist/bundle.js",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "build": "tsc && bun run bundle",
+    "bundle": "bun build src/index.ts --outfile dist/bundle.js --target=node --minify",
+    "start": "node dist/bundle.js",
     "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run bundle && chmod +x dist/bundle.js",
     "clean": "rm -rf dist .turbo"
   },
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "@brainpedia/axl": "workspace:*",
     "@brainpedia/compute-0g": "workspace:*",
     "@brainpedia/ens": "workspace:*",
@@ -24,11 +52,9 @@
     "@ensdomains/ensjs": "^4.2.2",
     "@modelcontextprotocol/sdk": "^1.0.4",
     "ethers": "^6.13.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
     "viem": "^2.21.55",
     "zod": "^3.24.1"
-  },
-  "devDependencies": {
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
   }
 }

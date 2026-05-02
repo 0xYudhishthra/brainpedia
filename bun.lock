@@ -26,12 +26,12 @@
       },
     },
     "apps/mcp-server": {
-      "name": "@brainpedia/mcp-server",
+      "name": "@brainpedia/mcp",
       "version": "0.1.0",
       "bin": {
-        "brainpedia-mcp": "dist/index.js",
+        "brainpedia-mcp": "dist/bundle.js",
       },
-      "dependencies": {
+      "devDependencies": {
         "@brainpedia/axl": "workspace:*",
         "@brainpedia/compute-0g": "workspace:*",
         "@brainpedia/ens": "workspace:*",
@@ -40,12 +40,10 @@
         "@ensdomains/ensjs": "^4.2.2",
         "@modelcontextprotocol/sdk": "^1.0.4",
         "ethers": "^6.13.4",
-        "viem": "^2.21.55",
-        "zod": "^3.24.1",
-      },
-      "devDependencies": {
         "tsx": "^4.19.2",
         "typescript": "^5.7.2",
+        "viem": "^2.21.55",
+        "zod": "^3.24.1",
       },
     },
     "apps/web": {
@@ -167,7 +165,7 @@
 
     "@brainpedia/ens": ["@brainpedia/ens@workspace:packages/ens"],
 
-    "@brainpedia/mcp-server": ["@brainpedia/mcp-server@workspace:apps/mcp-server"],
+    "@brainpedia/mcp": ["@brainpedia/mcp@workspace:apps/mcp-server"],
 
     "@brainpedia/obsidian-parser": ["@brainpedia/obsidian-parser@workspace:packages/obsidian-parser"],
 

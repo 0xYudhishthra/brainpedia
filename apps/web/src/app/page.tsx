@@ -119,18 +119,17 @@ export default async function HomePage() {
       <section className="flex flex-col gap-3">
         <h2 className="text-sm uppercase tracking-wider text-[var(--muted)]">Get started</h2>
         <div className="rounded-lg border border-current/10 p-5">
-          <p className="mb-3 text-sm">Run the MCP server locally and point Claude Desktop at it:</p>
+          <p className="mb-3 text-sm">
+            Install the MCP server in Claude Desktop or Claude Code and point it at
+            your Obsidian vault. The MCP server runs straight from npm (no clone, no build):
+          </p>
           <pre className="overflow-x-auto rounded bg-black/5 p-3 font-mono text-xs dark:bg-white/5">
-{`git clone https://github.com/0xYudhishthra/brainpedia
-cd brainpedia
-bun install && bun run --filter=@brainpedia/mcp-server build
-
-# claude_desktop_config.json
+{`# claude_desktop_config.json (or via: claude mcp add-json)
 {
   "mcpServers": {
     "brainpedia": {
-      "command": "node",
-      "args": ["<absolute-path>/brainpedia/apps/mcp-server/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "brainpedia-mcp"],
       "env": {
         "ZG_WALLET_PRIVATE_KEY": "0x<your-testnet-pk>",
         "ZG_INFT_CONTRACT_ADDRESS": "0x4E5c6DC869F9B3220F01de9047031cEd1577b08F",
@@ -142,7 +141,7 @@ bun install && bun run --filter=@brainpedia/mcp-server build
         "ENS_SUBNAME_REGISTRAR_ADDRESS": "0xBb921bFFBbbE2219D1EC365213a74097348F28F0",
         "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x3e7D22150d6b883a89703d760d66743D2223456b",
         "AXL_API_URL": "http://127.0.0.1:9012",
-        "BRAINPEDIA_DEFAULT_VAULT_PATH": "<absolute-path>/your-obsidian-vault"
+        "OBSIDIAN_REST_API_KEY": "<paste-from-Local-REST-API-plugin-settings>"
       }
     }
   }

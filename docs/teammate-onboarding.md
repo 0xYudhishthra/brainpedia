@@ -8,16 +8,19 @@ A 5-step setup. Anyone with their own wallet can self-onboard end-to-end — no 
 2. ~3 OG on **0G Galileo** — faucet at https://faucet.0g.ai (single request gives 1 OG, hit a few times to clear the 0G Compute ledger minimum)
 3. ~0.05 Sepolia ETH — any [Sepolia faucet](https://www.alchemy.com/faucets/ethereum-sepolia) works
 4. **Either** Claude Desktop **or** Claude Code installed locally (Brainpedia's MCP server runs identically under both)
-5. Your Obsidian vault on disk (or a folder of Markdown files — the parser doesn't care if it's a "real" Obsidian vault)
+5. Your Obsidian vault, reachable one of two ways:
+   - **(a) Filesystem**: any folder of Markdown files (works for vaults, plain notes folders, anything the parser can read).
+   - **(b) Obsidian Local REST API plugin** (recommended for the demo): install the [Local REST API plugin](https://github.com/coddingtonbear/obsidian-local-rest-api), grab the API key from its settings tab, paste it into the MCP config as `OBSIDIAN_REST_API_KEY`. No filesystem path needed; Brainpedia auto-discovers the active vault from your running Obsidian instance.
 
-## Step 1 — clone + build
+## Step 1 — install the MCP server
+
+One command, no clone needed:
 
 ```bash
-git clone https://github.com/0xYudhishthra/brainpedia
-cd brainpedia
-bun install
-bun run --filter=@brainpedia/mcp-server build
+npx -y brainpedia-mcp --version   # downloads + caches the published bundle
 ```
+
+(Behind the scenes this fetches the bundled single-file artifact from npm; nothing is built locally.)
 
 ## Step 2 — wire your wallet into the MCP server
 
@@ -32,8 +35,8 @@ One command (user-scope, so the config applies in every project you work in but 
 ```bash
 claude mcp add-json brainpedia '{
   "type": "stdio",
-  "command": "node",
-  "args": ["<absolute-path>/brainpedia/apps/mcp-server/dist/index.js"],
+  "command": "npx",
+  "args": ["-y", "brainpedia-mcp"],
   "env": {
     "ZG_WALLET_PRIVATE_KEY": "0x<your-testnet-pk>",
     "ZG_INFT_CONTRACT_ADDRESS": "0x4E5c6DC869F9B3220F01de9047031cEd1577b08F",
@@ -48,10 +51,12 @@ claude mcp add-json brainpedia '{
     "ENS_SUBNAME_REGISTRAR_ADDRESS": "0xBb921bFFBbbE2219D1EC365213a74097348F28F0",
     "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x3e7D22150d6b883a89703d760d66743D2223456b",
     "AXL_API_URL": "http://127.0.0.1:9012",
-    "BRAINPEDIA_DEFAULT_VAULT_PATH": "<absolute-path>/your-obsidian-vault"
+    "OBSIDIAN_REST_API_KEY": "<paste-from-Local-REST-API-plugin-settings>"
   }
 }' --scope user
 ```
+
+**Note**: the env block above uses the **Local REST API plugin path** (recommended). If you'd rather point at a filesystem folder instead, drop `OBSIDIAN_REST_API_KEY` and add `"BRAINPEDIA_DEFAULT_VAULT_PATH": "<absolute-path>/your-obsidian-vault"`. If both are set, the REST API path wins (auto-syncs with whatever vault Obsidian has open).
 
 Verify with `claude mcp list` — `brainpedia` should appear with `✓ Connected`.
 
@@ -72,8 +77,8 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
 {
   "mcpServers": {
     "brainpedia": {
-      "command": "node",
-      "args": ["<absolute-path>/brainpedia/apps/mcp-server/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "brainpedia-mcp"],
       "env": {
         "ZG_WALLET_PRIVATE_KEY": "0x<your-testnet-pk>",
         "ZG_INFT_CONTRACT_ADDRESS": "0x4E5c6DC869F9B3220F01de9047031cEd1577b08F",
@@ -88,7 +93,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
         "ENS_SUBNAME_REGISTRAR_ADDRESS": "0xBb921bFFBbbE2219D1EC365213a74097348F28F0",
         "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x3e7D22150d6b883a89703d760d66743D2223456b",
         "AXL_API_URL": "http://127.0.0.1:9012",
-        "BRAINPEDIA_DEFAULT_VAULT_PATH": "<absolute-path>/your-obsidian-vault"
+        "OBSIDIAN_REST_API_KEY": "<paste-from-Local-REST-API-plugin-settings>"
       }
     }
   }
