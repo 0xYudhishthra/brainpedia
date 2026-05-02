@@ -23,7 +23,7 @@ export const queryBrainTool: Tool = {
       target: {
         type: 'string',
         description:
-          'Brain ENS name (e.g., "yudhi.brainpedia.eth"). Topic discovery shortcuts ' +
+          'Brain ENS name (e.g., "yudhi.bpedia.eth"). Topic discovery shortcuts ' +
           '(<topic>.discover.<parent>) are not yet handled by this tool.',
       },
       prompt: { type: 'string', description: 'The user\'s question.' },

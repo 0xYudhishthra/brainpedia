@@ -138,7 +138,7 @@ export async function handleFinalizeBrain(args: Record<string, unknown>) {
       records: {
         description: parsed.data.description,
         avatar: parsed.data.avatar,
-        url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://brainpedia.xyz'}/${parsed.data.label}`,
+        url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://brainpedia.up.railway.app'}/${parsed.data.label}`,
         inft: inftPair,
         storageRoot: parsed.data.storageRoot,
         axlPeerId: parsed.data.axlPeerId,
