@@ -182,4 +182,4 @@ await pub.waitForTransactionReceipt({ hash: h4 });
 console.log(`   description tx:        ${h4}`);
 
 console.log(`\n✓ ${topic}.discover.${ens.parentName} now resolves to ${brains.length} brains`);
-console.log(`  view: https://app.ens.domains/${topic}.discover.${ens.parentName}?chain=sepolia`);
+console.log(`  view: https://sepolia.app.ens.domains/${topic}.discover.${ens.parentName}`);

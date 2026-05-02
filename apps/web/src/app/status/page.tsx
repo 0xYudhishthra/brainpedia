@@ -91,7 +91,7 @@ async function runChecks(): Promise<Check[]> {
     label: `${PARENT_NAME} registered`,
     detail: parentOwnerAddr ? `owner ${parentOwnerAddr.slice(0, 8)}…` : 'not registered',
     status: parentOwnerAddr && parentOwnerAddr !== '0x' + '0'.repeat(40) ? 'ok' : 'fail',
-    link: { href: `https://app.ens.domains/${PARENT_NAME}?chain=sepolia`, text: 'ens.domains →' },
+    link: { href: `https://sepolia.app.ens.domains/${PARENT_NAME}`, text: 'sepolia.app.ens.domains →' },
   });
 
   // 4. Sample subname records

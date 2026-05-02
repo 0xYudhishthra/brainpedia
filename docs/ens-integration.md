@@ -51,9 +51,9 @@ git grep -nE '\.eth' -- packages/ens/src/
 
 | Name | Resolves to |
 |---|---|
-| [`bpedia.eth`](https://app.ens.domains/bpedia.eth?chain=sepolia) | Deployer-owned parent name |
-| [`yudhi.bpedia.eth`](https://app.ens.domains/yudhi.bpedia.eth?chain=sepolia) | Sample Brain — 8 brain.* text records, all live |
-| [`defi.discover.bpedia.eth`](https://app.ens.domains/defi.discover.bpedia.eth?chain=sepolia) | Topic discovery shortcut → list of relevant Brains |
+| [`bpedia.eth`](https://sepolia.app.ens.domains/bpedia.eth) | Deployer-owned parent name |
+| [`yudhi.bpedia.eth`](https://sepolia.app.ens.domains/yudhi.bpedia.eth) | Sample Brain — 8 brain.* text records, all live |
+| [`defi.discover.bpedia.eth`](https://sepolia.app.ens.domains/defi.discover.bpedia.eth) | Topic discovery shortcut → list of relevant Brains |
 | `agenta5b68322.client.bpedia.eth` | Sample one-time-use access-token subname (TTL-bounded) |
 
 Contracts:

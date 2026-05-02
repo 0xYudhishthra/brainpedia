@@ -91,6 +91,10 @@ console.log(`     register tx: ${registerTx}`);
 console.log(`     gas used:    ${receipt.gasUsed}`);
 
 console.log('\n✓ registered!');
-console.log(`  https://app.ens.domains/${parentName}?chain=${network}`);
+console.log(
+  network === 'sepolia'
+    ? `  https://sepolia.app.ens.domains/${parentName}`
+    : `  https://app.ens.domains/${parentName}`,
+);
 console.log('\nNext: transfer parent ownership to SubnameRegistrar so it can issue subnames.');
 console.log(`  cast send <NameWrapper> "safeTransferFrom(...)" ... or use the ENS UI.`);

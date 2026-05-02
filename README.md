@@ -23,19 +23,22 @@ When a query needs multiple specialties, an orchestrator fans out to multiple Br
 |---|---|---|
 | **Web app** | Public site + D3 force-directed network viz + dynamic Brain pages | https://brainpedia.up.railway.app |
 | **AXL bootstrap node** | Yggdrasil daemon, pinned peer ID `cb4cc722…3b8` | Railway — mesh `:7000` |
-| **0G iNFT** `Brain.sol` (ERC-7857) | tokenId 1 minted, 0.001 OG/query | [0G Galileo `0x928940c1…3Ef6`](https://chainscan-galileo.0g.ai/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6) |
-| **ENS subname registrar** | Issues `<name>.brainpedia.eth` for Brain owners | [Sepolia `0x928940c1…3Ef6`](https://sepolia.etherscan.io/address/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6) |
-| **ENS access-token registrar** | Issues TTL-bounded `agent<hash>.client.brainpedia.eth` capability tokens | [Sepolia `0x36ce746e…4fd9`](https://sepolia.etherscan.io/address/0x36ce746e88b9098899fc8d0ab274c45748d04fd9) |
-| **`brainpedia.eth`** parent name | Registered, both registrars approved on ENS Registry + Public Resolver | [app.ens.domains/brainpedia.eth?chain=sepolia](https://app.ens.domains/brainpedia.eth?chain=sepolia) |
-| **Sample Brain** `yudhi.brainpedia.eth` | All 8 brain.* text records resolve live | [app.ens.domains/yudhi.brainpedia.eth?chain=sepolia](https://app.ens.domains/yudhi.brainpedia.eth?chain=sepolia) |
-| **Sample access token** `agenta5b68322.client.brainpedia.eth` | Issued by AccessTokenRegistrar, on-chain TTL | TTL-expiring |
+| **0G iNFT** `Brain.sol` (ERC-7857) | 5 brains minted (yudhi, malaysia, rwa, vaultdemo, vaultdemo2), 0.001 OG/query each | [0G Galileo `0x4E5c…b08F`](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F) |
+| **0G `BrainMinter`** | Permissionless wrapper that owns Brain.sol — anyone can self-mint | [0G Galileo `0xcca5…a2e7`](https://chainscan-galileo.0g.ai/address/0xcca5e8c639505dd6f1d4ebf2f0c138ddc9aca2e7) |
+| **0G `RoyaltyDistributor`** | Single-tx multi-Brain payment, citation-weighted | [0G Galileo `0x44ea…0649`](https://chainscan-galileo.0g.ai/address/0x44eaad4fdb7d509cd3fe7624ce512cc97b910649) |
+| **ENS subname registrar** | Issues `<name>.bpedia.eth` for Brain owners | [Sepolia `0xBb92…28F0`](https://sepolia.etherscan.io/address/0xBb921bFFBbbE2219D1EC365213a74097348F28F0) |
+| **ENS access-token registrar** | Issues TTL-bounded `agent<hash>.client.bpedia.eth` capability tokens | [Sepolia `0x3e7D…456b`](https://sepolia.etherscan.io/address/0x3e7D22150d6b883a89703d760d66743D2223456b) |
+| **`bpedia.eth`** parent name | Registered, both registrars approved on ENS Registry + Public Resolver | [sepolia.app.ens.domains/bpedia.eth](https://sepolia.app.ens.domains/bpedia.eth) |
+| **Sample Brain** `yudhi.bpedia.eth` | All brain.* text records resolve live | [sepolia.app.ens.domains/yudhi.bpedia.eth](https://sepolia.app.ens.domains/yudhi.bpedia.eth) |
+| **Discovery shortcut** `defi.discover.bpedia.eth` | `brainpedia.brains` text record → 5 brains | [sepolia.app.ens.domains/defi.discover.bpedia.eth](https://sepolia.app.ens.domains/defi.discover.bpedia.eth) |
+| **Sample access token** `agentf14abfb4.client.bpedia.eth` | Issued by AccessTokenRegistrar, on-chain TTL | TTL-expiring |
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Layer 4 — Discovery & Identity (ENS)                       │
-│  *.brainpedia.eth subnames + text records + access tokens   │
+│  *.bpedia.eth subnames + text records + access tokens   │
 ├─────────────────────────────────────────────────────────────┤
 │  Layer 3 — Communication (AXL)                              │
 │  Encrypted P2P mesh, MCP/A2A envelopes, Ed25519 peer IDs    │
@@ -91,7 +94,7 @@ See [docs/demo.md](docs/demo.md) for the full walkthrough.
 The TL;DR:
 
 1. **Setup a Brain** — Claude Desktop runs `setup_brain` on your Obsidian vault → `upload_articles` (compile + push to 0G Storage) → `finalize_brain` (mint iNFT + register ENS subname + write all `brain.*` text records).
-2. **Discovery** — agents resolve `<topic>.discover.brainpedia.eth` → list of Brain ENS names → resolve each → get peer ID + iNFT pair + price.
+2. **Discovery** — agents resolve `<topic>.discover.bpedia.eth` → list of Brain ENS names → resolve each → get peer ID + iNFT pair + price.
 3. **Pay-per-query** — `Brain.authorizeUsage(tokenId, agent, ttl)` with payment forwards to the Brain owner; emits `BrainPayment`. Optionally an access-token subname is issued as a one-time capability.
 4. **Query routing** — agent's local AXL daemon forwards a JSON-RPC `query` to the Brain's peer via the encrypted Yggdrasil mesh; the Brain validates the access token, fetches articles from 0G Storage, runs inference on 0G Compute, returns answer + citations + verified flag.
 5. **Mixture-of-Brains** — for multi-specialty queries, an orchestrator AXL node fans out to 3+ Brains in parallel and synthesizes via 0G Compute.
@@ -111,7 +114,7 @@ Every cross-system value is environment-driven — see [`.env.example`](.env.exa
 bun install
 
 # Deploy contracts (one-time, requires funded wallet on 0G + Sepolia)
-ENS_NETWORK=sepolia ENS_PARENT_NAME=brainpedia.eth bun run --cwd scripts prep-deploy
+ENS_NETWORK=sepolia ENS_PARENT_NAME=bpedia.eth bun run --cwd scripts prep-deploy
 PRIVATE_KEY=0x... forge script script/DeployBrain.s.sol      --rpc-url https://evmrpc-testnet.0g.ai           --broadcast
 PRIVATE_KEY=0x... forge script script/DeployRegistrars.s.sol --rpc-url https://ethereum-sepolia.publicnode.com --broadcast
 

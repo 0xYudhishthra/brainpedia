@@ -169,19 +169,19 @@ bun install && bun run --filter=@brainpedia/mcp-server build
         <DemoLink href="/status" label="Live status" detail="7 read-only checks against on-chain state" />
         <DemoLink
           external
-          href="https://app.ens.domains/bpedia.eth?chain=sepolia"
+          href="https://sepolia.app.ens.domains/bpedia.eth"
           label="bpedia.eth on ENS"
           detail="parent name, deployer-owned"
         />
         <DemoLink
           external
-          href="https://app.ens.domains/yudhi.bpedia.eth?chain=sepolia"
+          href="https://sepolia.app.ens.domains/yudhi.bpedia.eth"
           label="yudhi.bpedia.eth"
           detail="all brain.* records, live"
         />
         <DemoLink
           external
-          href="https://app.ens.domains/defi.discover.bpedia.eth?chain=sepolia"
+          href="https://sepolia.app.ens.domains/defi.discover.bpedia.eth"
           label="defi.discover…"
           detail="discovery shortcut → 3 brains"
         />

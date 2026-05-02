@@ -9,8 +9,8 @@ Confirmed working (verifiable by anyone, anytime):
 | Check | URL |
 |---|---|
 | Brain page renders live ENS records | https://brainpedia.up.railway.app/yudhi |
-| `bpedia.eth` exists on Sepolia | https://app.ens.domains/bpedia.eth?chain=sepolia |
-| `yudhi.bpedia.eth` resolves | https://app.ens.domains/yudhi.bpedia.eth?chain=sepolia |
+| `bpedia.eth` exists on Sepolia | https://sepolia.app.ens.domains/bpedia.eth |
+| `yudhi.bpedia.eth` resolves | https://sepolia.app.ens.domains/yudhi.bpedia.eth |
 | `Brain.sol` tokenId 1 deployed | https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F |
 | AXL bootstrap peer up | Railway service `axl-bootstrap`, peer id `cb4cc722…3b8` |
 
