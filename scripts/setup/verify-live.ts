@@ -14,9 +14,12 @@ const ZG_RPC = 'https://evmrpc-testnet.0g.ai';
 const SEPOLIA_RPC = 'https://ethereum-sepolia.publicnode.com';
 const WEB_URL = 'https://brainpedia.up.railway.app';
 
-const BRAIN = '0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6' as Address;
-const SUBNAME_REGISTRAR = '0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6' as Address;
-const ACCESS_TOKEN_REGISTRAR = '0x36ce746e88b9098899fc8d0ab274c45748d04fd9' as Address;
+// Post-redeploy addresses (new deployer 0xD24e06f0… after the bpedia.eth
+// deployer key was lost). Parent is bpedia.eth on Sepolia.
+const BRAIN = '0x4E5c6DC869F9B3220F01de9047031cEd1577b08F' as Address;
+const SUBNAME_REGISTRAR = '0xBb921bFFBbbE2219D1EC365213a74097348F28F0' as Address;
+const ACCESS_TOKEN_REGISTRAR = '0x3e7D22150d6b883a89703d760d66743D2223456b' as Address;
+const PARENT_NAME = 'bpedia.eth';
 
 const ok = (label: string) => console.log(`  ✓ ${label}`);
 const fail = (label: string, why: string) => console.log(`  ✗ ${label} — ${why}`);
@@ -99,8 +102,8 @@ await check('AccessTokenRegistrar deployed', async () => {
   ok(`AccessTokenRegistrar (${code.length} bytecode chars)`);
 });
 
-await check('brainpedia.eth registered', async () => {
-  const node = namehash('brainpedia.eth');
+await check('bpedia.eth registered', async () => {
+  const node = namehash('bpedia.eth');
   const result = await fetch(SEPOLIA_RPC, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -120,10 +123,10 @@ await check('brainpedia.eth registered', async () => {
     .then((r) => r.json() as Promise<{ result?: string }>)
     .then((d) => '0x' + (d.result ?? '').slice(-40));
   if (result === '0x0000000000000000000000000000000000000000') throw new Error('not registered');
-  ok(`brainpedia.eth owner = ${result}`);
+  ok(`bpedia.eth owner = ${result}`);
 });
 
-await check('yudhi.brainpedia.eth has 8 brain.* records', async () => {
+await check('yudhi.bpedia.eth has 8 brain.* records', async () => {
   const keys = [
     'description',
     'avatar',
@@ -137,7 +140,7 @@ await check('yudhi.brainpedia.eth has 8 brain.* records', async () => {
   ];
   let count = 0;
   for (const k of keys) {
-    const v = await getTextRecord(ensClient, { name: 'yudhi.brainpedia.eth', key: k });
+    const v = await getTextRecord(ensClient, { name: 'yudhi.bpedia.eth', key: k });
     if (v) {
       count++;
       if (k === 'brain.inft' || k === 'brain.storage_root' || k === 'brain.specialty') {
@@ -145,12 +148,12 @@ await check('yudhi.brainpedia.eth has 8 brain.* records', async () => {
       }
     }
   }
-  ok(`yudhi.brainpedia.eth resolves ${count}/${keys.length} records`);
+  ok(`yudhi.bpedia.eth resolves ${count}/${keys.length} records`);
 });
 
-await check('defi.discover.brainpedia.eth lists Brains', async () => {
+await check('defi.discover.bpedia.eth lists Brains', async () => {
   const v = await getTextRecord(ensClient, {
-    name: 'defi.discover.brainpedia.eth',
+    name: 'defi.discover.bpedia.eth',
     key: 'brainpedia.brains',
   });
   if (!v) throw new Error('no brainpedia.brains record');
@@ -173,7 +176,7 @@ await check('Brain page resolves ENS', async () => {
   const r = await fetch(`${WEB_URL}/yudhi`);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const html = await r.text();
-  if (!/0x928940c1B051db2bd12dfF49499Cf4d6FC2E3Ef6:1/.test(html)) {
+  if (!/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F:1/i.test(html)) {
     throw new Error('Brain page missing iNFT pair');
   }
   if (!/defi-yield-strategies/.test(html)) {
