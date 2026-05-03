@@ -1,10 +1,22 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { readFile, unlink } from 'node:fs/promises';
-import { JsonRpcProvider, Wallet, keccak256 } from 'ethers';
-import { Indexer, MemData } from '@0glabs/0g-ts-sdk';
+import { Indexer } from '@0glabs/0g-ts-sdk';
+import {
+  createPublicClient,
+  createWalletClient,
+  defineChain,
+  http,
+  keccak256,
+  toBytes,
+  type Address,
+  type Hex,
+} from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 import type { ZgConfig } from './config.js';
 import type { ArticleRecord } from './kv.js';
+import { buildSubmissionFromBytes } from './submission.js';
+import { uploadSegments } from './upload.js';
 
 /**
  * 0G Storage Log layer — immutable snapshots of a Brain's compiled wiki.
@@ -18,7 +30,7 @@ export interface SnapshotManifest {
   articleCount: number;
   articles: Array<{
     slug: string;
-    contentHash: string; // keccak256 of the article body
+    contentHash: string;
     bytes: number;
   }>;
   /** Optional pointer back to the previous snapshot's root. */
@@ -46,12 +58,83 @@ export interface BrainLogClient {
 const enc = new TextEncoder();
 
 function hashBody(body: string): string {
-  return keccak256(enc.encode(body));
+  return keccak256(toBytes(body));
 }
 
+const FLOW_ABI = [
+  {
+    type: 'function',
+    name: 'submit',
+    stateMutability: 'payable',
+    inputs: [
+      {
+        name: 'submission',
+        type: 'tuple',
+        components: [
+          {
+            name: 'data',
+            type: 'tuple',
+            components: [
+              { name: 'length', type: 'uint256' },
+              { name: 'tags', type: 'bytes' },
+              {
+                name: 'nodes',
+                type: 'tuple[]',
+                components: [
+                  { name: 'root', type: 'bytes32' },
+                  { name: 'height', type: 'uint256' },
+                ],
+              },
+            ],
+          },
+          { name: 'submitter', type: 'address' },
+        ],
+      },
+    ],
+    outputs: [
+      { name: '', type: 'uint256' },
+      { name: '', type: 'bytes32' },
+      { name: '', type: 'uint256' },
+      { name: '', type: 'uint256' },
+    ],
+  },
+  {
+    type: 'function',
+    name: 'market',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }],
+  },
+] as const;
+
+const MARKET_ABI = [
+  {
+    type: 'function',
+    name: 'pricePerSector',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'uint256' }],
+  },
+] as const;
+
+/** Submit(address,uint256,bytes32,uint256,uint256,...) topic0. The deployed
+ *  Flow's Submit event has only 3 indexed topics; submissionIndex (txSeq)
+ *  lives in data[0:32], not topics[3]. */
+const SUBMIT_TOPIC0 =
+  '0x167ce04d2aa1981994d3a31695da0d785373335b1078cec239a1a3a2c7675555';
+
 export function createBrainLogClient(cfg: ZgConfig, signerPrivateKey: string): BrainLogClient {
-  const provider = new JsonRpcProvider(cfg.rpcUrl);
-  const signer = new Wallet(signerPrivateKey, provider);
+  const pk = (signerPrivateKey.startsWith('0x') ? signerPrivateKey : `0x${signerPrivateKey}`) as Hex;
+  const account = privateKeyToAccount(pk);
+  const galileo = defineChain({
+    id: cfg.chainId,
+    name: '0G Galileo',
+    nativeCurrency: { name: 'OG', symbol: 'OG', decimals: 18 },
+    rpcUrls: { default: { http: [cfg.rpcUrl] } },
+    blockExplorers: { default: { name: '0G Chainscan', url: cfg.explorerUrl } },
+  });
+  const publicClient = createPublicClient({ chain: galileo, transport: http(cfg.rpcUrl) });
+  const walletClient = createWalletClient({ account, chain: galileo, transport: http(cfg.rpcUrl) });
   const indexer = new Indexer(cfg.storageIndexerUrl);
 
   return {
@@ -69,29 +152,90 @@ export function createBrainLogClient(cfg: ZgConfig, signerPrivateKey: string): B
         payload: articles,
       };
 
-      const bytes = enc.encode(JSON.stringify(manifest));
-      const file = new MemData(Array.from(bytes));
+      const manifestBytes = enc.encode(JSON.stringify(manifest));
 
-      const [res, err] = await indexer.upload(file, cfg.rpcUrl, signer as never);
-      if (err) throw err;
+      // 1. Hand-roll Flow.submit. The official @0glabs/0g-ts-sdk@0.3.3
+      //    `Indexer.upload` encodes selector 0xef3e12dc (the inner
+      //    SubmissionData), but the deployed Flow at
+      //    0x22E03a6A89B950F1c82ec5e74F8eCa321a105296 expects 0xbc8c11f8
+      //    for the 2-field outer Submission { SubmissionData data; address submitter; }
+      //    tuple. Reusing the SDK's MemData for merkle tree gen is fine; we
+      //    just have to send the tx ourselves.
+      const built = await buildSubmissionFromBytes(manifestBytes);
 
-      // Indexer.upload returns either single-file ({rootHash}) or fragments
-      // ({rootHashes[]}). For our small JSON manifests it's always single-file.
-      const r = res as {
-        rootHash?: string;
-        txHash?: string;
-        rootHashes?: string[];
-        txHashes?: string[];
-      };
-      const rootHash = r.rootHash ?? r.rootHashes?.[0];
-      const txHash = r.txHash ?? r.txHashes?.[0];
-      if (!rootHash || !txHash) throw new Error('indexer.upload returned empty result');
+      const marketAddr = (await publicClient.readContract({
+        address: cfg.flowContractAddress as Address,
+        abi: FLOW_ABI,
+        functionName: 'market',
+      })) as Address;
+      const pricePerSector = (await publicClient.readContract({
+        address: marketAddr,
+        abi: MARKET_ABI,
+        functionName: 'pricePerSector',
+      })) as bigint;
 
-      return { rootHash, txHash, manifest };
+      let sectors = 0n;
+      for (const n of built.nodes) sectors += 1n << BigInt(n.height);
+      const flowFee = sectors * pricePerSector;
+
+      const submitTx = await walletClient.writeContract({
+        address: cfg.flowContractAddress as Address,
+        abi: FLOW_ABI,
+        functionName: 'submit',
+        args: [
+          {
+            data: {
+              length: BigInt(built.length),
+              tags: '0x' as Hex,
+              nodes: built.nodes.map((n) => ({ root: n.root, height: BigInt(n.height) })),
+            },
+            submitter: account.address,
+          },
+        ],
+        value: flowFee,
+      });
+
+      // Galileo's RPC frequently 404s on the first poll for ~30-60s after
+      // submit. viem's defaults are too tight; bump generously.
+      const submitReceipt = await publicClient.waitForTransactionReceipt({
+        hash: submitTx,
+        timeout: 240_000,
+        retryDelay: 6_000,
+        retryCount: 40,
+      });
+      if (submitReceipt.status !== 'success') {
+        throw new Error(`uploadSnapshot: Flow.submit reverted: ${submitTx}`);
+      }
+
+      // 2. Decode Submit event for txSeq (lives in data[0:32], not topics[3]).
+      const submitLog = submitReceipt.logs.find(
+        (l) =>
+          l.address.toLowerCase() === cfg.flowContractAddress.toLowerCase() &&
+          l.topics[0]?.toLowerCase() === SUBMIT_TOPIC0,
+      );
+      if (!submitLog) {
+        throw new Error('uploadSnapshot: Submit event not found in receipt');
+      }
+      const txSeq = BigInt(submitLog.data.slice(0, 66));
+
+      // 3. Push raw segments to the storage nodes so the indexer can serve
+      //    Indexer.download(rootHash) round-trips later. Without this step
+      //    the on-chain commitment exists but no data backs it.
+      const upload = await uploadSegments(manifestBytes, {
+        indexerUrl: cfg.storageIndexerUrl,
+        txSeq,
+        expectedReplica: 1,
+      });
+      if (upload.rootHash.toLowerCase() !== built.rootHash.toLowerCase()) {
+        throw new Error(
+          `uploadSnapshot: rootHash mismatch (built=${built.rootHash}, pushed=${upload.rootHash})`,
+        );
+      }
+
+      return { rootHash: built.rootHash, txHash: submitTx, manifest };
     },
 
     async fetchSnapshot(rootHash) {
-      // Indexer.download writes to disk (Node-only); round-trip through tmp.
       const tmp = join(tmpdir(), `brainpedia-${rootHash.replace(/^0x/, '')}.json`);
       const err = await indexer.download(rootHash, tmp, false);
       if (err) throw err;
