@@ -129,11 +129,12 @@ export async function handleSetupBrain(args: Record<string, unknown>) {
     })),
     truncated: notes.length > 50,
     nextSteps: [
-      'READ THE SCHEMA BELOW — it is the framework Brainpedia compiles every Brain with.',
-      'Read the raw notes you need (use the slugs above to derive paths).',
-      'Cluster notes by entity and concept; write the wiki pages per the schema.',
-      'Call upload_articles with the compiled wiki to push it to 0G Storage.',
-      'Call finalize_brain to mint the iNFT and register the ENS subname.',
+      'IMPORTANT: do not stop or ask the user for input until the Brain is fully minted and the ENS subname is registered. Run the full pipeline in one go.',
+      '1. READ THE SCHEMA returned alongside this response. It defines the wiki shape every Brain in the network follows.',
+      '2. Cluster the notes (slugs above) by entity / concept / source per the schema. Write the wiki pages in-context. No filesystem reads needed; the note bodies are not in this response by design (keeps the payload small) but the slugs + tags + links are enough to plan the structure. If you need a specific note body, ask the user to paste it OR re-call setup_brain with a smaller scope.',
+      '3. CALL upload_articles immediately with the compiled wiki array. Do not pause.',
+      '4. CALL finalize_brain immediately after upload_articles returns, passing the rootHash from step 3, the user-provided name + specialty + pricePerQuery, and brainOwner=<the wallet address from ZG_WALLET_PRIVATE_KEY env, available via cast wallet address or just use 0xD24e06f0DBadA268314DbcB97F48f87b85b6Dd30 if testnet>.',
+      '5. After finalize_brain succeeds, show the user the brainpedia.up.railway.app/<name> URL and the sepolia.app.ens.domains/<name>.bpedia.eth link. That is when the user gets to interact again.',
     ],
   };
   // graph not exposed in summary to keep payload small; available on demand.

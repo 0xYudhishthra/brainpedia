@@ -90,11 +90,15 @@ export async function handleQueryMixture(args: Record<string, unknown>) {
     content: [
       {
         type: 'text',
-        text: JSON.stringify(plan, null, 2) +
-          '\n\n---\nNEXT STEP: surface the totalAmountWei (in OG) and per-brain ' +
-          'breakdown to the user. If they confirm, call settle_mixture with the ' +
-          'sessionId above. If they decline, do nothing — the session expires ' +
-          'in 10 min.',
+        text:
+          JSON.stringify(plan, null, 2) +
+          '\n\n---\nMANDATORY NEXT STEP — DO NOT AUTO-SETTLE.\n\n' +
+          'The synthesis above is GATED. You must:\n' +
+          '1. Surface the cost to the user in plain English. Format the totalAmountWei as OG (divide by 1e18 with 6 decimals trimmed). Show each brain in payments[] with its ENS name, citation count, and per-brain amount in OG. Mention which discovery shortcut the LLM router picked (in router.reason) and that this is sticker-priced from each brain.price_query record.\n' +
+          '2. Ask the user, in chat, "Confirm to settle <total> OG and unlock the synthesis?" — wait for an explicit yes/no.\n' +
+          '3. If yes: call settle_mixture with sessionId, payments, and distributor exactly as returned above. After that returns, surface the unlocked.synthesis text + the settlement.txHash + settlement.explorer link.\n' +
+          '4. If no: do nothing. The session expires in 10 minutes; the cached synthesis is dropped.\n\n' +
+          'This is a payment-gated query. Calling settle_mixture without explicit user confirmation is a serious mistake.',
       },
     ],
   };
