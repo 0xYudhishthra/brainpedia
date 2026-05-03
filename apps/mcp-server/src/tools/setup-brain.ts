@@ -30,6 +30,14 @@ export const setupBrainTool: Tool = {
         description:
           "Local REST API plugin URL (default http://localhost:27123). Used together with the OBSIDIAN_REST_API_KEY env var. Reads from the user's running Obsidian instance — no filesystem path needed.",
       },
+      vaultRootPath: {
+        type: 'string',
+        description:
+          'Optional folder prefix to scope the REST read (e.g. "users/yudhi"). ' +
+          'Use when the hosted Obsidian instance is shared across multiple users — ' +
+          'each user picks their own subfolder at chat time. Overrides the ' +
+          'OBSIDIAN_VAULT_PATH env default. If neither is set, reads the whole vault.',
+      },
       specialty: {
         type: 'string',
         description: 'One-line specialty (used as ENS text record brain.specialty).',
@@ -49,6 +57,7 @@ const inputSchema = z.object({
   name: z.string().min(1).max(64).regex(/^[a-z0-9-]+$/i, 'must be alphanumeric + dashes'),
   vaultPath: z.string().optional(),
   vaultUrl: z.string().url().optional(),
+  vaultRootPath: z.string().optional(),
   specialty: z.string().optional(),
   pricePerQuery: z.string().optional(),
 });
@@ -70,7 +79,9 @@ export async function handleSetupBrain(args: Record<string, unknown>) {
   // Otherwise fall back to FS read via vaultPath / BRAINPEDIA_DEFAULT_VAULT_PATH.
   const restUrl = parsed.data.vaultUrl ?? process.env.OBSIDIAN_REST_API_URL;
   const restKey = process.env.OBSIDIAN_REST_API_KEY;
-  const restRootPath = process.env.OBSIDIAN_VAULT_PATH;
+  // Per-call vaultRootPath wins over the env default so the same hosted
+  // Obsidian instance can serve any users/<handle> picked at chat time.
+  const restRootPath = parsed.data.vaultRootPath ?? process.env.OBSIDIAN_VAULT_PATH;
   const vaultPath = parsed.data.vaultPath ?? process.env.BRAINPEDIA_DEFAULT_VAULT_PATH;
 
   let notes: Awaited<ReturnType<typeof readVault>>;
