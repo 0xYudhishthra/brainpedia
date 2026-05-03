@@ -30,6 +30,7 @@ export default function PitchPage() {
           specialists together without renting from Big AI, and no way for an agent to
           verify it is actually paying the human whose expertise it is using.
         </p>
+        <MemeAgentEconomy />
       </Section>
 
       <Section eyebrow="The solution" title="Turn your Obsidian vault into a paid AI Brain.">
@@ -63,6 +64,7 @@ export default function PitchPage() {
           synthesis is cached server-side at fan-out time but never served until the
           on-chain Distributed events match the cached payment plan.
         </p>
+        <MemePayGate />
       </Section>
 
       <Section eyebrow="The tech" title="Every layer is on chain.">
@@ -264,44 +266,94 @@ function FlowRow({
       <p className={`font-mono text-[10px] uppercase tracking-widest ${accentClass}`}>
         {label}
       </p>
-      <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-stretch">
+      {/* Mobile: vertical stack with ↓ between cards. */}
+      <div className="flex flex-col gap-1 md:hidden">
         {steps.map((step, i) => (
-          <FlowStep key={step.title} step={step} isLast={i === steps.length - 1} />
+          <div key={step.title} className="flex flex-col">
+            <FlowCard step={step} />
+            {i < steps.length - 1 && (
+              <div className="my-1 flex justify-center font-mono text-xs text-[var(--muted)]">
+                ↓
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      {/* Desktop: single row, no wrap, horizontal scroll if needed. */}
+      <div className="hidden md:flex md:items-stretch md:gap-1 md:overflow-x-auto md:pb-1">
+        {steps.map((step, i) => (
+          <div key={step.title} className="flex shrink-0 items-center">
+            <div className="w-[150px]">
+              <FlowCard step={step} />
+            </div>
+            {i < steps.length - 1 && (
+              <div className="px-1 font-mono text-sm text-[var(--muted)]">→</div>
+            )}
+          </div>
         ))}
       </div>
     </div>
   );
 }
 
-function FlowStep({
-  step,
-  isLast,
-}: {
-  step: { title: string; sub: string; gate?: boolean };
-  isLast: boolean;
-}) {
+function FlowCard({ step }: { step: { title: string; sub: string; gate?: boolean } }) {
   return (
-    <>
-      <div
-        className={`flex min-w-[140px] flex-1 flex-col gap-1 rounded-lg border p-3 ${
-          step.gate
-            ? 'border-amber-500/40 bg-amber-500/5'
-            : 'border-current/15 bg-black/[0.02] dark:bg-white/[0.02]'
-        }`}
-      >
-        <p className="text-sm font-medium">
-          {step.gate ? <span className="mr-1">🔒</span> : null}
-          {step.title}
+    <div
+      className={`flex h-full flex-col gap-1 rounded-lg border p-3 ${
+        step.gate
+          ? 'border-amber-500/50 bg-amber-500/10 ring-1 ring-amber-500/30'
+          : 'border-current/15 bg-black/[0.02] dark:bg-white/[0.02]'
+      }`}
+    >
+      <p className="text-sm font-medium leading-tight">
+        {step.gate ? <span className="mr-1">🔒</span> : null}
+        {step.title}
+      </p>
+      <p className="text-[11px] leading-snug text-[var(--muted)]">{step.sub}</p>
+    </div>
+  );
+}
+
+/* ----- Memes (text-only, theme-aware) ------------------------------------ */
+
+function MemeAgentEconomy() {
+  return (
+    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/5 p-4">
+        <span className="text-2xl leading-none">🚫</span>
+        <p className="text-sm leading-snug text-[var(--fg)]">
+          Pay three corporate APIs forever to query a fixed knowledge cutoff.
         </p>
-        <p className="text-[11px] leading-snug text-[var(--muted)]">{step.sub}</p>
       </div>
-      {!isLast && (
-        <div className="flex items-center justify-center text-[var(--muted)] md:px-1">
-          <span className="font-mono text-xs md:hidden">↓</span>
-          <span className="hidden font-mono text-xs md:inline">→</span>
-        </div>
-      )}
-    </>
+      <div className="flex items-start gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4">
+        <span className="text-2xl leading-none">✅</span>
+        <p className="text-sm leading-snug text-[var(--fg)]">
+          Pay the human who actually wrote the notes.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function MemePayGate() {
+  return (
+    <div className="mt-6 flex flex-col gap-4 rounded-xl border border-amber-500/40 bg-amber-500/5 p-6 text-center">
+      <p className="font-mono text-[10px] uppercase tracking-widest text-amber-700 dark:text-amber-400">
+        AI agents trying to read the synthesis without settling on chain
+      </p>
+      <div className="flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3">
+        <span className="rounded-md border border-current/20 bg-black/[0.03] px-4 py-2 font-mono text-sm dark:bg-white/[0.03]">
+          agent: &quot;give me the answer&quot;
+        </span>
+        <span className="text-2xl leading-none">🛑</span>
+        <span className="rounded-md border border-amber-500/50 bg-amber-500/15 px-4 py-2 font-mono text-sm">
+          $0.002 OG first.
+        </span>
+      </div>
+      <p className="text-xs leading-snug text-[var(--muted)]">
+        no payment, no synthesis. it is not personal, it is just on chain.
+      </p>
+    </div>
   );
 }
 
