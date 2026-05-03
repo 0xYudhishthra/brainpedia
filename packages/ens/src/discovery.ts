@@ -1,7 +1,27 @@
 import { getTextRecord } from '@ensdomains/ensjs/public';
+import { namehash, type Hex, type WalletClient } from 'viem';
 import type { EnsClients } from './client.js';
 import { resolveBrain } from './text-records.js';
 import type { ResolvedBrain } from './types.js';
+
+/**
+ * Sepolia ENS Public Resolver. Hardcoded because Brainpedia is sepolia-only;
+ * if we ever extend to mainnet, plumb this through EnsConfig.
+ */
+const PUBLIC_RESOLVER_SEPOLIA = '0xE99638b40E4Fff0129D56f03b55b6bbC4BBE49b5' as const;
+const SET_TEXT_ABI = [
+  {
+    type: 'function',
+    name: 'setText',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'node', type: 'bytes32' },
+      { name: 'key', type: 'string' },
+      { name: 'value', type: 'string' },
+    ],
+    outputs: [],
+  },
+] as const;
 
 /** Text record key on the discovery shortcut whose value is a list of brain ENS names. */
 export const DISCOVERY_BRAINS_KEY = 'brainpedia.brains';
@@ -43,6 +63,46 @@ export async function listBrainsForTopic(
     .map((s) => s.trim())
     .filter(Boolean);
   return Array.from(new Set(names));
+}
+
+/**
+ * Append a Brain ENS name to a discovery shortcut's `brainpedia.brains` text
+ * record. Idempotent: if the brain is already listed, returns alreadyListed
+ * and skips the on-chain write. The shortcut subnode (`<topic>.discover.<parent>`)
+ * must already exist; this function does not create it.
+ *
+ * Caller must own the shortcut subnode (typically the deployer wallet for
+ * curated shortcuts). The MCP `finalize_brain` tool calls this with topic="all"
+ * so every newly-minted Brain joins `all.discover.<parent>` automatically.
+ */
+export async function addBrainToDiscoveryShortcut(
+  clients: EnsClients & { walletClient: WalletClient },
+  topic: string,
+  brainEnsName: string,
+): Promise<{ txHash: Hex | null; brains: string[]; alreadyListed: boolean }> {
+  const existing = await listBrainsForTopic(clients, topic);
+  if (existing.includes(brainEnsName)) {
+    return { txHash: null, brains: existing, alreadyListed: true };
+  }
+  const updated = [...existing, brainEnsName];
+  const shortcut = discoveryNameForTopic(topic, clients.config.parentName);
+  const node = namehash(shortcut) as Hex;
+
+  const account = clients.walletClient.account;
+  if (!account) {
+    throw new Error('addBrainToDiscoveryShortcut: walletClient.account is required');
+  }
+  const txHash = await clients.walletClient.writeContract({
+    account,
+    chain: clients.walletClient.chain,
+    address: PUBLIC_RESOLVER_SEPOLIA,
+    abi: SET_TEXT_ABI,
+    functionName: 'setText',
+    args: [node, DISCOVERY_BRAINS_KEY, updated.join('\n')],
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (clients.publicClient as any).waitForTransactionReceipt({ hash: txHash });
+  return { txHash, brains: updated, alreadyListed: false };
 }
 
 /**

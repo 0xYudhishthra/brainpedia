@@ -17,6 +17,7 @@ import {
   viemChainForNetwork,
   parsePriceQuery,
   formatPriceQuery,
+  addBrainToDiscoveryShortcut,
   BRAIN_TEXT_KEYS,
 } from '@brainpedia/ens';
 import { addEnsContracts } from '@ensdomains/ensjs';
@@ -61,6 +62,18 @@ export const finalizeBrainTool: Tool = {
         description:
           "Brain's AXL Ed25519 public key (hex). Used as brain.axl_peer_id.",
       },
+      discoveryTopics: {
+        type: 'array',
+        items: { type: 'string' },
+        description:
+          'Discovery shortcuts to auto-join after mint. The Brain ENS name will be ' +
+          'appended to each <topic>.discover.<parent> shortcut\'s brainpedia.brains ' +
+          'text record (idempotent — skips topics where the name is already listed). ' +
+          'Defaults to ["all"], so every newly-minted Brain joins all.discover.<parent> ' +
+          'and is immediately reachable by mixture queries with topic="all" or topic="auto". ' +
+          'Pass an empty array to skip auto-discovery entirely. Note: target shortcuts must ' +
+          'already exist on chain; this tool does not create new shortcut subnodes.',
+      },
     },
     required: ['label', 'brainOwner', 'storageRoot'],
   },
@@ -76,6 +89,7 @@ const inputSchema = z.object({
   pricePerQuery: z.string().optional(),
   computeUrl: z.string().optional(),
   axlPeerId: z.string().optional(),
+  discoveryTopics: z.array(z.string().min(1)).optional(),
 });
 
 // We mint through BrainMinter (a permissionless wrapper that owns Brain.sol)
@@ -195,6 +209,42 @@ export async function handleFinalizeBrain(args: Record<string, unknown>) {
     },
   );
 
+  // Auto-join discovery shortcuts so the new Brain is immediately reachable
+  // by mixture queries. Default to ["all"] (universal shortcut). Each join is
+  // idempotent — if the Brain is already listed, the on-chain write is skipped.
+  const topicsToJoin = parsed.data.discoveryTopics ?? ['all'];
+  const discoveryResults: Array<{
+    topic: string;
+    txHash: string | null;
+    alreadyListed: boolean;
+    brainCount: number;
+    error?: string;
+  }> = [];
+  for (const topic of topicsToJoin) {
+    try {
+      const r = await addBrainToDiscoveryShortcut(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { publicClient: ensPublic as any, walletClient: ensWallet as any, config: ens },
+        topic,
+        ensResult.fullName,
+      );
+      discoveryResults.push({
+        topic,
+        txHash: r.txHash,
+        alreadyListed: r.alreadyListed,
+        brainCount: r.brains.length,
+      });
+    } catch (err) {
+      discoveryResults.push({
+        topic,
+        txHash: null,
+        alreadyListed: false,
+        brainCount: 0,
+        error: (err as Error).message,
+      });
+    }
+  }
+
   return {
     content: [
       {
@@ -211,6 +261,10 @@ export async function handleFinalizeBrain(args: Record<string, unknown>) {
               fullName: ensResult.fullName,
               registerTxHash: ensResult.registerTxHash,
               textRecordsTxHash: ensResult.textRecordsTxHash,
+            },
+            discovery: {
+              topicsJoined: discoveryResults,
+              note: 'Brain is now listed in the discovery shortcuts above and reachable by mixture queries. Pass discoveryTopics=[] on a future call to skip this step.',
             },
             textRecords: {
               [BRAIN_TEXT_KEYS.inft]: inftPair,

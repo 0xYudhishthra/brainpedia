@@ -24,6 +24,7 @@ export {
   discoveryNameForTopic,
   discoverBrains,
   listBrainsForTopic,
+  addBrainToDiscoveryShortcut,
   DISCOVERY_BRAINS_KEY,
 } from './discovery.js';
 
