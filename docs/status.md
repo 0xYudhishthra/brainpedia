@@ -8,7 +8,7 @@
 bun install && bun run --cwd scripts verify-live
 ```
 
-11 read-only on-chain checks should all pass. The same checks render at https://brainpedia.up.railway.app/status on every page load. To test mixture-of-brains:
+7 read-only on-chain checks should all pass. The same checks render at https://brainpedia.up.railway.app/status on every page load. To test mixture-of-brains:
 
 ```bash
 # phase 1 — get the gated plan (no synthesis yet, just metadata + per-brain payment plan)
@@ -119,7 +119,7 @@ For karpathy (tokenId 6), `currentStorageRoot(6)` returns the root of the 16-pag
 - https://brainpedia.up.railway.app/karpathy — same shape, LLM-Wiki content
 - https://brainpedia.up.railway.app/api/query — single-brain proxy
 - https://brainpedia.up.railway.app/api/query?mode=mixture — two-phase: phase-1 fan-out + payment plan (synthesis gated), phase-2 unlock with sessionId + on-chain settlement txHash
-- https://brainpedia.up.railway.app/status — 11 read-only health checks against on-chain state
+- https://brainpedia.up.railway.app/status — 7 read-only health checks against on-chain state
 
 ## MCP server distribution
 

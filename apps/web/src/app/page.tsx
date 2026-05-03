@@ -167,9 +167,9 @@ export default async function HomePage() {
         <DemoLink
           href="/yudhi"
           label="Sample Brain"
-          detail="defi-yield-strategies, 7 articles, 0.001 OG/query"
+          detail="defi-yield-strategies, 6 articles, 0.001 OG/query"
         />
-        <DemoLink href="/status" label="Live status" detail="11 read-only checks against on-chain state" />
+        <DemoLink href="/status" label="Live status" detail="7 read-only checks against on-chain state" />
         <DemoLink
           external
           href="https://sepolia.app.ens.domains/bpedia.eth"

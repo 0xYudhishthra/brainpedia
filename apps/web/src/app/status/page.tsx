@@ -48,11 +48,11 @@ async function runChecks(): Promise<Check[]> {
       status: code && code !== '0x' ? 'ok' : 'fail',
       link: code && code !== '0x' ? { href: `${ZG_EXPLORER}/address/${ZG_INFT}`, text: 'explorer →' } : undefined,
     });
-    // tokenId 1
-    const data = '0x50da6a6c' + '0000000000000000000000000000000000000000000000000000000000000001';
+    // tokenId 7 — yudhi.bpedia.eth, the canonical demo Brain
+    const data = '0x50da6a6c' + '0000000000000000000000000000000000000000000000000000000000000007';
     const root = await rpc(ZG_RPC, 'eth_call', [{ to: ZG_INFT, data }, 'latest']);
     checks.push({
-      label: 'Sample Brain (tokenId 1) intelligence',
+      label: 'Sample Brain (tokenId 7, yudhi.bpedia.eth) intelligence',
       detail: root && root !== '0x' ? `currentStorageRoot = ${root.slice(0, 12)}…` : 'no record',
       status: root && root !== '0x' ? 'ok' : 'fail',
     });
