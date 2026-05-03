@@ -42,6 +42,8 @@ Every layer is on chain. No central API. No off-chain auth service. The Brain ou
 | **Sample access token** `agentf14abfb4.client.bpedia.eth` | Issued by AccessTokenRegistrar, on-chain TTL | TTL-expiring |
 | **Royalty settlement proof** | Single tx settled 2 brains in mixture mode | [chainscan-galileo tx `0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e) |
 
+> All five contracts have source verified on their respective explorers — click any address above to read the Solidity directly.
+
 ## Architecture
 
 ```
