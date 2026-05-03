@@ -54,7 +54,7 @@ claude mcp add-json brainpedia '{
 }' --scope user
 ```
 
-`query_brain` and `query_mixture` work as soon as the wallet is funded — no Obsidian creds needed for those (the latter goes through `BRAINPEDIA_API_URL`, settles via `ROYALTY_DISTRIBUTOR_ADDRESS`, and unlocks the synthesis after on-chain verification). `setup_brain` / `upload_articles` / `finalize_brain` need the Obsidian creds.
+`query_brain` works as soon as the wallet is funded. `query_mixture` returns a payment plan (no synthesis yet); `settle_mixture` then submits the `RoyaltyDistributor.distribute` tx and unlocks the cached synthesis. Both go through `BRAINPEDIA_API_URL` and settle to `ROYALTY_DISTRIBUTOR_ADDRESS` — no Obsidian creds needed for any query path. `setup_brain` / `upload_articles` / `finalize_brain` (the vault → Brain pipeline) need the Obsidian creds.
 
 **Note**: the env block above uses the **Local REST API plugin path** (recommended). If you'd rather point at a filesystem folder instead, drop `OBSIDIAN_REST_API_KEY` and add `"BRAINPEDIA_DEFAULT_VAULT_PATH": "<absolute-path>/your-obsidian-vault"`. If both are set, the REST API path wins (auto-syncs with whatever vault Obsidian has open).
 

@@ -1,6 +1,6 @@
 # Live state
 
-> Last updated: 2026-05-02. Full Brainpedia stack live. 7 Brain iNFTs minted across two cohorts (post-redeploy + the original orphaned set). Mixture-of-Brains queries return TEE-attested cited answers, fused into a single coherent synthesis by the orchestrator. The synthesis is gated behind on-chain settlement (the agent must pay each responding Brain its sticker `brain.price_query` via `RoyaltyDistributor.distribute` before the synthesis is unlocked). MCP server published to npm at `brainpedia-mcp@0.1.5` with the full phase-1 → settle → phase-2 unlock as a single tool call (`query_mixture`).
+> Last updated: 2026-05-03. Full Brainpedia stack live. 7 Brain iNFTs minted across two cohorts (post-redeploy + the original orphaned set), 2 currently active (`yudhi`, `karpathy`). Mixture-of-Brains queries return TEE-attested cited answers, fused into a single coherent synthesis by the orchestrator (separate TEE-attested 0G Compute call). The synthesis is gated behind on-chain settlement: the agent must pay each responding Brain its sticker `brain.price_query` via `RoyaltyDistributor.distribute` before the synthesis is unlocked. MCP server published to npm at `brainpedia-mcp@0.2.0` with 7 tools — the mixture flow is split into `query_mixture` (phase 1, returns plan + sessionId) and `settle_mixture` (phase 1.5 + 2, settles on chain and unlocks the synthesis) so the host LLM in Claude Code surfaces the cost to the user and waits for explicit confirmation between the two calls.
 
 ## TL;DR
 
@@ -26,7 +26,7 @@ curl -X POST 'https://brainpedia.up.railway.app/api/query?mode=mixture' \
   -d '{"sessionId":"mix_abc...","txHash":"0x..."}'
 ```
 
-Or run the whole flow in one call from Claude Code via the `query_mixture` MCP tool — the agent's wallet auto-settles and unlocks the synthesis.
+Or run the flow inside Claude Code via two MCP tool calls: `query_mixture` returns the plan, the host LLM surfaces the cost ("0.002 OG total — confirm?"), and once you say yes `settle_mixture` runs the on-chain tx + unlocks the synthesis.
 
 ## Deployed contracts (Galileo + Sepolia)
 
@@ -123,13 +123,13 @@ For karpathy (tokenId 6), `currentStorageRoot(6)` returns the root of the 16-pag
 
 ## MCP server distribution
 
-[`brainpedia-mcp@0.1.5` on npm](https://www.npmjs.com/package/brainpedia-mcp) — single bundled binary (1.5 MB), all workspace deps inlined. Install in Claude Code via `claude mcp add-json brainpedia '{...}' --scope user` (see [docs/teammate-onboarding.md](teammate-onboarding.md)). 6 tools shipped: `setup_brain`, `upload_articles`, `finalize_brain`, `sync_vault`, `query_brain`, `query_mixture` (the last one drives phase-1 → settle → phase-2 unlock end-to-end).
+[`brainpedia-mcp@0.2.0` on npm](https://www.npmjs.com/package/brainpedia-mcp) — single bundled binary (1.5 MB), all workspace deps inlined. Install in Claude Code via `claude mcp add-json brainpedia '{...}' --scope user` (see [docs/teammate-onboarding.md](teammate-onboarding.md)). 7 tools shipped: `setup_brain` (per-call `vaultRootPath` lets the host LLM ask the user which `users/<handle>` folder to compile), `upload_articles`, `finalize_brain` (auto-fills `brain.compute_url` from env), `sync_vault`, `query_brain`, `query_mixture` (phase-1 plan + sessionId), `settle_mixture` (phase-1.5 + phase-2 unlock — only call after the user has confirmed the cost).
 
 ## Code health
 
 - 14 workspace packages, all typecheck under `bun run typecheck`
 - CI green on the latest `main` (build + contracts jobs both pass)
-- 6 MCP tools (`setup_brain`, `upload_articles`, `finalize_brain`, `sync_vault`, `query_brain`, `query_mixture`) wired end-to-end and shipped on npm
+- 7 MCP tools (`setup_brain`, `upload_articles`, `finalize_brain`, `sync_vault`, `query_brain`, `query_mixture`, `settle_mixture`) wired end-to-end and shipped on npm
 - ~12 helper scripts under `scripts/setup/` covering deploy, seed, settle, verify
 
 ## What's left
@@ -137,4 +137,4 @@ For karpathy (tokenId 6), `currentStorageRoot(6)` returns the root of the 16-pag
 | Task | Owner |
 |---|---|
 | Demo video (under 3 min) | User |
-| Run the published `brainpedia-mcp@0.1.5` end-to-end inside Claude Code on the user's MacBook | User |
+| Run the published `brainpedia-mcp@0.2.0` end-to-end inside Claude Code on the user's MacBook | User |

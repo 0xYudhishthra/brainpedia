@@ -60,15 +60,15 @@ Visuals:
 
 Visuals — split: Claude Code + browser:
 
-1. (1:40) Claude Code: *"Use query_mixture to ask: compare stablecoin yield strategies with the LLM-Wiki approach to compiling notes."*
-2. (1:45) Loading — D3 graph on the homepage pulses. Sidebar event stream:
+1. (1:40) Claude Code (you): *"Compare stablecoin yield strategies with the LLM-Wiki approach to compiling notes."* Claude calls `query_mixture` (phase 1).
+2. (1:45) Loading — D3 graph on the homepage pulses. Event stream:
    - `phase 1: orchestrator routes "auto" → all.discover.bpedia.eth (LLM)`
    - `fanning out to yudhi.bpedia.eth + karpathy.bpedia.eth`
    - `each brain: ENS resolved → 0G Storage snapshot → top-K → 0G Compute (TEE attestation OK)`
-   - `phase 1 done: payment plan = 0.001 OG yudhi + 0.001 OG karpathy = 0.002 OG total. SYNTHESIS GATED.`
-3. (2:00) Claude Code: *"settling RoyaltyDistributor.distribute([7,6], [0.001, 0.001] OG, "mixture")"* — one tx, two `Distributed` events. Show chainscan.
-4. (2:10) Phase-2 unlock: *"posting sessionId + txHash → server verifies events match the plan → release synthesis"*.
-5. (2:20) Final synthesised answer appears in Claude Code — quoting both `yudhi.bpedia.eth` and `karpathy.bpedia.eth` inline, ending with `Sources: yudhi.bpedia.eth, karpathy.bpedia.eth`. The synthesis itself is a separate TEE-attested 0G Compute call that fuses the two brain answers.
+   - `phase 1 returns: payment plan = 0.001 OG yudhi + 0.001 OG karpathy = 0.002 OG total · SYNTHESIS GATED`
+3. (2:00) Claude (in chat): *"This will cost **0.002 OG** total — 0.001 OG to yudhi.bpedia.eth and 0.001 OG to karpathy.bpedia.eth. Confirm to settle?"* You: *"yes"*.
+4. (2:10) Claude calls `settle_mixture` with the sessionId. One on-chain tx: `RoyaltyDistributor.distribute([7, 6], [0.001 OG, 0.001 OG])`. Two `Distributed` events emitted. Show chainscan.
+5. (2:20) Phase-2 unlock fires automatically: server verifies events match the cached plan → releases the synthesis. Final fused answer appears in Claude Code — quotes both `yudhi.bpedia.eth` and `karpathy.bpedia.eth` inline, ends with `Sources: yudhi.bpedia.eth, karpathy.bpedia.eth`. The synthesis itself is a separate TEE-attested 0G Compute call that fuses the two brain answers.
 
 ### Scene 5 — Composition close (2:30–3:00)
 
@@ -86,7 +86,7 @@ Visuals:
 
 - **Live iNFTs**: 7 minted on `Brain.sol` ([`0x4E5c…b08F`](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F)). `currentStorageRoot(7)` for yudhi or `currentStorageRoot(6)` for karpathy returns roots that resolve to article snapshots on the 0G Storage indexer.
 - **Permissionless mint**: `BrainMinter` ([`0xcca5…a2e7`](https://chainscan-galileo.0g.ai/address/0xcca5e8c639505dd6f1d4ebf2f0c138ddc9aca2e7)) owns Brain.sol; any wallet can self-mint with `mintToSender`.
-- **Royalty splits on usage**: `RoyaltyDistributor` ([`0x44ea…0649`](https://chainscan-galileo.0g.ai/address/0x44eaad4fdb7d509cd3fe7624ce512cc97b910649)) settles citation-weighted splits in one tx — proven live on tx [`0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e) (2 brains paid, 2 `Distributed` events).
+- **Royalty splits on usage**: `RoyaltyDistributor` ([`0x44ea…0649`](https://chainscan-galileo.0g.ai/address/0x44eaad4fdb7d509cd3fe7624ce512cc97b910649)) settles per-brain sticker prices in one tx (each Brain receives exactly its `brain.price_query`). The synthesised answer is gated: the web service verifies the on-chain `Distributed` events match the cached payment plan before releasing it. Proven live on tx [`0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e) (2 brains paid, 2 `Distributed` events).
 - **Storage**: KV layer for live edits, Log layer for snapshots. `Flow.submit` ABI workaround documented in `docs/0g-integration.md`.
 - **Compute**: TEE-attested Qwen 2.5 7B; every `verified: true` in API responses is real attestation.
 - **Swarm coordination**: ENS discovery + AXL transport + on-chain settlement, no central broker. See `docs/architecture.md`.
