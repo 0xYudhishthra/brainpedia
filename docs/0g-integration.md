@@ -29,9 +29,9 @@ This is cryptographic, not by-convention.
 
 Brains coordinate via three shared substrates:
 
-1. **Communication** — AXL (see [axl-integration.md](axl-integration.md)).
-2. **Identity & discovery** — ENS (see [ens-integration.md](ens-integration.md)).
-3. **Shared context** — 0G Storage. The orchestrator can read any Brain's current snapshot (from the snapshot's storage root, looked up via the Brain's `brain.storage_root` ENS text record) for cross-Brain retrieval grounding.
+1. **Communication**: AXL P2P transport between agents and Brain daemons. Encrypted Yggdrasil mesh, MCP/A2A envelopes, Ed25519 peer IDs.
+2. **Identity & discovery**: ENS subnames (`*.bpedia.eth`) for Brain handles and TTL-bounded capability tokens (`agent<hash>.client.bpedia.eth`) for query authorization.
+3. **Shared context**: 0G Storage. The orchestrator can read any Brain's current snapshot (from the snapshot's storage root, looked up via the Brain's `brain.storage_root` ENS text record) for cross-Brain retrieval grounding.
 
 No private state lives in the orchestrator — it's transparent and can be replaced by another orchestrator that reads the same on-chain + on-storage state.
 

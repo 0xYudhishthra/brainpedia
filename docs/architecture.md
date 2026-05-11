@@ -162,14 +162,16 @@ block-explorer-style surface for humans to browse what agents have done
 — shareable URLs, no wallet popup, no onboarding gate.
 
 **One important consequence**: a visitor can hit `/api/query?mode=mixture`
-without a wallet and get a TEE-attested cited answer — but they can't
+without a wallet and get a TEE-attested cited answer, but they can't
 *create* a Brain through the web. To monetize a vault, you go through the
-MCP path (see `docs/teammate-onboarding.md`). The web app holds zero user
-PKs; only the Railway brain process has its own signing key for paying
-0G Compute and verifying TEE attestations.
+MCP path (`npx -y brainpedia-mcp` in Claude Code; see the Setup section
+of the project README). The web app holds zero user PKs; only the Railway
+brain process has its own signing key for paying 0G Compute and verifying
+TEE attestations.
 
-## Track-specific docs
+## Related reading
 
-- [0g-integration.md](0g-integration.md) — Storage, Compute, iNFT
-- [ens-integration.md](ens-integration.md) — Subnames, text records, access tokens, dynamic discovery
-- [axl-integration.md](axl-integration.md) — Per-Brain daemons, MCP routing, mesh bootstrap
+- [0g-integration.md](0g-integration.md) — Storage, Compute, iNFT, Agent ID, TEE attestation
+- Project [README](../README.md) — overview, 5/5 0G integration table, roadmap, setup
+- [../contracts/SECURITY.md](../contracts/SECURITY.md) — privileged roles, trust boundaries, invariants
+- [../contracts/KNOWN_ISSUES.md](../contracts/KNOWN_ISSUES.md) — deferred audit findings with remediation paths

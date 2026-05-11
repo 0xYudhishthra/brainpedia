@@ -1,13 +1,13 @@
 /**
  * Brainpedia's compile methodology, instantiating Karpathy's LLM-Wiki pattern.
  * Returned by setup_brain so the host LLM (Claude) follows the same discipline
- * across every Brain. Source: docs/brain-compile-schema.md (kept inline here
- * so the bundled npm package is self-contained).
+ * across every Brain. This file is the canonical source; the schema lives inline
+ * so the bundled npm package is self-contained.
  *
  * Pattern credit: Andrej Karpathy's LLM-Wiki gist
  * (https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).
  * Karpathy explicitly invites readers to "share it with your LLM agent and
- * work together to instantiate a version that fits your needs" — this is
+ * work together to instantiate a version that fits your needs". This is
  * Brainpedia's instantiation, layered with on-chain monetisation.
  */
 export const BRAIN_COMPILE_SCHEMA = `# How to compile this vault into a Brain
