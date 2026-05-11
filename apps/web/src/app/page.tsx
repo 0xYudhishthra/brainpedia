@@ -204,7 +204,7 @@ export default async function HomePage() {
 
       <footer className="mt-auto border-t border-current/10 pt-6 text-xs text-[var(--muted)]">
         <p>
-          Built for ETHGlobal Open Agents · 0G · ENS · Gensyn AXL ·{' '}
+          0G · ENS · AXL ·{' '}
           <a
             className="underline underline-offset-4"
             href="https://github.com/0xYudhishthra/brainpedia"

@@ -1,8 +1,6 @@
 # 0G integration
 
-> Track: **Best Autonomous Agents, Swarms & iNFT Innovations** ($7,500, up to 5 winners × $1,500)
->
-> **Team**: Yudhishthra Sugumaran (solo) — X [@0xYudhishthra](https://twitter.com/0xYudhishthra), Telegram `yudhishthra`
+> **Team**: Yudhishthra Sugumaran (solo). X [@0xYudhishthra](https://twitter.com/0xYudhishthra), Telegram `yudhishthra`.
 
 ## Features used
 

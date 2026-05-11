@@ -1,6 +1,6 @@
 # Brainpedia AXL demo
 
-Satisfies the **Gensyn AXL bounty**: spins up four separate AXL nodes
+Daemon-per-Brain reference deployment: spins up four separate AXL nodes
 (one orchestrator + three Brains), each its own process with its own
 Ed25519 key, and runs a Mixture-of-Brains query through them.
 

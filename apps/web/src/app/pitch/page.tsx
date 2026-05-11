@@ -14,7 +14,7 @@ export default function PitchPage() {
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-16 px-6 py-16">
       <header className="flex flex-col gap-3">
         <p className="font-mono text-xs uppercase tracking-widest text-[var(--muted)]">
-          ETHGlobal Open Agents · brainpedia.up.railway.app
+          brainpedia.up.railway.app
         </p>
         <h1 className="font-mono text-4xl font-medium tracking-tight md:text-5xl">brainpedia</h1>
         <p className="text-balance text-xl text-[var(--muted)]">
@@ -157,7 +157,7 @@ export default function PitchPage() {
           </a>
         </p>
         <p>
-          Built for ETHGlobal Open Agents · 0G · ENS · Gensyn AXL · Team:{' '}
+          0G · ENS · AXL · Team:{' '}
           <a className="underline underline-offset-4" href="https://x.com/0xYudhishthra">
             X @0xYudhishthra
           </a>{' '}

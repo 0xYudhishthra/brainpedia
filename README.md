@@ -2,9 +2,6 @@
 
 > Turn your Obsidian vault into an AI brain that other agents pay you to query.
 
-**Hackathon:** ETHGlobal Open Agents
-**Tracks:** 0G · ENS (×2) · Gensyn AXL
-
 - **Live web**: https://brainpedia.up.railway.app
 - **Sample Brain**: https://brainpedia.up.railway.app/yudhi (resolves live from ENS Sepolia)
 - **Karpathy LLM-Wiki Brain**: https://brainpedia.up.railway.app/karpathy
@@ -71,9 +68,9 @@ Surfaces split by intent: the **MCP server is the write path** (read your vault,
 | **Set up your own Brain end to end** (5 min, `npx -y brainpedia-mcp` + Claude Code) | [docs/teammate-onboarding.md](docs/teammate-onboarding.md) |
 | **Understand the four-layer architecture and the MCP-write / web-read split** | [docs/architecture.md](docs/architecture.md) |
 | **Understand how Brainpedia compiles every Brain** (Karpathy LLM-Wiki schema) | [docs/brain-compile-schema.md](docs/brain-compile-schema.md) |
-| **Audit our 0G integration** (iNFT, Storage KV+Log, Compute, swarm coordination, royalty splits) — bounty doc | [docs/0g-integration.md](docs/0g-integration.md) |
-| **Audit our ENS integration** (subnames as identity + capability tokens, no hardcoded values) — bounty doc | [docs/ens-integration.md](docs/ens-integration.md) |
-| **Audit our AXL integration** (per-Brain daemons, MCP router, multi-node demo) — bounty doc | [docs/axl-integration.md](docs/axl-integration.md) |
+| **Read the 0G integration deep-dive** (iNFT, Storage KV+Log, Compute, swarm coordination, royalty splits) | [docs/0g-integration.md](docs/0g-integration.md) |
+| **Read the ENS integration deep-dive** (subnames as identity + capability tokens, no hardcoded values) | [docs/ens-integration.md](docs/ens-integration.md) |
+| **Read the AXL integration deep-dive** (per-Brain daemons, MCP router, multi-node demo) | [docs/axl-integration.md](docs/axl-integration.md) |
 | **Re-deploy from scratch** (Railway, contracts, env wiring) | [docs/deployment.md](docs/deployment.md) |
 | **Watch the demo** | [docs/demo.md](docs/demo.md) |
 | **Snapshot of current live state** | [docs/status.md](docs/status.md) |
@@ -97,9 +94,9 @@ brainpedia/
 ├── scripts/
 │   ├── setup/                  prep-deploy, register-parent, wire-ens, setup-compute,
 │   │                           seed-from-vault, settle-royalties, push-segments, verify-live
-│   └── demo/                   axl_demo.py (4-node Yggdrasil mesh — AXL bounty's "working
-│                               example") + sample/karpathy/yudhi vaults
-└── docs/                       architecture + per-bounty integration notes
+│   └── demo/                   axl_demo.py (4-node Yggdrasil mesh, daemon-per-Brain
+│                               working example) + sample/karpathy/yudhi vaults
+└── docs/                       architecture + per-stack integration notes
 ```
 
 Why apps and packages are separate: standard Bun workspace / Turborepo convention. `apps/` are deployable with their own entry points; `packages/` are libraries that apps consume. Apps don't depend on other apps.
@@ -113,7 +110,7 @@ Why apps and packages are separate: standard Bun workspace / Turborepo conventio
 | MCP server | `@modelcontextprotocol/sdk` over stdio, bundled to a single 1.5 MB file via `bun build`, published on npm as `brainpedia-mcp` |
 | Storage | `@0glabs/0g-ts-sdk` — but with a hand-rolled `Flow.submit` workaround because the SDK's ABI selector is wrong (see [docs/0g-integration.md](docs/0g-integration.md)) |
 | Compute | `@0glabs/0g-serving-broker@0.7.5` (TEE-attested Qwen 2.5 7B) |
-| ENS | `@ensdomains/ensjs` + `viem` (zero hardcoded addresses — bounty rule, [grep recipe in docs](docs/ens-integration.md#verifying-no-hardcoded-values)) |
+| ENS | `@ensdomains/ensjs` + `viem` (zero hardcoded addresses by design, [grep recipe in docs](docs/ens-integration.md#verifying-no-hardcoded-values)) |
 | AXL | `axl` daemon HTTP API + `mcp_router.py` from `gensyn-ai/axl/integrations/mcp_routing` |
 | Contracts | Foundry, Solidity 0.8.26, OpenZeppelin v5 |
 | Hosting | Railway (web, brain, AXL bootstrap, hosted Obsidian) |
@@ -130,7 +127,7 @@ See [docs/demo.md](docs/demo.md) for the full walkthrough. The TL;DR:
 
 ## Configuration
 
-Every cross-system value is environment-driven (see `.env.example`). ENS parent name, registrar addresses, contract addresses, RPC URLs, AXL bootstrap peers, and 0G provider details are **never hardcoded** in source — required by the ENS bounty.
+Every cross-system value is environment-driven (see `.env.example`). ENS parent name, registrar addresses, contract addresses, RPC URLs, AXL bootstrap peers, and 0G provider details are **never hardcoded** in source. This is a design rule, not a convenience.
 
 ```bash
 bun install
@@ -143,8 +140,6 @@ npx -y brainpedia-mcp
 ```
 
 ## Team
-
-Built solo for ETHGlobal Open Agents.
 
 - **Yudhishthra Sugumaran** ([@0xYudhishthra](https://twitter.com/0xYudhishthra) on X · `yudhishthra` on Telegram)
 

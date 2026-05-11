@@ -1,6 +1,6 @@
 # Demo runbook
 
-Step-by-step demo for the ETHGlobal Open Agents submission. 3 minute video target.
+Step-by-step demo runbook. 3 minute video target.
 
 ## Live state heading into the demo
 
@@ -80,9 +80,9 @@ Visuals:
 - Cut to the full submission stack: `npx -y brainpedia-mcp`, `bpedia.eth`, `RoyaltyDistributor` on chainscan, the github repo URL.
 - End card: *"brainpedia.up.railway.app · npm/brainpedia-mcp · github.com/0xYudhishthra/brainpedia"*
 
-## Things to highlight per bounty track
+## Things to highlight
 
-### 0G — Best Autonomous Agents, Swarms & iNFT Innovations ($7,500)
+### 0G stack — iNFTs, Storage, Compute, royalty splits
 
 - **Live iNFTs**: 7 minted on `Brain.sol` ([`0x4E5c…b08F`](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F)). `currentStorageRoot(7)` for yudhi or `currentStorageRoot(6)` for karpathy returns roots that resolve to article snapshots on the 0G Storage indexer.
 - **Permissionless mint**: `BrainMinter` ([`0xcca5…a2e7`](https://chainscan-galileo.0g.ai/address/0xcca5e8c639505dd6f1d4ebf2f0c138ddc9aca2e7)) owns Brain.sol; any wallet can self-mint with `mintToSender`.
@@ -130,4 +130,4 @@ open https://brainpedia.up.railway.app
 
 - **Real**: every contract address, every tx hash on chain, every TEE attestation, every ENS resolution, every Obsidian REST API call.
 - **Prop for demo continuity**: the hosted Obsidian on Railway runs the same Local REST API plugin a real user would run on their laptop. Real users run Obsidian + the plugin locally; the hosted version exists so the demo doesn't need to expose your personal vault on screen.
-- **Not yet wired in production**: the orchestrator role described in scene 4 is the web's `/api/query?mode=mixture` route running server-side fan-out, not a separate AXL orchestrator daemon. The 4-node Python variant in `scripts/demo/axl_demo.py` shows the daemon-per-Brain shape required by the AXL bounty's "separate AXL nodes" rule.
+- **Not yet wired in production**: the orchestrator role described in scene 4 is the web's `/api/query?mode=mixture` route running server-side fan-out, not a separate AXL orchestrator daemon. The 4-node Python variant in `scripts/demo/axl_demo.py` shows the daemon-per-Brain shape for a fully-distributed deployment.
