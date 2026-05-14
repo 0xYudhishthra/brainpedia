@@ -90,3 +90,5 @@ sample-vault/
 # Team-shared gstack enforcement (committed for all contributors)
 !.claude/hooks/
 !.claude/settings.json
+.env.*.bak
+.env.testnet.bak

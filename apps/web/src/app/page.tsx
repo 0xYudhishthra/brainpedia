@@ -314,7 +314,7 @@ export default async function HomePage() {
         />
         <DemoLink
           external
-          href={`${EXPLORER}/open/address/${MINTER_ADDRESS}`}
+          href={`${EXPLORER}/address/${MINTER_ADDRESS}`}
           label="brain minter"
           detail="permissionless self-mint on 0G mainnet"
         />
@@ -345,18 +345,27 @@ function IntegrationCard({ label, detail }: { label: string; detail: string }) {
 }
 
 function ProofRow({ label, address }: { label: string; address: string }) {
+  const lower = address.toLowerCase();
   return (
-    <a
-      href={`${EXPLORER}/open/address/${address}`}
-      target="_blank"
-      rel="noreferrer"
-      className="flex flex-col gap-1 p-5 transition-colors hover:bg-[var(--surface-2)]"
-    >
+    <div className="flex flex-col gap-1 p-5">
       <span className="text-eyebrow text-[var(--ink-subtle)]">{label}</span>
-      <span className="font-mono text-sm text-[var(--ink-muted)]">
+      <a
+        href={`${EXPLORER}/address/${lower}`}
+        target="_blank"
+        rel="noreferrer"
+        className="font-mono text-sm text-[var(--ink-muted)] hover:text-[var(--ink)]"
+      >
         {address.slice(0, 8)}…{address.slice(-6)}
-      </span>
-    </a>
+      </a>
+      <a
+        href={`https://explorer.0g.ai/mainnet/blockchain/accounts/${lower}/verified-contracts`}
+        target="_blank"
+        rel="noreferrer"
+        className="text-xs text-[var(--accent-hover)] hover:underline"
+      >
+        verified source ↗
+      </a>
+    </div>
   );
 }
 

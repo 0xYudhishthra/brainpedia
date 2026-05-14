@@ -45,7 +45,7 @@ export default function CreatePage() {
             4. Your wallet signs <code className="font-mono">BrainMinter.mintToSender(rootHash, ...)</code> at{' '}
             <a
               className="underline"
-              href={`${explorerUrl}/open/address/${minterAddress}`}
+              href={`${explorerUrl}/address/${minterAddress}`}
               target="_blank"
               rel="noreferrer"
             >
