@@ -111,11 +111,12 @@ gate, not a suggestion:
 The MCP `query_mixture` tool (`brainpedia-mcp@0.1.5`) drives the whole
 flow in one call using the agent's wallet.
 
-Live on Galileo at
-[`0x44eaad…0649`](https://chainscan-galileo.0g.ai/address/0x44eaad4fdb7d509cd3fe7624ce512cc97b910649).
-Verified end-to-end via `scripts/setup/settle-royalties.ts` (CLI) and
-the MCP tool — [tx `0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e)
-distributed 0.001 OG to tokenId 1 + 0.001 OG to tokenId 2 in a single call.
+Live on 0G Aristotle mainnet (chainId 16661) at
+[`0x7F26DeDe0c5E1Db844c9A8138C21cA3439B63C49`](https://chainscan.0g.ai/address/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49).
+Hero settlement on chain: [tx `0x77202942…`](https://chainscan.0g.ai/tx/0x77202942ca382179c8a825eb48c0434a60dff3a273172ca11a25d8d6cbdb1341)
+distributed 0.002 OG to tokenId 1, 0.0015 OG to tokenId 2, and 0.0035 OG
+to tokenId 3 (the 0G Expert Brain) in a single call. Three
+`Distributed` events emitted in one block.
 
 ## Surfaces — MCP write path vs web read path
 
@@ -129,7 +130,7 @@ Brainpedia is split into two user-facing surfaces by intent:
     has a vault)  ───▶ │  — 5 tools: setup_brain,            │
                        │    upload_articles, finalize_brain, │
                        │    sync_vault, query_brain          │
-                       │  — signs Galileo + Sepolia txs      │
+                       │  — signs 0G mainnet + Sepolia txs   │
                        │    with ZG_WALLET_PRIVATE_KEY       │
                        │    in its env. PK never leaves the  │
                        │    user's machine.                  │
