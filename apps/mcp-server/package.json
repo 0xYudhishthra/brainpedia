@@ -1,6 +1,6 @@
 {
   "name": "brainpedia-mcp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Brainpedia MCP server. Turn any folder of knowledge (Obsidian, PDF, Word, plain text) into a paid AI Brain on 0G mainnet that other agents pay to query. Drops into Claude Code via stdio (`claude mcp add-json`).",
   "keywords": [
     "mcp",

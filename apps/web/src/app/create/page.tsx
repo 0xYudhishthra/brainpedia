@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export default function CreatePage() {
   const minterAddress =
     process.env.NEXT_PUBLIC_BRAIN_MINTER_ADDRESS ??
-    '0x3e7D22150d6b883a89703d760d66743D2223456b';
+    '0x1a64F3296aE427CaF760A493F82Dc6D786d99005';
   const explorerUrl =
     process.env.NEXT_PUBLIC_ZG_EXPLORER_URL ?? 'https://chainscan.0g.ai';
 

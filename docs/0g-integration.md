@@ -44,22 +44,22 @@ No private state lives in the orchestrator; it's transparent and can be replaced
 
 | What | Address / link |
 |---|---|
-| `Brain.sol` (ERC-7857) | [`0x4E5c6DC869F9B3220F01de9047031cEd1577b08F`](https://chainscan.0g.ai/address/0x4e5c6dc869f9b3220f01de9047031ced1577b08f) ([source via API ↗](https://chainscan.0g.ai/v1/contract/0x4e5c6dc869f9b3220f01de9047031ced1577b08f)) |
-| `BrainOracle` | [`0x923A0b7f21c57d92BFa8AA6721b574f47Fe5C5C0`](https://chainscan.0g.ai/address/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0) ([source via API ↗](https://chainscan.0g.ai/v1/contract/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0)) |
-| `BrainMinter` | [`0x3e7D22150d6b883a89703d760d66743D2223456b`](https://chainscan.0g.ai/address/0x3e7d22150d6b883a89703d760d66743d2223456b) ([source via API ↗](https://chainscan.0g.ai/v1/contract/0x3e7d22150d6b883a89703d760d66743d2223456b)) |
-| `RoyaltyDistributor` | [`0x7F26DeDe0c5E1Db844c9A8138C21cA3439B63C49`](https://chainscan.0g.ai/address/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49) ([source via API ↗](https://chainscan.0g.ai/v1/contract/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49)) |
+| `Brain.sol` (ERC-7857) | [`0x8C2BE2D73876ec7BD8A190f3317f3C6cA91d66D6`](https://chainscan.0g.ai/address/0x8c2be2d73876ec7bd8a190f3317f3c6ca91d66d6) ([source via API ↗](https://chainscan.0g.ai/v1/contract/0x8c2be2d73876ec7bd8a190f3317f3c6ca91d66d6)) |
+| `BrainOracle` | [`0xB7376A897222DA0C4eE61702b797DdfE251F7FD0`](https://chainscan.0g.ai/address/0xb7376a897222da0c4ee61702b797ddfe251f7fd0) ([source via API ↗](https://chainscan.0g.ai/v1/contract/0xb7376a897222da0c4ee61702b797ddfe251f7fd0)) |
+| `BrainMinter` | [`0x1a64F3296aE427CaF760A493F82Dc6D786d99005`](https://chainscan.0g.ai/address/0x1a64f3296ae427caf760a493f82dc6d786d99005) ([source via API ↗](https://chainscan.0g.ai/v1/contract/0x1a64f3296ae427caf760a493f82dc6d786d99005)) |
+| `RoyaltyDistributor` | [`0x7AF89556A11FCfE6cF1c3e3D1c36AfBcee2f0073`](https://chainscan.0g.ai/address/0x7af89556a11fcfe6cf1c3e3d1c36afbcee2f0073) ([source via API ↗](https://chainscan.0g.ai/v1/contract/0x7af89556a11fcfe6cf1c3e3d1c36afbcee2f0073)) |
 | Flow contract (0G Storage Log) | `0x62D4144dB0F0a6fBBaeb6296c785C71B3D57C526` |
 | Storage indexer | `https://indexer-storage-turbo.0g.ai` |
-| `tokenId 1` (Yudhi's Brain) | mint [tx `0xb60080c6…`](https://chainscan.0g.ai/tx/0xb60080c60aeed1d134870971b5f14cb8fe2693e22c8fcadab7b6b122cad7427f) |
-| `tokenId 2` (Brainpedia protocol Brain) | mint [tx `0xa54b53b9…`](https://chainscan.0g.ai/tx/0xa54b53b9c4ec94796d0ec3ace20515efebd203c4dcb48386bc08429815fefd5e) |
-| `tokenId 3` (0G Expert Brain) | mint [tx `0x70618c4a…`](https://chainscan.0g.ai/tx/0x70618c4a4620bfb7397bd7cd6b177a69ae7586ddbb4ea0e00bde7d164c7e56d7) — 428 articles compiled from docs.0g.ai/llms-full.txt |
-| Hero 3-brain mixture settlement | [tx `0x77202942…`](https://chainscan.0g.ai/tx/0x77202942ca382179c8a825eb48c0434a60dff3a273172ca11a25d8d6cbdb1341) — `RoyaltyDistributor.distribute([1, 2, 3], [0.002, 0.0015, 0.0035], reason)`, 3 `Distributed` events |
+| `tokenId 1` (Yudhi's Brain) | mint [tx `0x24e7ed5f…`](https://chainscan.0g.ai/tx/0x24e7ed5f408891ee16c538b9ba7f6b57abe6009d89b640baae38a02ac06d5584) |
+| `tokenId 2` (Brainpedia protocol Brain) | mint [tx `0xf691a113…`](https://chainscan.0g.ai/tx/0xf691a1136214cca48109e373ca1a4632124d5ada6e0547117770029d9f455be9) |
+| `tokenId 3` (0G Expert Brain) | mint [tx `0x805a748d…`](https://chainscan.0g.ai/tx/0x805a748dd4d0e811219145e4b6dd85e9e2836a1d256af626c79dac699120e3b4) — 428 articles compiled from docs.0g.ai/llms-full.txt |
+| Hero 3-brain mixture settlement | [tx `0x9a503d7c…`](https://chainscan.0g.ai/tx/0x9a503d7c48787d423883c0b05b690c873af1389ee75e27a315ab232e8a57230c) — `RoyaltyDistributor.distribute([1, 2, 3], [0.002, 0.0015, 0.0035], reason)`, 3 `Distributed` events |
 | 0G Compute provider | `0xa48f01287233509FD694a22Bf840225062E67836` (Qwen 2.5 7B, TEE-attested) |
 
 Verify intelligence is embedded:
 
 ```bash
-cast call 0x4E5c6DC869F9B3220F01de9047031cEd1577b08F \
+cast call 0x8C2BE2D73876ec7BD8A190f3317f3C6cA91d66D6 \
   "currentStorageRoot(uint256)(bytes32)" 3 \
   --rpc-url https://evmrpc.0g.ai
 # returns the 0G Expert Brain's merkle root from 0G Storage

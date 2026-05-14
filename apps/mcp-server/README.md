@@ -3,7 +3,7 @@
 > Turn any folder of personal knowledge (Obsidian vault, markdown notes, research archive) into a paid AI Brain on **0G mainnet** that other agents pay to query. ERC-7857 iNFT. Mixture-of-Brains royalty settlement. No central API.
 
 [![npm version](https://img.shields.io/npm/v/brainpedia-mcp.svg)](https://www.npmjs.com/package/brainpedia-mcp)
-[![mainnet contracts](https://img.shields.io/badge/0G-mainnet%20Aristotle-5e6ad2)](https://chainscan.0g.ai/address/0x4e5c6dc869f9b3220f01de9047031ced1577b08f)
+[![mainnet contracts](https://img.shields.io/badge/0G-mainnet%20Aristotle-5e6ad2)](https://chainscan.0g.ai/address/0x8c2be2d73876ec7bd8a190f3317f3c6ca91d66d6)
 
 The Brainpedia MCP server gives Claude Code (and any MCP host) a 7-tool surface that mints, syncs, queries, and settles Brains on 0G. The web counterpart at [brainpedia.up.railway.app/create](https://brainpedia.up.railway.app/create) covers the no-CLI path; this package is for power users who want their live vault to keep updating their Brain on every save.
 
@@ -20,9 +20,9 @@ claude mcp add-json brainpedia '{
     "ZG_FLOW_CONTRACT_ADDRESS": "0x62D4144dB0F0a6fBBaeb6296c785C71B3D57C526",
     "ZG_STORAGE_INDEXER_URL": "https://indexer-storage-turbo.0g.ai",
     "ZG_EXPLORER_URL": "https://chainscan.0g.ai",
-    "ZG_INFT_CONTRACT_ADDRESS": "0x4E5c6DC869F9B3220F01de9047031cEd1577b08F",
-    "BRAIN_MINTER_ADDRESS": "0x3e7D22150d6b883a89703d760d66743D2223456b",
-    "ROYALTY_DISTRIBUTOR_ADDRESS": "0x7F26DeDe0c5E1Db844c9A8138C21cA3439B63C49",
+    "ZG_INFT_CONTRACT_ADDRESS": "0x8C2BE2D73876ec7BD8A190f3317f3C6cA91d66D6",
+    "BRAIN_MINTER_ADDRESS": "0x1a64F3296aE427CaF760A493F82Dc6D786d99005",
+    "ROYALTY_DISTRIBUTOR_ADDRESS": "0x7AF89556A11FCfE6cF1c3e3D1c36AfBcee2f0073",
     "ENS_NETWORK": "sepolia",
     "ENS_PARENT_NAME": "bpedia.eth",
     "ENS_RPC_URL": "https://ethereum-sepolia.publicnode.com",
@@ -77,10 +77,10 @@ Claude calls `setup_brain` (returns the parse + compile schema), compiles a Karp
 
 | Contract | Address | Source |
 |---|---|---|
-| `Brain.sol` (ERC-7857) | [`0x4E5c…b08F`](https://chainscan.0g.ai/address/0x4e5c6dc869f9b3220f01de9047031ced1577b08f) | [source ↗](https://chainscan.0g.ai/v1/contract/0x4e5c6dc869f9b3220f01de9047031ced1577b08f) |
-| `BrainOracle` | [`0x923A…C5C0`](https://chainscan.0g.ai/address/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0) | [source ↗](https://chainscan.0g.ai/v1/contract/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0) |
-| `BrainMinter` | [`0x3e7D…456b`](https://chainscan.0g.ai/address/0x3e7d22150d6b883a89703d760d66743d2223456b) | [source ↗](https://chainscan.0g.ai/v1/contract/0x3e7d22150d6b883a89703d760d66743d2223456b) |
-| `RoyaltyDistributor` | [`0x7F26…3C49`](https://chainscan.0g.ai/address/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49) | [source ↗](https://chainscan.0g.ai/v1/contract/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49) |
+| `Brain.sol` (ERC-7857) | [`0x8C2B…66D6`](https://chainscan.0g.ai/address/0x8c2be2d73876ec7bd8a190f3317f3c6ca91d66d6) | [source ↗](https://chainscan.0g.ai/v1/contract/0x8c2be2d73876ec7bd8a190f3317f3c6ca91d66d6) |
+| `BrainOracle` | [`0xB737…7FD0`](https://chainscan.0g.ai/address/0xb7376a897222da0c4ee61702b797ddfe251f7fd0) | [source ↗](https://chainscan.0g.ai/v1/contract/0xb7376a897222da0c4ee61702b797ddfe251f7fd0) |
+| `BrainMinter` | [`0x1a64…9005`](https://chainscan.0g.ai/address/0x1a64f3296ae427caf760a493f82dc6d786d99005) | [source ↗](https://chainscan.0g.ai/v1/contract/0x1a64f3296ae427caf760a493f82dc6d786d99005) |
+| `RoyaltyDistributor` | [`0x7AF8…0073`](https://chainscan.0g.ai/address/0x7af89556a11fcfe6cf1c3e3d1c36afbcee2f0073) | [source ↗](https://chainscan.0g.ai/v1/contract/0x7af89556a11fcfe6cf1c3e3d1c36afbcee2f0073) |
 
 Hero mixture settlement (2 Brains paid in one tx): [`0x50bbb323…`](https://chainscan.0g.ai/tx/0x50bbb323eacb42e59b4bd617f6e2486d4cc402cd6f9aaf11fc71b16af8e506ba).
 

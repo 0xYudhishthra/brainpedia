@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity =0.8.34 >=0.4.16 ^0.8.20 ^0.8.24;
+pragma solidity =0.8.30 >=0.4.16 ^0.8.20 ^0.8.24;
 
 // lib/openzeppelin-contracts/contracts/utils/Context.sol
 

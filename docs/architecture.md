@@ -112,8 +112,8 @@ The MCP `query_mixture` tool (`brainpedia-mcp@0.1.5`) drives the whole
 flow in one call using the agent's wallet.
 
 Live on 0G Aristotle mainnet (chainId 16661) at
-[`0x7F26DeDe0c5E1Db844c9A8138C21cA3439B63C49`](https://chainscan.0g.ai/address/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49).
-Hero settlement on chain: [tx `0x77202942…`](https://chainscan.0g.ai/tx/0x77202942ca382179c8a825eb48c0434a60dff3a273172ca11a25d8d6cbdb1341)
+[`0x7AF89556A11FCfE6cF1c3e3D1c36AfBcee2f0073`](https://chainscan.0g.ai/address/0x7af89556a11fcfe6cf1c3e3d1c36afbcee2f0073).
+Hero settlement on chain: [tx `0x9a503d7c…`](https://chainscan.0g.ai/tx/0x9a503d7c48787d423883c0b05b690c873af1389ee75e27a315ab232e8a57230c)
 distributed 0.002 OG to tokenId 1, 0.0015 OG to tokenId 2, and 0.0035 OG
 to tokenId 3 (the 0G Expert Brain) in a single call. Three
 `Distributed` events emitted in one block.

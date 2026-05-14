@@ -19,10 +19,10 @@
  */
 
 const CONTRACTS = [
-  { name: 'Brain', address: '0x4E5c6DC869F9B3220F01de9047031cEd1577b08F' },
-  { name: 'BrainOracle', address: '0x923A0b7f21c57d92BFa8AA6721b574f47Fe5C5C0' },
-  { name: 'BrainMinter', address: '0x3e7D22150d6b883a89703d760d66743D2223456b' },
-  { name: 'RoyaltyDistributor', address: '0x7F26DeDe0c5E1Db844c9A8138C21cA3439B63C49' },
+  { name: 'Brain', address: '0x8C2BE2D73876ec7BD8A190f3317f3C6cA91d66D6' },
+  { name: 'BrainOracle', address: '0xB7376A897222DA0C4eE61702b797DdfE251F7FD0' },
+  { name: 'BrainMinter', address: '0x1a64F3296aE427CaF760A493F82Dc6D786d99005' },
+  { name: 'RoyaltyDistributor', address: '0x7AF89556A11FCfE6cF1c3e3D1c36AfBcee2f0073' },
 ];
 
 interface VerifyResponse {

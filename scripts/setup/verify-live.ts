@@ -16,7 +16,7 @@ const WEB_URL = 'https://brainpedia.up.railway.app';
 
 // Post-redeploy addresses (new deployer 0xD24e06f0… after the bpedia.eth
 // deployer key was lost). Parent is bpedia.eth on Sepolia.
-const BRAIN = '0x4E5c6DC869F9B3220F01de9047031cEd1577b08F' as Address;
+const BRAIN = '0x8C2BE2D73876ec7BD8A190f3317f3C6cA91d66D6' as Address;
 const SUBNAME_REGISTRAR = '0xBb921bFFBbbE2219D1EC365213a74097348F28F0' as Address;
 const ACCESS_TOKEN_REGISTRAR = '0x3e7D22150d6b883a89703d760d66743D2223456b' as Address;
 const PARENT_NAME = 'bpedia.eth';
@@ -176,7 +176,7 @@ await check('Brain page resolves ENS', async () => {
   const r = await fetch(`${WEB_URL}/yudhi`);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const html = await r.text();
-  if (!/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F:1/i.test(html)) {
+  if (!/0x8C2BE2D73876ec7BD8A190f3317f3C6cA91d66D6:1/i.test(html)) {
     throw new Error('Brain page missing iNFT pair');
   }
   if (!/defi-yield-strategies/.test(html)) {

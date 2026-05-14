@@ -74,7 +74,7 @@ export default function PitchPage() {
       <Section eyebrow="Live on chain" title="Verifiable by anyone.">
         <ul className="grid gap-2 md:grid-cols-2">
           <Proof
-            href="https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F"
+            href="https://chainscan-galileo.0g.ai/address/0x8C2BE2D73876ec7BD8A190f3317f3C6cA91d66D6"
             label="Brain.sol (ERC-7857 iNFT) on 0G Galileo"
             detail="7 Brain iNFTs minted across two cohorts"
           />
