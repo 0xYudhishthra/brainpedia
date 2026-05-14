@@ -77,10 +77,10 @@ Claude calls `setup_brain` (returns the parse + compile schema), compiles a Karp
 
 | Contract | Address | Source |
 |---|---|---|
-| `Brain.sol` (ERC-7857) | [`0x4E5c…b08F`](https://chainscan.0g.ai/address/0x4e5c6dc869f9b3220f01de9047031ced1577b08f) | [verified ↗](https://explorer.0g.ai/mainnet/blockchain/accounts/0x4e5c6dc869f9b3220f01de9047031ced1577b08f/verified-contracts) |
-| `BrainOracle` | [`0x923A…C5C0`](https://chainscan.0g.ai/address/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0) | [verified ↗](https://explorer.0g.ai/mainnet/blockchain/accounts/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0/verified-contracts) |
-| `BrainMinter` | [`0x3e7D…456b`](https://chainscan.0g.ai/address/0x3e7d22150d6b883a89703d760d66743d2223456b) | [verified ↗](https://explorer.0g.ai/mainnet/blockchain/accounts/0x3e7d22150d6b883a89703d760d66743d2223456b/verified-contracts) |
-| `RoyaltyDistributor` | [`0x7F26…3C49`](https://chainscan.0g.ai/address/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49) | [verified ↗](https://explorer.0g.ai/mainnet/blockchain/accounts/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49/verified-contracts) |
+| `Brain.sol` (ERC-7857) | [`0x4E5c…b08F`](https://chainscan.0g.ai/address/0x4e5c6dc869f9b3220f01de9047031ced1577b08f) | [source ↗](https://chainscan.0g.ai/v1/contract/0x4e5c6dc869f9b3220f01de9047031ced1577b08f) |
+| `BrainOracle` | [`0x923A…C5C0`](https://chainscan.0g.ai/address/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0) | [source ↗](https://chainscan.0g.ai/v1/contract/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0) |
+| `BrainMinter` | [`0x3e7D…456b`](https://chainscan.0g.ai/address/0x3e7d22150d6b883a89703d760d66743d2223456b) | [source ↗](https://chainscan.0g.ai/v1/contract/0x3e7d22150d6b883a89703d760d66743d2223456b) |
+| `RoyaltyDistributor` | [`0x7F26…3C49`](https://chainscan.0g.ai/address/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49) | [source ↗](https://chainscan.0g.ai/v1/contract/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49) |
 
 Hero mixture settlement (2 Brains paid in one tx): [`0x50bbb323…`](https://chainscan.0g.ai/tx/0x50bbb323eacb42e59b4bd617f6e2486d4cc402cd6f9aaf11fc71b16af8e506ba).
 

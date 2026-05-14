@@ -44,10 +44,10 @@ No private state lives in the orchestrator; it's transparent and can be replaced
 
 | What | Address / link |
 |---|---|
-| `Brain.sol` (ERC-7857) | [`0x4E5c6DC869F9B3220F01de9047031cEd1577b08F`](https://chainscan.0g.ai/address/0x4e5c6dc869f9b3220f01de9047031ced1577b08f) ([verified source ↗](https://explorer.0g.ai/mainnet/blockchain/accounts/0x4e5c6dc869f9b3220f01de9047031ced1577b08f/verified-contracts)) |
-| `BrainOracle` | [`0x923A0b7f21c57d92BFa8AA6721b574f47Fe5C5C0`](https://chainscan.0g.ai/address/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0) ([verified ↗](https://explorer.0g.ai/mainnet/blockchain/accounts/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0/verified-contracts)) |
-| `BrainMinter` | [`0x3e7D22150d6b883a89703d760d66743D2223456b`](https://chainscan.0g.ai/address/0x3e7d22150d6b883a89703d760d66743d2223456b) ([verified ↗](https://explorer.0g.ai/mainnet/blockchain/accounts/0x3e7d22150d6b883a89703d760d66743d2223456b/verified-contracts)) |
-| `RoyaltyDistributor` | [`0x7F26DeDe0c5E1Db844c9A8138C21cA3439B63C49`](https://chainscan.0g.ai/address/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49) ([verified ↗](https://explorer.0g.ai/mainnet/blockchain/accounts/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49/verified-contracts)) |
+| `Brain.sol` (ERC-7857) | [`0x4E5c6DC869F9B3220F01de9047031cEd1577b08F`](https://chainscan.0g.ai/address/0x4e5c6dc869f9b3220f01de9047031ced1577b08f) ([source via API ↗](https://chainscan.0g.ai/v1/contract/0x4e5c6dc869f9b3220f01de9047031ced1577b08f)) |
+| `BrainOracle` | [`0x923A0b7f21c57d92BFa8AA6721b574f47Fe5C5C0`](https://chainscan.0g.ai/address/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0) ([source via API ↗](https://chainscan.0g.ai/v1/contract/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0)) |
+| `BrainMinter` | [`0x3e7D22150d6b883a89703d760d66743D2223456b`](https://chainscan.0g.ai/address/0x3e7d22150d6b883a89703d760d66743d2223456b) ([source via API ↗](https://chainscan.0g.ai/v1/contract/0x3e7d22150d6b883a89703d760d66743d2223456b)) |
+| `RoyaltyDistributor` | [`0x7F26DeDe0c5E1Db844c9A8138C21cA3439B63C49`](https://chainscan.0g.ai/address/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49) ([source via API ↗](https://chainscan.0g.ai/v1/contract/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49)) |
 | Flow contract (0G Storage Log) | `0x62D4144dB0F0a6fBBaeb6296c785C71B3D57C526` |
 | Storage indexer | `https://indexer-storage-turbo.0g.ai` |
 | `tokenId 1` (Yudhi's Brain) | mint [tx `0xb60080c6…`](https://chainscan.0g.ai/tx/0xb60080c60aeed1d134870971b5f14cb8fe2693e22c8fcadab7b6b122cad7427f) |

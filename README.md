@@ -54,17 +54,23 @@ Two ways to mint:
 |---|---|---|
 | **Web app** | Public site + D3 force-directed network viz + dynamic per-Brain pages + mixture-mode `/api/query` proxy | https://brainpedia.up.railway.app |
 | **MCP server** | 7 tools (`setup_brain`, `upload_articles`, `finalize_brain`, `sync_vault`, `query_brain`, `query_mixture`, `settle_mixture`) on npm | [`brainpedia-mcp` on npm](https://www.npmjs.com/package/brainpedia-mcp) |
-| **`Brain.sol`** (ERC-7857 canonical) | iNFT contract holding intelligence lineage + sealed key events | mainnet [`0x4E5c…b08F`](https://chainscan.0g.ai/address/0x4e5c6dc869f9b3220f01de9047031ced1577b08f) · [verified source ↗](https://explorer.0g.ai/mainnet/blockchain/accounts/0x4e5c6dc869f9b3220f01de9047031ced1577b08f/verified-contracts) |
-| **`BrainOracle`** | EIP-712 attestor for ERC-7857 secure transfers (context-bound proofs) | mainnet [`0x923A…C5C0`](https://chainscan.0g.ai/address/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0) · [verified source ↗](https://explorer.0g.ai/mainnet/blockchain/accounts/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0/verified-contracts) |
-| **`BrainMinter`** | Permissionless self-mint wrapper, anyone can mint a Brain to themselves | mainnet [`0x3e7D…456b`](https://chainscan.0g.ai/address/0x3e7d22150d6b883a89703d760d66743d2223456b) · [verified source ↗](https://explorer.0g.ai/mainnet/blockchain/accounts/0x3e7d22150d6b883a89703d760d66743d2223456b/verified-contracts) |
-| **`RoyaltyDistributor`** | Multi-Brain royalty settlement with pull-payment pattern | mainnet [`0x7F26…3C49`](https://chainscan.0g.ai/address/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49) · [verified source ↗](https://explorer.0g.ai/mainnet/blockchain/accounts/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49/verified-contracts) |
+| **`Brain.sol`** (ERC-7857 canonical) | iNFT contract holding intelligence lineage + sealed key events | mainnet [`0x4E5c…b08F`](https://chainscan.0g.ai/address/0x4e5c6dc869f9b3220f01de9047031ced1577b08f) · [verified source (API) ↗](https://chainscan.0g.ai/v1/contract/0x4e5c6dc869f9b3220f01de9047031ced1577b08f) |
+| **`BrainOracle`** | EIP-712 attestor for ERC-7857 secure transfers (context-bound proofs) | mainnet [`0x923A…C5C0`](https://chainscan.0g.ai/address/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0) · [verified source (API) ↗](https://chainscan.0g.ai/v1/contract/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0) |
+| **`BrainMinter`** | Permissionless self-mint wrapper, anyone can mint a Brain to themselves | mainnet [`0x3e7D…456b`](https://chainscan.0g.ai/address/0x3e7d22150d6b883a89703d760d66743d2223456b) · [verified source (API) ↗](https://chainscan.0g.ai/v1/contract/0x3e7d22150d6b883a89703d760d66743d2223456b) |
+| **`RoyaltyDistributor`** | Multi-Brain royalty settlement with pull-payment pattern | mainnet [`0x7F26…3C49`](https://chainscan.0g.ai/address/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49) · [verified source (API) ↗](https://chainscan.0g.ai/v1/contract/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49) |
 | **`SubnameRegistrar`** + **`AccessTokenRegistrar`** (Sepolia) | ENS-based discovery and TTL-bounded capability tokens (supporting infrastructure) | [sepolia.app.ens.domains/bpedia.eth](https://sepolia.app.ens.domains/bpedia.eth) |
 | **Brain #1** | Yudhi's Brain, tokenId 1 on 0G mainnet | [chainscan tx `0xb60080c6…`](https://chainscan.0g.ai/tx/0xb60080c60aeed1d134870971b5f14cb8fe2693e22c8fcadab7b6b122cad7427f) |
 | **Brain #2** | Brainpedia protocol Brain, tokenId 2 | [chainscan tx `0xa54b53b9…`](https://chainscan.0g.ai/tx/0xa54b53b9c4ec94796d0ec3ace20515efebd203c4dcb48386bc08429815fefd5e) |
 | **Brain #3 — 0G Expert** | tokenId 3, populated by running 0G's own docs (`docs.0g.ai/llms-full.txt`) through `@brainpedia/knowledge-compiler`. 428 articles, sticker price 0.001 OG. Brainpedia hosting 0G's knowledge on 0G itself. Mint script: [`scripts/setup/mint-0g-expert-brain.ts`](scripts/setup/mint-0g-expert-brain.ts) | [chainscan tx `0x70618c4a…`](https://chainscan.0g.ai/tx/0x70618c4a4620bfb7397bd7cd6b177a69ae7586ddbb4ea0e00bde7d164c7e56d7) |
 | **3-brain mixture royalty settlement** | Single tx paid all 3 Brains via `RoyaltyDistributor.distribute([1,2,3], [0.002, 0.0015, 0.0035], reason)` — 3 `Distributed` events in one block | [chainscan tx `0x77202942…`](https://chainscan.0g.ai/tx/0x77202942ca382179c8a825eb48c0434a60dff3a273172ca11a25d8d6cbdb1341) |
 
-> All four Solidity contracts have verified source on `chainscan.0g.ai`. See [contracts/SECURITY.md](contracts/SECURITY.md) for the audit summary and [contracts/KNOWN_ISSUES.md](contracts/KNOWN_ISSUES.md) for accepted risks.
+> All four Solidity contracts have verified source on `chainscan.0g.ai` with `exactMatch=true`. Confirm in one command:
+>
+> ```bash
+> bun scripts/setup/verify-contracts-on-chainscan.ts
+> ```
+>
+> See [contracts/SECURITY.md](contracts/SECURITY.md) for the audit summary and [contracts/KNOWN_ISSUES.md](contracts/KNOWN_ISSUES.md) for accepted risks.
 
 ## Architecture
 

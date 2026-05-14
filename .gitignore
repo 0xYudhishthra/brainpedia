@@ -92,3 +92,4 @@ sample-vault/
 !.claude/settings.json
 .env.*.bak
 .env.testnet.bak
+.gstack/

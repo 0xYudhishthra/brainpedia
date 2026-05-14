@@ -378,12 +378,12 @@ function ProofRow({ label, address }: { label: string; address: string }) {
         {address.slice(0, 8)}…{address.slice(-6)}
       </a>
       <a
-        href={`https://explorer.0g.ai/mainnet/blockchain/accounts/${lower}/verified-contracts`}
+        href={`${EXPLORER}/v1/contract/${lower}`}
         target="_blank"
         rel="noreferrer"
         className="text-xs text-[var(--accent-hover)] hover:underline"
       >
-        verified source ↗
+        source via chainscan API ↗
       </a>
     </div>
   );
