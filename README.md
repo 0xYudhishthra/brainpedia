@@ -44,14 +44,16 @@ Brainpedia is the supply side of the agent economy. Any human publishes their pe
 |---|---|---|
 | **Web app** | Public site + D3 force-directed network viz + dynamic per-Brain pages + mixture-mode `/api/query` proxy | https://brainpedia.up.railway.app |
 | **MCP server** | 7 tools (`setup_brain`, `upload_articles`, `finalize_brain`, `sync_vault`, `query_brain`, `query_mixture`, `settle_mixture`) on npm | [`brainpedia-mcp` on npm](https://www.npmjs.com/package/brainpedia-mcp) |
-| **`Brain.sol`** (ERC-7857 canonical) | Multiple brains minted across cohorts | mainnet deploy in progress (testnet `0x4E5c…b08F` on [chainscan-galileo](https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F)) |
-| **`BrainOracle`** | EIP-712 attestor for ERC-7857 secure transfers (context-bound proofs) | mainnet deploy in progress |
-| **`BrainMinter`** | Permissionless mint wrapper, anyone can self-mint | mainnet deploy in progress (testnet `0xcca5…a2e7`) |
-| **`RoyaltyDistributor`** | Multi-Brain royalty settlement with pull-payment pattern | mainnet deploy in progress (testnet `0x44ea…0649`) |
+| **`Brain.sol`** (ERC-7857 canonical) | iNFT contract holding intelligence lineage + sealed key events | 0G mainnet (Aristotle, 16661) [`0x4E5c…b08F`](https://chainscan.0g.ai/open/address/0x4e5c6dc869f9b3220f01de9047031ced1577b08f) |
+| **`BrainOracle`** | EIP-712 attestor for ERC-7857 secure transfers (context-bound proofs) | mainnet [`0x923A…C5C0`](https://chainscan.0g.ai/open/address/0x923a0b7f21c57d92bfa8aa6721b574f47fe5c5c0) |
+| **`BrainMinter`** | Permissionless self-mint wrapper, anyone can mint a Brain to themselves | mainnet [`0x3e7D…456b`](https://chainscan.0g.ai/open/address/0x3e7d22150d6b883a89703d760d66743d2223456b) |
+| **`RoyaltyDistributor`** | Multi-Brain royalty settlement with pull-payment pattern | mainnet [`0x7F26…3C49`](https://chainscan.0g.ai/open/address/0x7f26dede0c5e1db844c9a8138c21ca3439b63c49) |
 | **`SubnameRegistrar`** + **`AccessTokenRegistrar`** (Sepolia) | ENS-based discovery and TTL-bounded capability tokens (supporting infrastructure) | [sepolia.app.ens.domains/bpedia.eth](https://sepolia.app.ens.domains/bpedia.eth) |
-| **Royalty settlement proof** | Single tx settled 2 brains in mixture mode | [chainscan-galileo tx `0x9637800e…`](https://chainscan-galileo.0g.ai/tx/0x9637800e6f7b644ac71cf4900bb272f908628d1bd7f0590a9912a183de56bb0e) |
+| **Hero mint #1** | Brain tokenId 1 minted on 0G mainnet | [chainscan tx `0xb60080c6…`](https://chainscan.0g.ai/tx/0xb60080c60aeed1d134870971b5f14cb8fe2693e22c8fcadab7b6b122cad7427f) |
+| **Hero mint #2** | Brain tokenId 2 minted on 0G mainnet | [chainscan tx `0xa54b53b9…`](https://chainscan.0g.ai/tx/0xa54b53b9c4ec94796d0ec3ace20515efebd203c4dcb48386bc08429815fefd5e) |
+| **Mixture royalty settlement proof** | Single tx settled 2 brains via `RoyaltyDistributor.distribute([1,2], [0.005, 0.003], reason)` — 2 `Distributed` events emitted in one block | [chainscan tx `0x50bbb323…`](https://chainscan.0g.ai/tx/0x50bbb323eacb42e59b4bd617f6e2486d4cc402cd6f9aaf11fc71b16af8e506ba) |
 
-> All Solidity is verified on the explorer. Mainnet addresses + hero settlement tx appear here after deploy. See [contracts/SECURITY.md](contracts/SECURITY.md) for the audit summary and [contracts/KNOWN_ISSUES.md](contracts/KNOWN_ISSUES.md) for accepted risks.
+> All four Solidity contracts have verified source on `chainscan.0g.ai`. See [contracts/SECURITY.md](contracts/SECURITY.md) for the audit summary and [contracts/KNOWN_ISSUES.md](contracts/KNOWN_ISSUES.md) for accepted risks.
 
 ## Architecture
 
