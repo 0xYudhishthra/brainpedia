@@ -21,7 +21,9 @@ const ORACLE_ADDRESS = '0x923A0b7f21c57d92BFa8AA6721b574f47Fe5C5C0';
 const MINTER_ADDRESS = '0x3e7D22150d6b883a89703d760d66743D2223456b';
 const ROYALTY_ADDRESS = '0x7F26DeDe0c5E1Db844c9A8138C21cA3439B63C49';
 const MIXTURE_PROOF_TX =
-  '0x50bbb323eacb42e59b4bd617f6e2486d4cc402cd6f9aaf11fc71b16af8e506ba';
+  '0x77202942ca382179c8a825eb48c0434a60dff3a273172ca11a25d8d6cbdb1341';
+const OG_EXPERT_MINT_TX =
+  '0x70618c4a4620bfb7397bd7cd6b177a69ae7586ddbb4ea0e00bde7d164c7e56d7';
 const EXPLORER = 'https://chainscan.0g.ai';
 
 interface GraphData {
@@ -278,21 +280,39 @@ export default async function HomePage() {
           <ProofRow label="BrainMinter" address={MINTER_ADDRESS} />
           <ProofRow label="RoyaltyDistributor" address={ROYALTY_ADDRESS} />
         </div>
-        <a
-          href={`${EXPLORER}/tx/${MIXTURE_PROOF_TX}`}
-          target="_blank"
-          rel="noreferrer"
-          className="surface-1 group flex flex-col gap-1 rounded-xl p-5 transition-colors hover:border-[var(--hairline-strong)]"
-        >
-          <span className="text-eyebrow text-[var(--ink-subtle)]">hero settlement tx</span>
-          <span className="text-card-title text-[var(--ink)]">
-            2 brains paid in one transaction
-          </span>
-          <span className="text-xs text-[var(--ink-subtle)] group-hover:text-[var(--ink-muted)]">
-            RoyaltyDistributor.distribute([1, 2], [0.005, 0.003], reason) ·{' '}
-            <span className="font-mono">{MIXTURE_PROOF_TX.slice(0, 18)}…</span>
-          </span>
-        </a>
+        <div className="grid gap-3 md:grid-cols-2">
+          <a
+            href={`${EXPLORER}/tx/${OG_EXPERT_MINT_TX}`}
+            target="_blank"
+            rel="noreferrer"
+            className="surface-1 group flex flex-col gap-1 rounded-xl p-5 transition-colors hover:border-[var(--hairline-strong)]"
+          >
+            <span className="text-eyebrow text-[var(--ink-subtle)]">0G Expert Brain</span>
+            <span className="text-card-title text-[var(--ink)]">
+              Brainpedia is hosting 0G&apos;s knowledge on 0G itself
+            </span>
+            <span className="text-xs text-[var(--ink-subtle)] group-hover:text-[var(--ink-muted)]">
+              tokenId 3 · 428 articles compiled from{' '}
+              <code className="font-mono">docs.0g.ai/llms-full.txt</code> · 0.001 OG/query ·{' '}
+              <span className="font-mono">{OG_EXPERT_MINT_TX.slice(0, 14)}…</span>
+            </span>
+          </a>
+          <a
+            href={`${EXPLORER}/tx/${MIXTURE_PROOF_TX}`}
+            target="_blank"
+            rel="noreferrer"
+            className="surface-1 group flex flex-col gap-1 rounded-xl p-5 transition-colors hover:border-[var(--hairline-strong)]"
+          >
+            <span className="text-eyebrow text-[var(--ink-subtle)]">hero settlement tx</span>
+            <span className="text-card-title text-[var(--ink)]">
+              3 brains paid in one transaction
+            </span>
+            <span className="text-xs text-[var(--ink-subtle)] group-hover:text-[var(--ink-muted)]">
+              RoyaltyDistributor.distribute([1, 2, 3], [0.002, 0.0015, 0.0035], reason) · 3 Distributed events ·{' '}
+              <span className="font-mono">{MIXTURE_PROOF_TX.slice(0, 14)}…</span>
+            </span>
+          </a>
+        </div>
       </section>
 
       {/* EXPLORE */}
