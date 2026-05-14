@@ -14,11 +14,15 @@ import { MixtureDemo } from '@/components/mixture-demo';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-/** Topic used as the discovery shortcut for the homepage graph.
- *  `all.discover.bpedia.eth` lists every Brain — agents searching by topic
- *  use the narrower shortcuts (`defi.discover…`, `agentic-web.discover…`),
- *  but the homepage shows the union so visitors see the whole network. */
 const HOMEPAGE_DISCOVERY_TOPIC = 'all';
+
+const BRAIN_ADDRESS = '0x4E5c6DC869F9B3220F01de9047031cEd1577b08F';
+const ORACLE_ADDRESS = '0x923A0b7f21c57d92BFa8AA6721b574f47Fe5C5C0';
+const MINTER_ADDRESS = '0x3e7D22150d6b883a89703d760d66743D2223456b';
+const ROYALTY_ADDRESS = '0x7F26DeDe0c5E1Db844c9A8138C21cA3439B63C49';
+const MIXTURE_PROOF_TX =
+  '0x50bbb323eacb42e59b4bd617f6e2486d4cc402cd6f9aaf11fc71b16af8e506ba';
+const EXPLORER = 'https://chainscan.0g.ai';
 
 interface GraphData {
   nodes: NetworkNode[];
@@ -35,8 +39,6 @@ async function loadGraph(): Promise<GraphData> {
     { source: 'agent', target: 'orch', kind: 'request', active: 0.8 },
   ];
 
-  // If ENS env isn't configured (build-time / dev with no .env), return just
-  // the agent + orchestrator skeleton — never the old hardcoded demo brains.
   if (
     !process.env.ENS_PARENT_NAME ||
     !process.env.ENS_RPC_URL ||
@@ -79,39 +81,156 @@ async function loadGraph(): Promise<GraphData> {
 
 export default async function HomePage() {
   const { nodes, links, brainNames } = await loadGraph();
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-12 px-6 py-20">
-      <header className="flex flex-col gap-4">
-        <h1 className="font-mono text-3xl font-medium tracking-tight">brainpedia</h1>
-        <p className="text-balance text-lg text-[var(--muted)]">
-          Compiled human expertise as iNFTs — a knowledge layer agents pay to query.
+    <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-24 px-6 py-20">
+      {/* HERO */}
+      <header className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="pill pill-accent">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-hover)]" />
+            live on 0G mainnet
+          </span>
+          <a
+            href="https://ethglobal.com/showcase/brainpedia-ctx9g"
+            target="_blank"
+            rel="noreferrer"
+            className="pill hover:border-[var(--hairline-strong)]"
+          >
+            winner: ETHGlobal Open Agents
+          </a>
+          <span className="pill">0G best autonomous agents + iNFT</span>
+          <span className="pill">ENS for AI agents (2nd place)</span>
+        </div>
+
+        <h1 className="text-display-xl text-[var(--ink)]">brainpedia.</h1>
+        <p className="max-w-2xl text-balance text-xl text-[var(--ink-muted)]">
+          A network where any human turns any folder of knowledge into a paid
+          AI agent on 0G. Markdown, PDF, Word, plain text. Other agents
+          discover, query, and pay royalties on chain.
         </p>
+
+        <div className="flex flex-wrap gap-3 pt-2">
+          <Link href="/create" className="btn-primary">
+            mint a brain
+          </Link>
+          <a
+            href="https://www.npmjs.com/package/brainpedia-mcp"
+            target="_blank"
+            rel="noreferrer"
+            className="btn-secondary"
+          >
+            install the MCP server
+          </a>
+          <a
+            href={`${EXPLORER}/tx/${MIXTURE_PROOF_TX}`}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-tertiary"
+          >
+            view hero settlement tx
+          </a>
+        </div>
       </header>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm uppercase tracking-wider text-[var(--muted)]">
-          Mixture-of-Brains query
-        </h2>
-        <div className="rounded-lg border border-current/10 bg-black/[0.02] p-3 dark:bg-white/[0.02]">
+      {/* PRIZE STRIP (collapsible context) */}
+      <section className="flex flex-col gap-4">
+        <h2 className="text-eyebrow text-[var(--ink-subtle)]">already validated</h2>
+        <div className="surface-1 rounded-xl p-6">
+          <p className="text-[var(--ink-muted)]">
+            Brainpedia won 0G&apos;s <strong className="text-[var(--ink)]">Best Autonomous Agents, Swarms &amp; iNFT Innovations</strong> prize and ENS&apos;s
+            {' '}
+            <strong className="text-[var(--ink)]">Best ENS Integration for AI Agents (2nd place)</strong> at ETHGlobal Open Agents.
+            0G itself{' '}
+            <a
+              className="text-[var(--accent-hover)] hover:underline"
+              href="https://x.com/0G_labs/status/2052362392026108335"
+              target="_blank"
+              rel="noreferrer"
+            >
+              tweeted the win
+            </a>
+            . This submission rebuilds the project on 0G mainnet with multi-format
+            ingest, a web-native mint flow, and a Karpathy-style knowledge framework.
+          </p>
+        </div>
+      </section>
+
+      {/* WHAT IT IS */}
+      <section className="flex flex-col gap-6">
+        <h2 className="text-eyebrow text-[var(--ink-subtle)]">what it is</h2>
+        <h3 className="text-display-md text-[var(--ink)]">
+          The supply side of the agent economy.
+        </h3>
+        <p className="max-w-3xl text-lg text-[var(--ink-muted)]">
+          Agents have no legitimate way to buy specialty knowledge. APIs are
+          centralized and the human expert sees nothing. Brainpedia turns any
+          human knowledge artifact (notes, papers, case files) into an
+          ERC-7857 iNFT on 0G that other agents pay to query. Mixture-of-Brains
+          settles royalties to multiple Brain owners in a single on-chain tx.
+        </p>
+      </section>
+
+      {/* TWO PATHS */}
+      <section className="flex flex-col gap-6">
+        <h2 className="text-eyebrow text-[var(--ink-subtle)]">two ways to mint</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="surface-1 rounded-xl p-6">
+            <div className="text-card-title text-[var(--ink)]">web</div>
+            <p className="mt-2 text-sm text-[var(--ink-muted)]">
+              Drop a folder. We extract markdown, PDF, Word, and plain text,
+              compile into a Karpathy-style wiki, upload to 0G Storage, and
+              your wallet signs the mint. No CLI.
+            </p>
+            <Link href="/create" className="btn-primary mt-4 inline-block">
+              open /create
+            </Link>
+          </div>
+          <div className="surface-1 rounded-xl p-6">
+            <div className="text-card-title text-[var(--ink)]">claude code</div>
+            <p className="mt-2 text-sm text-[var(--ink-muted)]">
+              The MCP server reads your vault, lets Claude compile pages, and
+              mints the iNFT from your wallet. Power-user path for live wikis
+              that update with every Obsidian save.
+            </p>
+            <a
+              href="https://www.npmjs.com/package/brainpedia-mcp"
+              target="_blank"
+              rel="noreferrer"
+              className="btn-secondary mt-4 inline-block"
+            >
+              brainpedia-mcp on npm
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* NETWORK */}
+      <section className="flex flex-col gap-6">
+        <h2 className="text-eyebrow text-[var(--ink-subtle)]">mixture-of-brains</h2>
+        <div className="surface-1 overflow-hidden rounded-xl p-3">
           <NetworkViz nodes={nodes} links={links} />
         </div>
-        <p className="text-xs text-[var(--muted)]">
+        <p className="text-sm text-[var(--ink-subtle)]">
           {brainNames.length > 0 ? (
             <>
-              Live from Sepolia ENS — {brainNames.length} brain
+              Live from Sepolia ENS. {brainNames.length} brain
               {brainNames.length === 1 ? '' : 's'} listed under{' '}
-              <code className="font-mono">{HOMEPAGE_DISCOVERY_TOPIC}.discover.bpedia.eth</code>.
-              Agent → orchestrator (AXL <code className="font-mono">/mcp</code>) → fan-out to
-              specialty Brains → synthesized response. Each Brain runs its own AXL daemon
-              with its own Ed25519 peer id.
+              <code className="text-[var(--ink-muted)]">
+                {HOMEPAGE_DISCOVERY_TOPIC}.discover.bpedia.eth
+              </code>
+              . Agent fans out to specialty Brains, each runs TEE-attested
+              inference on 0G Compute, and the orchestrator settles royalties
+              in one tx.
             </>
           ) : (
             <>
               No brains registered yet under{' '}
-              <code className="font-mono">{HOMEPAGE_DISCOVERY_TOPIC}.discover.bpedia.eth</code>
-              . Once a Brain ENS name is added to the discovery shortcut&apos;s{' '}
-              <code className="font-mono">brainpedia.brains</code> text record, it shows up
-              here automatically.
+              <code className="text-[var(--ink-muted)]">
+                {HOMEPAGE_DISCOVERY_TOPIC}.discover.bpedia.eth
+              </code>
+              . A Brain ENS name added to that shortcut&apos;s text records shows
+              up here automatically.
             </>
           )}
         </p>
@@ -119,94 +238,93 @@ export default async function HomePage() {
 
       <MixtureDemo />
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm uppercase tracking-wider text-[var(--muted)]">Get started</h2>
-        <div className="rounded-lg border border-current/10 p-5">
-          <p className="mb-3 text-sm">
-            Install the MCP server in <strong>Claude Code</strong> with one
-            command (Claude Desktop is not a supported install target). The MCP
-            server runs straight from npm — no clone, no build:
-          </p>
-          <pre className="overflow-x-auto rounded bg-black/5 p-3 font-mono text-xs dark:bg-white/5">
-{`claude mcp add-json brainpedia '{
-  "command": "npx",
-  "args": ["-y", "brainpedia-mcp@latest"],
-  "env": {
-    "ZG_WALLET_PRIVATE_KEY": "0x<your-testnet-pk>",
-    "ZG_INFT_CONTRACT_ADDRESS": "0x4E5c6DC869F9B3220F01de9047031cEd1577b08F",
-    "BRAIN_MINTER_ADDRESS": "0xcca5e8c639505dd6f1d4ebf2f0c138ddc9aca2e7",
-    "ROYALTY_DISTRIBUTOR_ADDRESS": "0x44eaad4fdb7d509cd3fe7624ce512cc97b910649",
-    "ZG_RPC_URL": "https://evmrpc-testnet.0g.ai",
-    "ENS_NETWORK": "sepolia",
-    "ENS_PARENT_NAME": "bpedia.eth",
-    "ENS_RPC_URL": "https://ethereum-sepolia.publicnode.com",
-    "ENS_SUBNAME_REGISTRAR_ADDRESS": "0xBb921bFFBbbE2219D1EC365213a74097348F28F0",
-    "ENS_ACCESS_TOKEN_REGISTRAR_ADDRESS": "0x3e7D22150d6b883a89703d760d66743D2223456b",
-    "BRAINPEDIA_API_URL": "https://brainpedia.up.railway.app",
-    "OBSIDIAN_REST_API_KEY": "<paste-from-Local-REST-API-plugin-settings>",
-    "OBSIDIAN_VAULT_PATH": "users/<your-handle>"
-  }
-}' --scope user`}
-          </pre>
+      {/* 0G INTEGRATION DEPTH */}
+      <section className="flex flex-col gap-6">
+        <h2 className="text-eyebrow text-[var(--ink-subtle)]">0G integration depth</h2>
+        <p className="max-w-3xl text-lg text-[var(--ink-muted)]">
+          Brainpedia uses 5 of 5 0G components on mainnet. Every Brain creation,
+          query, and settlement is verifiable on chainscan.0g.ai.
+        </p>
+        <div className="grid gap-3 md:grid-cols-2">
+          <IntegrationCard
+            label="0G Storage"
+            detail="KV layer for live wiki edits. Log layer for immutable merkle-rooted snapshots that the iNFT carries."
+          />
+          <IntegrationCard
+            label="0G Compute"
+            detail="Per-query inference on TEE-attested Qwen 2.5 7B via broker.ledger metering. Mixture-of-Brains synthesis runs here too."
+          />
+          <IntegrationCard
+            label="0G Chain (Aristotle, 16661)"
+            detail="All iNFT custody, royalty distribution, and mint wrappers live on mainnet. 4 verified contracts."
+          />
+          <IntegrationCard
+            label="Agent ID (ERC-7857 iNFT)"
+            detail="Encrypted private manifest sealed for owner. Oracle-attested transfers via BrainOracle. Append-only intelligence lineage."
+          />
+          <IntegrationCard
+            label="Privacy + TEE attestation"
+            detail="Every inference response carries verified=true from the TEE attestor. Same attestor key gates ownership transfer."
+          />
         </div>
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm uppercase tracking-wider text-[var(--muted)]">Browse Brains</h2>
-        <p className="text-sm text-[var(--muted)]">
-          Each Brain has a public page at{' '}
-          <code className="font-mono">brainpedia.up.railway.app/&lt;name&gt;</code>. Try{' '}
-          <Link className="underline underline-offset-4" href="/yudhi">
-            /yudhi
-          </Link>
-          .
-        </p>
+      {/* ON-CHAIN PROOF */}
+      <section className="flex flex-col gap-6">
+        <h2 className="text-eyebrow text-[var(--ink-subtle)]">live on 0G mainnet</h2>
+        <div className="surface-1 grid grid-cols-1 divide-y divide-[var(--hairline)] rounded-xl text-sm md:grid-cols-2 md:divide-x md:divide-y-0">
+          <ProofRow label="Brain.sol" address={BRAIN_ADDRESS} />
+          <ProofRow label="BrainOracle" address={ORACLE_ADDRESS} />
+          <ProofRow label="BrainMinter" address={MINTER_ADDRESS} />
+          <ProofRow label="RoyaltyDistributor" address={ROYALTY_ADDRESS} />
+        </div>
+        <a
+          href={`${EXPLORER}/tx/${MIXTURE_PROOF_TX}`}
+          target="_blank"
+          rel="noreferrer"
+          className="surface-1 group flex flex-col gap-1 rounded-xl p-5 transition-colors hover:border-[var(--hairline-strong)]"
+        >
+          <span className="text-eyebrow text-[var(--ink-subtle)]">hero settlement tx</span>
+          <span className="text-card-title text-[var(--ink)]">
+            2 brains paid in one transaction
+          </span>
+          <span className="text-xs text-[var(--ink-subtle)] group-hover:text-[var(--ink-muted)]">
+            RoyaltyDistributor.distribute([1, 2], [0.005, 0.003], reason) ·{' '}
+            <span className="font-mono">{MIXTURE_PROOF_TX.slice(0, 18)}…</span>
+          </span>
+        </a>
       </section>
 
+      {/* EXPLORE */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <DemoLink href="/yudhi" label="sample brain" detail="yudhi.bpedia.eth · live wiki" />
+        <DemoLink href="/status" label="live status" detail="7 read-only checks against on-chain state" />
+        <DemoLink href="/create" label="/create" detail="drag a folder · mint from any wallet" />
         <DemoLink
-          href="/yudhi"
-          label="Sample Brain"
-          detail="defi-yield-strategies, 6 articles, 0.001 OG/query"
+          external
+          href="https://github.com/0xYudhishthra/brainpedia"
+          label="github"
+          detail="apps · packages · contracts · docs"
         />
-        <DemoLink href="/status" label="Live status" detail="7 read-only checks against on-chain state" />
         <DemoLink
           external
           href="https://sepolia.app.ens.domains/bpedia.eth"
           label="bpedia.eth on ENS"
-          detail="parent name, deployer-owned"
+          detail="discovery layer on Sepolia"
         />
         <DemoLink
           external
-          href="https://sepolia.app.ens.domains/yudhi.bpedia.eth"
-          label="yudhi.bpedia.eth"
-          detail="all brain.* records, live"
-        />
-        <DemoLink
-          external
-          href="https://sepolia.app.ens.domains/all.discover.bpedia.eth"
-          label="all.discover…"
-          detail="discovery shortcut → 2 brains (homepage graph reads this)"
-        />
-        <DemoLink
-          external
-          href="https://chainscan-galileo.0g.ai/address/0x4E5c6DC869F9B3220F01de9047031cEd1577b08F"
-          label="Brain.sol on 0G"
-          detail="ERC-7857 iNFT, 7 tokens minted"
-        />
-        <DemoLink
-          external
-          href="https://chainscan-galileo.0g.ai/address/0x44eaad4fdb7d509cd3fe7624ce512cc97b910649"
-          label="RoyaltyDistributor"
-          detail="single-tx multi-Brain payment"
+          href={`${EXPLORER}/open/address/${MINTER_ADDRESS}`}
+          label="brain minter"
+          detail="permissionless self-mint on 0G mainnet"
         />
       </section>
 
-      <footer className="mt-auto border-t border-current/10 pt-6 text-xs text-[var(--muted)]">
+      <footer className="border-t border-[var(--hairline)] pt-6 text-xs text-[var(--ink-subtle)]">
         <p>
-          0G · ENS · AXL ·{' '}
+          0G Aristotle (chainId 16661) · ENS Sepolia · AXL P2P ·{' '}
           <a
-            className="underline underline-offset-4"
+            className="text-[var(--ink-muted)] hover:text-[var(--ink)]"
             href="https://github.com/0xYudhishthra/brainpedia"
           >
             github
@@ -214,6 +332,31 @@ export default async function HomePage() {
         </p>
       </footer>
     </main>
+  );
+}
+
+function IntegrationCard({ label, detail }: { label: string; detail: string }) {
+  return (
+    <div className="surface-1 rounded-xl p-5">
+      <div className="text-card-title text-[var(--ink)]">{label}</div>
+      <p className="mt-2 text-sm text-[var(--ink-muted)]">{detail}</p>
+    </div>
+  );
+}
+
+function ProofRow({ label, address }: { label: string; address: string }) {
+  return (
+    <a
+      href={`${EXPLORER}/open/address/${address}`}
+      target="_blank"
+      rel="noreferrer"
+      className="flex flex-col gap-1 p-5 transition-colors hover:bg-[var(--surface-2)]"
+    >
+      <span className="text-eyebrow text-[var(--ink-subtle)]">{label}</span>
+      <span className="font-mono text-sm text-[var(--ink-muted)]">
+        {address.slice(0, 8)}…{address.slice(-6)}
+      </span>
+    </a>
   );
 }
 
@@ -233,11 +376,10 @@ function DemoLink({
   return (
     <Comp
       {...(props as { href: string; target?: string; rel?: string })}
-      className="flex flex-col gap-1 rounded-lg border border-current/10 p-3 hover:border-current/20 transition-colors"
+      className="surface-1 flex flex-col gap-1 rounded-lg p-4 transition-colors hover:border-[var(--hairline-strong)]"
     >
-      <span className="text-sm font-medium">{label} →</span>
-      <span className="text-xs text-[var(--muted)]">{detail}</span>
+      <span className="text-sm font-medium text-[var(--ink)]">{label} →</span>
+      <span className="text-xs text-[var(--ink-subtle)]">{detail}</span>
     </Comp>
   );
 }
-
