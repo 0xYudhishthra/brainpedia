@@ -11,6 +11,8 @@ import {
   toBytes,
   type Address,
   type Hex,
+  type PublicClient,
+  type TransactionReceipt,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import type { ZgConfig } from './config.js';
@@ -195,13 +197,14 @@ export function createBrainLogClient(cfg: ZgConfig, signerPrivateKey: string): B
         value: flowFee,
       });
 
-      // Galileo's RPC frequently 404s on the first poll for ~30-60s after
-      // submit. viem's defaults are too tight; bump generously.
-      const submitReceipt = await publicClient.waitForTransactionReceipt({
-        hash: submitTx,
-        timeout: 240_000,
-        retryDelay: 6_000,
-        retryCount: 40,
+      // 0G's RPC sometimes 404s for ~30-60s after submit, and viem's
+      // waitForTransactionReceipt can give up earlier than expected when
+      // it sees consecutive "not found" responses. Wrap with our own
+      // polling loop so we wait the full timeout regardless of viem's
+      // internal retry state.
+      const submitReceipt = await pollForReceipt(publicClient, submitTx, {
+        timeoutMs: 240_000,
+        pollIntervalMs: 3_000,
       });
       if (submitReceipt.status !== 'success') {
         throw new Error(`uploadSnapshot: Flow.submit reverted: ${submitTx}`);
@@ -246,4 +249,31 @@ export function createBrainLogClient(cfg: ZgConfig, signerPrivateKey: string): B
       }
     },
   };
+}
+
+/**
+ * Poll `eth_getTransactionReceipt` until either the receipt resolves OR the
+ * timeout expires. viem's built-in waitForTransactionReceipt sometimes
+ * gives up early when the RPC returns null on the first few polls
+ * (0G mainnet has a noticeable mempool→block latency on submit). This
+ * helper sidesteps that by manually polling for the entire budget.
+ */
+async function pollForReceipt(
+  client: PublicClient,
+  hash: Hex,
+  opts: { timeoutMs: number; pollIntervalMs: number },
+): Promise<TransactionReceipt> {
+  const deadline = Date.now() + opts.timeoutMs;
+  let lastError: unknown = null;
+  while (Date.now() < deadline) {
+    try {
+      const r = await client.getTransactionReceipt({ hash });
+      if (r) return r;
+    } catch (err) {
+      lastError = err;
+    }
+    await new Promise((res) => setTimeout(res, opts.pollIntervalMs));
+  }
+  const msg = lastError instanceof Error ? lastError.message : 'no receipt within timeout';
+  throw new Error(`pollForReceipt: ${hash} not confirmed within ${opts.timeoutMs}ms (${msg})`);
 }
