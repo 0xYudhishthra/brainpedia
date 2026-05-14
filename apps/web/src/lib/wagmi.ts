@@ -4,11 +4,12 @@ import { injected } from 'wagmi/connectors';
 import { mainnet, sepolia } from 'wagmi/chains';
 
 /**
- * 0G Aristotle mainnet — chain id 16661.
- * Brainpedia's Brain iNFTs + RoyaltyDistributor live here.
+ * 0G Aristotle mainnet, chain id 16661.
+ * Brainpedia's Brain iNFT contracts live here. We hardcode the chain id so
+ * a misconfigured deploy can't silently swap us back to testnet.
  */
 const zeroGMainnet = defineChain({
-  id: Number(process.env.NEXT_PUBLIC_ZG_CHAIN_ID ?? 16661),
+  id: 16661,
   name: '0G Aristotle',
   nativeCurrency: { name: '0G', symbol: '0G', decimals: 18 },
   rpcUrls: {
@@ -24,7 +25,7 @@ const zeroGMainnet = defineChain({
   },
 });
 
-/** 0G Galileo testnet — still useful for dev work. */
+/** 0G Galileo testnet, still useful for dev work. */
 const zeroGGalileo = defineChain({
   id: 16602,
   name: '0G Galileo Testnet',
@@ -40,17 +41,20 @@ const zeroGGalileo = defineChain({
 
 export const wagmiConfig = createConfig({
   chains: [zeroGMainnet, zeroGGalileo, sepolia, mainnet],
-  connectors: [injected()],
+  connectors: [injected({ shimDisconnect: true })],
   transports: {
-    [zeroGMainnet.id]: http(),
-    [zeroGGalileo.id]: http(),
+    [zeroGMainnet.id]: http(process.env.NEXT_PUBLIC_ZG_RPC_URL ?? 'https://evmrpc.0g.ai'),
+    [zeroGGalileo.id]: http('https://evmrpc-testnet.0g.ai'),
     [sepolia.id]: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL),
     [mainnet.id]: http(process.env.NEXT_PUBLIC_MAINNET_RPC_URL),
   },
   ssr: true,
 });
 
-export const ZG_MAINNET_ID = zeroGMainnet.id;
+/** Always 16661 (0G Aristotle mainnet). Hardcoded so build-time env mismatches can't break the mint UX. */
+export const ZG_MAINNET_ID = 16661;
+export const ZG_MAINNET_RPC =
+  process.env.NEXT_PUBLIC_ZG_RPC_URL ?? 'https://evmrpc.0g.ai';
 export const ZG_EXPLORER_URL =
   process.env.NEXT_PUBLIC_ZG_EXPLORER_URL ?? 'https://chainscan.0g.ai';
 

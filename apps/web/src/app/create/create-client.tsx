@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAccount, useConnect, useDisconnect, useSwitchChain, useWriteContract } from 'wagmi';
-import { ZG_EXPLORER_URL, ZG_MAINNET_ID } from '@/lib/wagmi';
+import { ZG_EXPLORER_URL, ZG_MAINNET_ID, ZG_MAINNET_RPC } from '@/lib/wagmi';
 
 interface CompiledArticleSummary {
   slug: string;
@@ -47,20 +47,64 @@ const ZERO_BYTES32 = '0x00000000000000000000000000000000000000000000000000000000
 
 export function CreateBrainClient({ minterAddress }: { minterAddress: `0x${string}` }) {
   const { address, isConnected, chainId } = useAccount();
-  const { connect, connectors, isPending: isConnecting } = useConnect();
+  const { connect, connectors, isPending: isConnecting, error: connectError } = useConnect();
   const { disconnect } = useDisconnect();
-  const { switchChain } = useSwitchChain();
+  const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync, isPending: isMinting } = useWriteContract();
 
+  const [hydrated, setHydrated] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [description, setDescription] = useState('');
   const [compileState, setCompileState] = useState<'idle' | 'compiling' | 'done' | 'error'>('idle');
   const [compileResult, setCompileResult] = useState<CompileResponse | null>(null);
   const [mintHash, setMintHash] = useState<`0x${string}` | null>(null);
   const [mintError, setMintError] = useState<string | null>(null);
+  const [switchError, setSwitchError] = useState<string | null>(null);
+
+  // Avoid SSR hydration mismatches — wagmi state is undefined on the server.
+  useEffect(() => setHydrated(true), []);
 
   const onChainCorrect = chainId === ZG_MAINNET_ID;
-  const injectedConnector = useMemo(() => connectors.find((c) => c.id === 'injected') ?? connectors[0], [connectors]);
+  const injectedConnector = useMemo(
+    () => connectors.find((c) => c.id === 'injected') ?? connectors[0],
+    [connectors],
+  );
+  // Detect window.ethereum on the client without server-rendering it
+  const hasInjectedWallet =
+    hydrated && typeof window !== 'undefined' && Boolean((window as { ethereum?: unknown }).ethereum);
+
+  const onAddOrSwitchChain = useCallback(async () => {
+    setSwitchError(null);
+    try {
+      await switchChainAsync({ chainId: ZG_MAINNET_ID });
+    } catch (err) {
+      // wagmi/viem returns code 4902 for "chain not yet added". Try
+      // wallet_addEthereumChain directly as a fallback so users don't have
+      // to add 0G Aristotle to MetaMask manually.
+      const eth = (window as { ethereum?: { request?: (a: { method: string; params: unknown[] }) => Promise<unknown> } }).ethereum;
+      if (eth?.request) {
+        try {
+          await eth.request({
+            method: 'wallet_addEthereumChain',
+            params: [
+              {
+                chainId: `0x${ZG_MAINNET_ID.toString(16)}`,
+                chainName: '0G Aristotle',
+                nativeCurrency: { name: '0G', symbol: '0G', decimals: 18 },
+                rpcUrls: [ZG_MAINNET_RPC],
+                blockExplorerUrls: [ZG_EXPLORER_URL],
+              },
+            ],
+          });
+          return;
+        } catch (addErr) {
+          setSwitchError(addErr instanceof Error ? addErr.message : String(addErr));
+          return;
+        }
+      }
+      setSwitchError(err instanceof Error ? err.message : String(err));
+    }
+  }, [switchChainAsync]);
 
   const onPickFiles = useCallback((picked: FileList | null) => {
     if (!picked) return;
@@ -107,7 +151,7 @@ export function CreateBrainClient({ minterAddress }: { minterAddress: `0x${strin
     setMintError(null);
     try {
       if (!onChainCorrect) {
-        await switchChain({ chainId: ZG_MAINNET_ID });
+        await onAddOrSwitchChain();
       }
       const hash = await writeContractAsync({
         address: minterAddress,
@@ -126,7 +170,7 @@ export function CreateBrainClient({ minterAddress }: { minterAddress: `0x${strin
     } catch (err) {
       setMintError(err instanceof Error ? err.message : String(err));
     }
-  }, [compileResult, description, minterAddress, onChainCorrect, switchChain, writeContractAsync]);
+  }, [compileResult, description, minterAddress, onChainCorrect, onAddOrSwitchChain, writeContractAsync]);
 
   return (
     <section className="flex flex-col gap-6">
@@ -136,37 +180,71 @@ export function CreateBrainClient({ minterAddress }: { minterAddress: `0x${strin
           <div className="text-sm">
             <div className="text-[var(--muted)]">wallet</div>
             <div className="font-mono">
-              {isConnected && address
+              {hydrated && isConnected && address
                 ? `${address.slice(0, 6)}…${address.slice(-4)}`
                 : 'not connected'}
             </div>
+            {hydrated && isConnected && (
+              <div className="mt-1 text-xs text-[var(--muted)]">
+                on chain {chainId ?? '?'} {onChainCorrect ? '(0G Aristotle ✓)' : '(wrong network)'}
+              </div>
+            )}
           </div>
-          {!isConnected ? (
+          {hydrated && !isConnected ? (
             <button
-              className="rounded border border-current/20 px-3 py-1 text-sm hover:bg-black/5 dark:hover:bg-white/10"
-              disabled={isConnecting || !injectedConnector}
+              className="rounded border border-current/20 px-3 py-1 text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-50"
+              disabled={isConnecting || !injectedConnector || !hasInjectedWallet}
               onClick={() => injectedConnector && connect({ connector: injectedConnector })}
+              title={!hasInjectedWallet ? 'No injected wallet detected (MetaMask / Rabby / Brave). Install one.' : undefined}
             >
-              {isConnecting ? 'connecting…' : 'connect wallet'}
+              {isConnecting ? 'connecting…' : hasInjectedWallet ? 'connect wallet' : 'no wallet detected'}
             </button>
-          ) : (
+          ) : hydrated ? (
             <button
               className="rounded border border-current/20 px-3 py-1 text-sm hover:bg-black/5 dark:hover:bg-white/10"
               onClick={() => disconnect()}
             >
               disconnect
             </button>
-          )}
+          ) : null}
         </div>
-        {isConnected && !onChainCorrect && (
-          <div className="mt-3 flex items-center justify-between gap-3 text-sm text-amber-600 dark:text-amber-400">
-            <span>Wrong network. Brainpedia mints on 0G Aristotle (chainId {ZG_MAINNET_ID}).</span>
-            <button
-              className="rounded border border-current/30 px-2 py-1 text-xs hover:bg-amber-100/30"
-              onClick={() => switchChain({ chainId: ZG_MAINNET_ID })}
-            >
-              switch network
-            </button>
+
+        {/* No-wallet hint */}
+        {hydrated && !hasInjectedWallet && !isConnected && (
+          <div className="mt-3 text-xs text-[var(--muted)]">
+            Brainpedia&apos;s web mint flow needs an injected wallet (MetaMask, Rabby, Brave). Install one and refresh, or use the{' '}
+            <a className="underline" href="https://www.npmjs.com/package/brainpedia-mcp" target="_blank" rel="noreferrer">
+              brainpedia-mcp
+            </a>{' '}
+            Claude Code path instead.
+          </div>
+        )}
+
+        {/* Connect error */}
+        {connectError && (
+          <div className="mt-3 text-xs text-red-500 dark:text-red-400 break-words">
+            connect failed: {connectError.message}
+          </div>
+        )}
+
+        {/* Wrong-chain prompt */}
+        {hydrated && isConnected && !onChainCorrect && (
+          <div className="mt-3 flex flex-col gap-2 text-sm text-amber-600 dark:text-amber-400">
+            <div className="flex items-center justify-between gap-3">
+              <span>Wrong network. Brainpedia mints on 0G Aristotle (chainId {ZG_MAINNET_ID}).</span>
+              <button
+                className="rounded border border-current/30 px-2 py-1 text-xs hover:bg-amber-100/30"
+                onClick={onAddOrSwitchChain}
+              >
+                add / switch to 0G Aristotle
+              </button>
+            </div>
+            {switchError && (
+              <div className="text-xs text-red-500 dark:text-red-400 break-words">
+                switch failed: {switchError}. Open MetaMask, add a custom network with chainId 16661, RPC{' '}
+                <code>{ZG_MAINNET_RPC}</code>, currency symbol 0G, explorer <code>{ZG_EXPLORER_URL}</code>.
+              </div>
+            )}
           </div>
         )}
       </div>
