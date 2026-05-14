@@ -1,13 +1,18 @@
 # Brainpedia
 
-> Brainpedia is a network where humans turn their personal notes into ERC-7857 AI Brains on 0G that other agents pay to query.
+> Brainpedia is a network where any human turns any folder of knowledge (markdown, PDF, Word, plain text) into ERC-7857 AI Brains on 0G that other agents pay to query.
 
 - **Live web**: https://brainpedia.up.railway.app
+- **Mint a Brain (no CLI)**: https://brainpedia.up.railway.app/create
 - **Sample Brain**: https://brainpedia.up.railway.app/yudhi
 - **Install MCP server**: `npx -y brainpedia-mcp`
 - **0G integration deep-dive**: [docs/0g-integration.md](docs/0g-integration.md)
 - **Architecture**: [docs/architecture.md](docs/architecture.md)
 - **Security**: [contracts/SECURITY.md](contracts/SECURITY.md) · [contracts/KNOWN_ISSUES.md](contracts/KNOWN_ISSUES.md)
+
+### Prior validation
+
+Brainpedia previously won the **0G Best Autonomous Agents, Swarms & iNFT Innovations** prize and **ENS Best ENS Integration for AI Agents (2nd place)** at ETHGlobal Open Agents. 0G itself [announced the win on X](https://x.com/0G_labs/status/2052362392026108335). The [ethglobal.com showcase entry](https://ethglobal.com/showcase/brainpedia-ctx9g) reflects that earlier build. This submission rebuilds the project on **0G mainnet** with multi-format ingest, a web-native mint flow, a Karpathy-style knowledge framework, and the canonical ERC-7857 contract surface.
 
 ---
 
@@ -17,7 +22,12 @@ Agents have no legitimate way to buy specialty knowledge. APIs are centralized, 
 
 ## The solution
 
-Brainpedia is the supply side of the agent economy. Any human publishes their personal notes (Obsidian vault, research archive, case files) as a specialty AI Brain. Each Brain is an ERC-7857 iNFT minted on 0G with encrypted private metadata sealed for the owner. Other agents discover Brains, pay a per-query sticker price, and run inference against the Brain's snapshot using 0G's TEE-attested compute. A `Mixture-of-Brains` query fans out across multiple Brains and settles royalties in a single on-chain transaction. No central API, no off-chain auth service. The Brain outlives Brainpedia.
+Brainpedia is the supply side of the agent economy. Any human publishes a folder of knowledge as a specialty AI Brain. Markdown notes, research papers (PDF), case files (Word), plain text, anything. The `@brainpedia/knowledge-compiler` pipeline extracts text per format, segments into article candidates, and compiles a Karpathy-style LLM wiki. Each Brain is an ERC-7857 iNFT minted on 0G with encrypted private metadata sealed for the owner. Other agents discover Brains, pay a per-query sticker price, and run inference against the Brain's snapshot using 0G's TEE-attested compute. A `Mixture-of-Brains` query fans out across multiple Brains and settles royalties in a single on-chain transaction. No central API, no off-chain auth service. The Brain outlives Brainpedia.
+
+Two ways to mint:
+
+1. **Web** at [brainpedia.up.railway.app/create](https://brainpedia.up.railway.app/create). Drag a folder, connect a wallet, sign the mint. No CLI.
+2. **Claude Code** via `npx -y brainpedia-mcp`. The MCP server reads your live Obsidian vault and updates the Brain's wiki on every save. Power-user path.
 
 ## 0G integration depth — 5 of 5 components
 
@@ -74,11 +84,35 @@ Brainpedia is the supply side of the agent economy. Any human publishes their pe
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-Two surfaces split by intent: the **MCP server is the write path** (read your vault, sign txs, mint brains, locally hold your key) and the **web app is the read path** (browse the network, query brains, settle royalties; holds zero user state). Full diagram + Mixture-of-Brains flow in [docs/architecture.md](docs/architecture.md).
+Two surfaces split by intent: the **MCP server is the write path** (read your vault, sign txs, mint brains, locally hold your key) and the **web app is the read+write path** (browse the network, query brains, settle royalties; plus `/create` for wallet-only mints with no CLI). Full diagram + Mixture-of-Brains flow in [docs/architecture.md](docs/architecture.md).
+
+## Knowledge framework
+
+`@brainpedia/knowledge-compiler` is a format-agnostic pipeline that turns any folder of mixed knowledge into a Karpathy-style LLM wiki ready to be snapshotted onto 0G Storage and minted as an ERC-7857 Brain. Each stage has a stable interface so new file formats and new compile backends slot in without touching downstream code.
+
+```
+File (md, txt, pdf, docx, ... )
+   ↓ Extractor (one per format, pluggable)
+RawDocument { text, structureHints, sourceMeta, format }
+   ↓ Segmenter (heading-aware, page-aware, size-bounded)
+ArticleCandidate[]
+   ↓ Compiler (v1 deterministic; v2 swappable for 0G Compute TEE inference)
+CompiledArticle[]
+   ↓ buildGraph
+ArticleGraph (articles + adjacency + backlinks)
+   ↓ @brainpedia/storage-0g uploadSnapshot
+0G Storage merkle rootHash
+   ↓ BrainMinter.mintToSender(rootHash, ...)
+ERC-7857 iNFT
+```
+
+Today's extractors: `markdown` (.md), `text` (.txt), `pdf` (.pdf via `pdf-parse`), `docx` (.docx via `mammoth`). Adding a new format means adding one Extractor implementation; the segmenter, compiler, graph, snapshot, and mint stages stay untouched. The v1 compiler is deterministic (kebab-slug + substring cross-references). v2 swaps in a 0G Compute backend that uses the same TEE-attested Qwen 2.5 model as the query path, so 0G Compute appears at both ends: creation and inference.
 
 ## How a query works
 
-1. **Create a Brain**. Run `npx -y brainpedia-mcp` inside Claude Code. Say *"set up my Brain from my Obsidian vault."* The MCP server reads your vault, returns the parse + compile schema, then Claude compiles wiki pages following that schema. `upload_articles` pushes the snapshot to 0G Storage; `finalize_brain` mints the iNFT via `BrainMinter` and writes all `brain.*` text records. Your wallet owns the iNFT.
+1. **Create a Brain**. Two paths.
+   - **Web (no CLI)**: open [brainpedia.up.railway.app/create](https://brainpedia.up.railway.app/create), connect a wallet on 0G mainnet, drop a folder of mixed-format knowledge. The server runs `@brainpedia/knowledge-compiler`, uploads the compiled snapshot to 0G Storage, and returns the merkle rootHash. Your wallet signs `BrainMinter.mintToSender(rootHash, ...)`. The iNFT is owned by you, not the server.
+   - **MCP (live vault sync)**: `npx -y brainpedia-mcp` inside Claude Code. Say *"set up my Brain from my Obsidian vault."* The MCP server reads your vault, lets Claude compile pages following the same schema, pushes the snapshot to 0G Storage via `upload_articles`, mints via `finalize_brain`, and writes all `brain.*` ENS text records. Subsequent saves to your vault push new snapshots via `sync_vault`.
 2. **Discover**. Agents resolve `<topic>.discover.bpedia.eth`, get a list of Brain ENS names, resolve each, get peer ID, iNFT ref, and per-query sticker price.
 3. **Mixture-of-Brains query**. The orchestrator fans out a question to N Brains in parallel. Each runs inference on 0G Compute (TEE-attested), returns citations + per-Brain answer.
 4. **Pay-to-read settlement**. Phase 1 returns redacted citations + the on-chain payment plan (each Brain receives its sticker `brain.price_query`). The synthesised answer is gated until the agent settles via `RoyaltyDistributor.distribute(tokenIds[], amounts[], reason)` in a single transaction. The server verifies on-chain `Distributed` events match the cached plan, then releases the synthesis.
@@ -93,6 +127,7 @@ brainpedia/
 │   ├── mcp-server/             stdio MCP for Claude Code, published as `brainpedia-mcp` (7 tools)
 │   └── brain/                  Brain-side service (multi-tenant), runs on Railway
 ├── packages/                   shared libraries (consumed by apps; no app→app deps)
+│   ├── knowledge-compiler/     Format-agnostic pipeline: md/pdf/docx/txt → Karpathy LLM wiki
 │   ├── obsidian-parser/        Vault → article graph (FS + Local REST API plugin)
 │   ├── storage-0g/             0G Storage KV + Log wrappers
 │   ├── compute-0g/             0G Compute broker + OpenAI-compat client
