@@ -86,4 +86,7 @@ sample-vault/
 !scripts/demo/sample-vault/
 
 # Local Claude Code agent state
-.claude/
+.claude/*
+# Team-shared gstack enforcement (committed for all contributors)
+!.claude/hooks/
+!.claude/settings.json
