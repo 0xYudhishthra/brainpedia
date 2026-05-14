@@ -39,8 +39,16 @@ export default function CreatePage() {
         </h2>
         <ol className="flex flex-col gap-2 text-sm">
           <li>1. Connect a wallet on 0G Aristotle mainnet (chainId 16661).</li>
-          <li>2. Drop your files. Server extracts text and compiles articles.</li>
-          <li>3. Server uploads the snapshot to 0G Storage and returns a merkle root.</li>
+          <li>
+            2. Drop your files and click <em>preview compilation</em>. The server extracts text and
+            compiles articles, but does NOT upload to chain yet. You can review the article list
+            and recompile if anything looks off.
+          </li>
+          <li>
+            3. When the preview looks right, click <em>upload to 0G Storage</em>. This is the
+            first on-chain step; the server pushes the snapshot to 0G Storage Log and returns a
+            merkle rootHash.
+          </li>
           <li>
             4. Your wallet signs <code className="font-mono">BrainMinter.mintToSender(rootHash, ...)</code> at{' '}
             <a

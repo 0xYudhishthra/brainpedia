@@ -14,6 +14,7 @@ interface CompiledArticleSummary {
 
 interface CompileResponse {
   ok: boolean;
+  step?: 'preview' | 'finalize';
   rootHash?: `0x${string}`;
   articleCount?: number;
   articles?: CompiledArticleSummary[];
@@ -23,6 +24,14 @@ interface CompileResponse {
   storageUploadTx?: string;
   error?: string;
 }
+
+type FlowState =
+  | 'idle'                  // user has not previewed yet
+  | 'previewing'            // POST ?step=preview in flight
+  | 'previewed'             // server returned article preview; awaiting user confirm
+  | 'finalizing'            // POST ?step=finalize in flight (uploading to 0G Storage)
+  | 'ready-to-mint'         // server returned rootHash; user can sign
+  | 'error';                // either phase failed
 
 // Minimal BrainMinter ABI for mintToSender. Public-only Brain — encryptedURI
 // and sealedKey are empty, metadataHash is zero. The server-uploaded snapshot
@@ -55,8 +64,9 @@ export function CreateBrainClient({ minterAddress }: { minterAddress: `0x${strin
   const [hydrated, setHydrated] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [description, setDescription] = useState('');
-  const [compileState, setCompileState] = useState<'idle' | 'compiling' | 'done' | 'error'>('idle');
-  const [compileResult, setCompileResult] = useState<CompileResponse | null>(null);
+  const [flowState, setFlowState] = useState<FlowState>('idle');
+  const [previewResult, setPreviewResult] = useState<CompileResponse | null>(null);
+  const [finalizeResult, setFinalizeResult] = useState<CompileResponse | null>(null);
   const [mintHash, setMintHash] = useState<`0x${string}` | null>(null);
   const [mintError, setMintError] = useState<string | null>(null);
   const [switchError, setSwitchError] = useState<string | null>(null);
@@ -106,48 +116,78 @@ export function CreateBrainClient({ minterAddress }: { minterAddress: `0x${strin
     }
   }, [switchChainAsync]);
 
-  const onPickFiles = useCallback((picked: FileList | null) => {
-    if (!picked) return;
-    setFiles(Array.from(picked));
-    setCompileState('idle');
-    setCompileResult(null);
+  const resetFlow = useCallback(() => {
+    setFlowState('idle');
+    setPreviewResult(null);
+    setFinalizeResult(null);
     setMintHash(null);
     setMintError(null);
   }, []);
 
-  const onDrop = useCallback((ev: React.DragEvent<HTMLDivElement>) => {
-    ev.preventDefault();
-    const dropped = Array.from(ev.dataTransfer.files);
-    if (dropped.length === 0) return;
-    setFiles(dropped);
-    setCompileState('idle');
-    setCompileResult(null);
-  }, []);
+  const onPickFiles = useCallback(
+    (picked: FileList | null) => {
+      if (!picked) return;
+      setFiles(Array.from(picked));
+      resetFlow();
+    },
+    [resetFlow],
+  );
 
-  const onCompile = useCallback(async () => {
+  const onDrop = useCallback(
+    (ev: React.DragEvent<HTMLDivElement>) => {
+      ev.preventDefault();
+      const dropped = Array.from(ev.dataTransfer.files);
+      if (dropped.length === 0) return;
+      setFiles(dropped);
+      resetFlow();
+    },
+    [resetFlow],
+  );
+
+  // Step 1: preview compilation (no storage upload)
+  const onPreview = useCallback(async () => {
     if (!address || files.length === 0) return;
-    setCompileState('compiling');
-    setCompileResult(null);
+    setFlowState('previewing');
+    setPreviewResult(null);
+    setFinalizeResult(null);
     setMintError(null);
     try {
       const fd = new FormData();
       fd.append('owner', address);
       for (const f of files) fd.append('files', f);
-      const res = await fetch('/api/create', { method: 'POST', body: fd });
+      const res = await fetch('/api/create?step=preview', { method: 'POST', body: fd });
       const body: CompileResponse = await res.json();
-      setCompileResult(body);
-      setCompileState(body.ok ? 'done' : 'error');
+      setPreviewResult(body);
+      setFlowState(body.ok ? 'previewed' : 'error');
     } catch (err) {
-      setCompileResult({
-        ok: false,
-        error: err instanceof Error ? err.message : String(err),
-      });
-      setCompileState('error');
+      setPreviewResult({ ok: false, error: err instanceof Error ? err.message : String(err) });
+      setFlowState('error');
     }
   }, [address, files]);
 
+  // Step 2: user confirms — upload snapshot to 0G Storage
+  const onFinalize = useCallback(async () => {
+    if (!address || files.length === 0) return;
+    setFlowState('finalizing');
+    setFinalizeResult(null);
+    setMintError(null);
+    try {
+      const fd = new FormData();
+      fd.append('owner', address);
+      for (const f of files) fd.append('files', f);
+      const res = await fetch('/api/create?step=finalize', { method: 'POST', body: fd });
+      const body: CompileResponse = await res.json();
+      setFinalizeResult(body);
+      setFlowState(body.ok && body.rootHash ? 'ready-to-mint' : 'error');
+    } catch (err) {
+      setFinalizeResult({ ok: false, error: err instanceof Error ? err.message : String(err) });
+      setFlowState('error');
+    }
+  }, [address, files]);
+
+  // Step 3: sign the mint transaction
   const onMint = useCallback(async () => {
-    if (!compileResult?.rootHash) return;
+    if (!finalizeResult?.rootHash) return;
     setMintError(null);
     try {
       if (!onChainCorrect) {
@@ -158,7 +198,7 @@ export function CreateBrainClient({ minterAddress }: { minterAddress: `0x${strin
         abi: MINTER_ABI,
         functionName: 'mintToSender',
         args: [
-          compileResult.rootHash,
+          finalizeResult.rootHash,
           '0x' as `0x${string}`,
           ZERO_BYTES32,
           description.trim() || 'Brain created via brainpedia.up.railway.app',
@@ -170,7 +210,7 @@ export function CreateBrainClient({ minterAddress }: { minterAddress: `0x${strin
     } catch (err) {
       setMintError(err instanceof Error ? err.message : String(err));
     }
-  }, [compileResult, description, minterAddress, onChainCorrect, onAddOrSwitchChain, writeContractAsync]);
+  }, [finalizeResult, description, minterAddress, onChainCorrect, onAddOrSwitchChain, writeContractAsync]);
 
   return (
     <section className="flex flex-col gap-6">
@@ -291,71 +331,126 @@ export function CreateBrainClient({ minterAddress }: { minterAddress: `0x${strin
         />
       </div>
 
-      <button
-        className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
-        disabled={!isConnected || files.length === 0 || compileState === 'compiling'}
-        onClick={onCompile}
-      >
-        {compileState === 'compiling' ? 'compiling + uploading…' : 'compile and upload to 0G Storage'}
-      </button>
+      {/* === Step 1: PREVIEW button (no storage upload yet) === */}
+      {flowState !== 'finalizing' && flowState !== 'ready-to-mint' && (
+        <button
+          className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
+          disabled={!isConnected || files.length === 0 || flowState === 'previewing'}
+          onClick={onPreview}
+        >
+          {flowState === 'previewing'
+            ? 'extracting + compiling…'
+            : flowState === 'previewed'
+              ? 'recompile (input changed?)'
+              : '1. preview compilation'}
+        </button>
+      )}
 
-      {/* Compile result */}
-      {compileResult && !compileResult.ok && (
+      {/* Preview / finalize errors */}
+      {flowState === 'error' && previewResult && !previewResult.ok && (
         <div className="rounded border border-red-300/30 bg-red-50/30 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">
-          <div className="font-medium">compile failed</div>
-          <div className="font-mono text-xs">{compileResult.error}</div>
+          <div className="font-medium">preview failed</div>
+          <div className="font-mono text-xs break-all">{previewResult.error}</div>
+        </div>
+      )}
+      {flowState === 'error' && finalizeResult && !finalizeResult.ok && (
+        <div className="rounded border border-red-300/30 bg-red-50/30 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">
+          <div className="font-medium">upload failed</div>
+          <div className="font-mono text-xs break-all">{finalizeResult.error}</div>
         </div>
       )}
 
-      {compileResult?.ok && (
-        <div className="flex flex-col gap-4 rounded-lg border border-current/10 p-4">
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-            <span>
-              <span className="text-[var(--muted)]">articles:</span>{' '}
-              <span className="font-mono">{compileResult.articleCount}</span>
-            </span>
-            <span>
-              <span className="text-[var(--muted)]">storage root:</span>{' '}
-              <span className="font-mono">
-                {compileResult.rootHash?.slice(0, 10)}…{compileResult.rootHash?.slice(-6)}
+      {/* === Step 2 result panel: preview compiled articles + confirm === */}
+      {(flowState === 'previewed' || flowState === 'finalizing' || flowState === 'ready-to-mint') &&
+        previewResult?.ok && (
+          <div className="flex flex-col gap-4 rounded-lg border border-current/10 p-4">
+            <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
+              <span>
+                <span className="text-[var(--muted)]">articles compiled:</span>{' '}
+                <span className="font-mono">{previewResult.articleCount}</span>
               </span>
-            </span>
-            {compileResult.storageUploadTx && (
-              <a
-                href={`${ZG_EXPLORER_URL}/tx/${compileResult.storageUploadTx}`}
-                target="_blank"
-                rel="noreferrer"
-                className="underline"
-              >
-                storage upload tx ↗
-              </a>
+              {previewResult.formatBreakdown && (
+                <span className="text-xs text-[var(--muted)]">
+                  ({Object.entries(previewResult.formatBreakdown)
+                    .filter(([, n]) => (n as number) > 0)
+                    .map(([k, n]) => `${k}=${n}`)
+                    .join(' · ')})
+                </span>
+              )}
+            </div>
+
+            <ul className="flex max-h-72 flex-col gap-1 overflow-auto text-xs">
+              {previewResult.articles?.map((a) => (
+                <li key={a.slug} className="font-mono">
+                  <span className="text-[var(--muted)]">{a.slug}</span> · {a.title} · {a.bodyChars} chars · {a.linkCount} link
+                  {a.linkCount === 1 ? '' : 's'}
+                </li>
+              ))}
+            </ul>
+
+            {previewResult.unsupported && previewResult.unsupported.length > 0 && (
+              <div className="text-xs text-[var(--muted)]">
+                Skipped (unsupported): {previewResult.unsupported.map((u) => u.path).join(', ')}
+              </div>
+            )}
+
+            {/* Confirm panel (before upload) */}
+            {flowState === 'previewed' && (
+              <div className="flex flex-col gap-3 rounded border border-amber-300/30 bg-amber-50/20 p-3 text-sm dark:bg-amber-900/10">
+                <p className="text-[var(--muted)]">
+                  Nothing has been uploaded yet. Review the article list above. If anything looks off,
+                  change your files (or the description) and click <em>recompile</em>. When you&apos;re happy,
+                  the next step uploads the snapshot to 0G Storage on chain.
+                </p>
+                <button
+                  className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
+                  disabled={!isConnected}
+                  onClick={onFinalize}
+                >
+                  2. looks good — upload to 0G Storage
+                </button>
+              </div>
+            )}
+
+            {/* Finalizing state */}
+            {flowState === 'finalizing' && (
+              <div className="rounded border border-current/10 bg-black/[0.02] p-3 text-sm text-[var(--muted)] dark:bg-white/[0.02]">
+                uploading snapshot to 0G Storage Log layer… this is the on-chain step (~10s).
+              </div>
+            )}
+
+            {/* Ready-to-mint panel */}
+            {flowState === 'ready-to-mint' && finalizeResult?.rootHash && (
+              <div className="flex flex-col gap-3 rounded border border-emerald-300/30 bg-emerald-50/20 p-3 text-sm dark:bg-emerald-900/10">
+                <div className="flex flex-wrap gap-x-6 gap-y-1">
+                  <span>
+                    <span className="text-[var(--muted)]">storage root:</span>{' '}
+                    <span className="font-mono">
+                      {finalizeResult.rootHash.slice(0, 10)}…{finalizeResult.rootHash.slice(-6)}
+                    </span>
+                  </span>
+                  {finalizeResult.storageUploadTx && (
+                    <a
+                      href={`${ZG_EXPLORER_URL}/tx/${finalizeResult.storageUploadTx}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline"
+                    >
+                      storage upload tx ↗
+                    </a>
+                  )}
+                </div>
+                <button
+                  className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
+                  disabled={!isConnected || isMinting}
+                  onClick={onMint}
+                >
+                  {isMinting ? 'sign mint in wallet…' : '3. sign mint transaction'}
+                </button>
+              </div>
             )}
           </div>
-
-          <ul className="flex flex-col gap-1 text-xs">
-            {compileResult.articles?.map((a) => (
-              <li key={a.slug} className="font-mono">
-                <span className="text-[var(--muted)]">{a.slug}</span> · {a.title} · {a.bodyChars} chars · {a.linkCount} link
-                {a.linkCount === 1 ? '' : 's'}
-              </li>
-            ))}
-          </ul>
-
-          {compileResult.unsupported && compileResult.unsupported.length > 0 && (
-            <div className="text-xs text-[var(--muted)]">
-              Skipped (unsupported): {compileResult.unsupported.map((u) => u.path).join(', ')}
-            </div>
-          )}
-
-          <button
-            className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
-            disabled={!isConnected || isMinting}
-            onClick={onMint}
-          >
-            {isMinting ? 'sign mint in wallet…' : 'sign mint transaction'}
-          </button>
-        </div>
-      )}
+        )}
 
       {mintError && (
         <div className="rounded border border-red-300/30 bg-red-50/30 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">
