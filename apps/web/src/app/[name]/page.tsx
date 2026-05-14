@@ -140,14 +140,16 @@ function Stat({
   );
 }
 
-/** chainscan-galileo address URL (0G Galileo testnet, chain 16602). */
+/** 0G explorer address URL. Defaults to mainnet; override via env. */
 function galileoAddress(addr: string): string {
-  return `https://chainscan-galileo.0g.ai/address/${addr}`;
+  const base = process.env.NEXT_PUBLIC_ZG_EXPLORER_URL ?? 'https://chainscan.0g.ai';
+  return `${base}/address/${addr}`;
 }
 
-/** chainscan-galileo tx URL (0G Galileo testnet, chain 16602). */
+/** 0G explorer tx URL. Defaults to mainnet; override via env. */
 function galileoTx(hash: string): string {
-  return `https://chainscan-galileo.0g.ai/tx/${hash}`;
+  const base = process.env.NEXT_PUBLIC_ZG_EXPLORER_URL ?? 'https://chainscan.0g.ai';
+  return `${base}/tx/${hash}`;
 }
 
 /** Sepolia ENS UI URL — the canonical sepolia.app.ens.domains form. */

@@ -245,7 +245,7 @@ export function MixtureDemo() {
                 <p className="mt-3 text-[11px] text-[var(--muted)]">
                   Settle in one tx via{' '}
                   <a
-                    href={`https://chainscan-galileo.0g.ai/address/${response.distributor}`}
+                    href={`${process.env.NEXT_PUBLIC_ZG_EXPLORER_URL ?? 'https://chainscan.0g.ai'}/address/${response.distributor}`}
                     target="_blank"
                     rel="noopener"
                     className="font-mono underline-offset-4 hover:underline"
