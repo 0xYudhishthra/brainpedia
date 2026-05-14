@@ -137,8 +137,20 @@ brainpedia/
 │                               SubnameRegistrar, AccessTokenRegistrar + lib/Errors
 ├── scripts/setup/              prep-deploy, register-parent, wire-ens, setup-compute,
 │                               seed-from-vault, settle-royalties, push-segments
-└── docs/                       0g-integration.md + architecture.md
+└── docs/                       0g-integration.md + architecture.md + submission-kit.md
 ```
+
+## For reviewers (60-second onboarding)
+
+The fastest path to verify Brainpedia works end-to-end on 0G mainnet.
+
+1. **Verify the contracts**. Open any of the four mainnet addresses in the table above and click "verified source ↗" to see the Solidity source on `explorer.0g.ai`. All four pass.
+2. **See the hero settlement on chain**. [chainscan.0g.ai tx `0x50bbb323…`](https://chainscan.0g.ai/tx/0x50bbb323eacb42e59b4bd617f6e2486d4cc402cd6f9aaf11fc71b16af8e506ba) settled 2 brains in one transaction. Two `Distributed` events emitted in one block.
+3. **Try the web mint flow**. Open [brainpedia.up.railway.app/create](https://brainpedia.up.railway.app/create), connect a wallet with 0G mainnet (Aristotle, chainId 16661), drop a folder containing any `.md`, `.pdf`, `.docx`, or `.txt` files, and sign the mint. The Brain is yours.
+4. **Query a Brain**. Visit any Brain page via `brainpedia.up.railway.app/<name>` (start at [yudhi](https://brainpedia.up.railway.app/yudhi)) and run a mixture query through the demo widget.
+5. **Read the code**. Start with [`contracts/src/Brain.sol`](contracts/src/Brain.sol), [`packages/knowledge-compiler/src/pipeline.ts`](packages/knowledge-compiler/src/pipeline.ts), and [`apps/web/src/app/api/create/route.ts`](apps/web/src/app/api/create/route.ts) to see the three layers connect.
+
+If a test wallet was provided in HackQuest reviewer notes, import that key and skip step 3's wallet creation.
 
 ## Tech stack
 
