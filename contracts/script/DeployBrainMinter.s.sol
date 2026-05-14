@@ -25,8 +25,11 @@ contract DeployBrainMinter is Script {
         vm.startBroadcast(pk);
         BrainMinter minter = new BrainMinter(brainAddr, fee, deployer);
         // Hand Brain.sol's ownership to the minter so its mint() (onlyOwner)
-        // can be called by the wrapper on behalf of any msg.sender.
+        // can be called by the wrapper on behalf of any msg.sender. Brain
+        // uses Ownable2Step, so this is a 2-call dance: deployer initiates,
+        // then BrainMinter accepts via its claimBrainOwnership() wrapper.
         IBrainOwnable(brainAddr).transferOwnership(address(minter));
+        minter.claimBrainOwnership();
         vm.stopBroadcast();
 
         console.log("BrainMinter:        ", address(minter));

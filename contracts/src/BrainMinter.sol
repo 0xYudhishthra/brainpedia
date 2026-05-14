@@ -30,6 +30,7 @@ interface IBrainMintable {
     ) external returns (uint256 tokenId);
 
     function transferOwnership(address newOwner) external;
+    function acceptOwnership() external;
 }
 
 /// @title  BrainMinter
@@ -128,5 +129,13 @@ contract BrainMinter is Ownable2Step {
     function transferBrainOwnership(address newOwner) external onlyOwner {
         if (newOwner == address(0)) revert Errors.ZeroAddress();
         BRAIN.transferOwnership(newOwner);
+    }
+
+    /// @notice Accept pending ownership of Brain.sol. Permissionless because
+    ///         Ownable2Step's acceptOwnership() reverts unless this contract
+    ///         is already the pending owner. Used by the deploy script right
+    ///         after Brain.transferOwnership(this) to complete the 2-step.
+    function claimBrainOwnership() external {
+        BRAIN.acceptOwnership();
     }
 }
