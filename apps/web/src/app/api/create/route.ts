@@ -14,7 +14,11 @@
  * the iNFT owner is always the connected user, never the server.
  */
 import { NextResponse } from 'next/server';
-import { compileKnowledge } from '@brainpedia/knowledge-compiler';
+import {
+  compileKnowledge,
+  createComputeCompiler,
+  deterministicCompiler,
+} from '@brainpedia/knowledge-compiler';
 import { createBrainLogClient, loadZgConfig } from '@brainpedia/storage-0g';
 import { isAddress } from 'viem';
 
@@ -80,7 +84,29 @@ export async function POST(req: Request) {
       });
     }
 
-    const compiled = await compileKnowledge(inputFiles);
+    // Compiler backend: deterministic by default. Set ?compile=tee to use
+    // 0G Compute TEE-attested inference for each article rewrite. The TEE
+    // path is slower and costs broker credits per article, but produces a
+    // Karpathy-style wiki with LLM-generated cross-references and emits a
+    // TEE attestation for every article (creation-time provenance).
+    const url = new URL(req.url);
+    const compileMode = url.searchParams.get('compile') ?? 'deterministic';
+    let compiler = deterministicCompiler;
+    if (compileMode === 'tee' || compileMode === 'compute' || compileMode === '0g') {
+      try {
+        compiler = createComputeCompiler();
+      } catch (err) {
+        return NextResponse.json<ResponsePayload>(
+          {
+            ok: false,
+            error: `TEE compile backend unavailable: ${err instanceof Error ? err.message : String(err)}`,
+          },
+          { status: 500 },
+        );
+      }
+    }
+
+    const compiled = await compileKnowledge(inputFiles, { compiler });
     if (compiled.articles.length === 0) {
       return NextResponse.json<ResponsePayload>(
         {

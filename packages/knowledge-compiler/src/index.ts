@@ -28,5 +28,7 @@ export { textExtractor } from './extractors/text.js';
 export { pdfExtractor } from './extractors/pdf.js';
 export { docxExtractor } from './extractors/docx.js';
 export { deterministicCompiler } from './compilers/deterministic.js';
+export { createComputeCompiler } from './compilers/compute-0g.js';
+export type { ComputeCompilerOptions } from './compilers/compute-0g.js';
 export { segmentDocuments } from './segmenter.js';
 export { buildGraph } from './graph.js';

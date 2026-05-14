@@ -111,6 +111,7 @@
       "name": "@brainpedia/knowledge-compiler",
       "version": "0.1.0",
       "dependencies": {
+        "@brainpedia/compute-0g": "workspace:*",
         "mammoth": "^1.8.0",
         "pdf-parse": "^1.1.1",
       },
