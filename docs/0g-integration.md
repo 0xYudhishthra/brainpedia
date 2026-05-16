@@ -28,7 +28,7 @@ This is cryptographic, not by-convention.
 
 ## Multi-format ingest
 
-`@brainpedia/knowledge-compiler` is a format-agnostic pipeline turning any folder of mixed knowledge files into a Karpathy-style LLM wiki. Today's extractors: markdown (`.md`), plain text (`.txt`), PDF (`pdf-parse`), DOCX (`mammoth`). Adding a new file format means adding one Extractor implementation; the downstream segmenter, compiler, graph, snapshot, and mint stages stay untouched. The default compiler is deterministic (kebab-slug + substring cross-references). The opt-in `createComputeCompiler()` uses 0G Compute's TEE-attested gpt-5.4-mini on a Phala dstack TEE node to rewrite each candidate as a focused wiki article with LLM-generated wikilinks, so 0G Compute appears at BOTH ends of a Brain lifecycle.
+`@brainpedia/knowledge-compiler` is a format-agnostic pipeline turning any folder of mixed knowledge files into a Karpathy-style LLM wiki. Today's extractors: markdown (`.md`), plain text (`.txt`), PDF (`pdf-parse`), DOCX (`mammoth`). Adding a new file format means adding one Extractor implementation; the downstream segmenter, compiler, graph, snapshot, and mint stages stay untouched. The default compiler is deterministic (kebab-slug + substring cross-references). The opt-in `createComputeCompiler()` uses 0G Compute's TEE-attested Qwen 2.5 7B Instruct on a Phala dstack TEE node to rewrite each candidate as a focused wiki article with LLM-generated wikilinks, so 0G Compute appears at BOTH ends of a Brain lifecycle.
 
 ## Swarm coordination
 
@@ -54,7 +54,7 @@ No private state lives in the orchestrator; it's transparent and can be replaced
 | `tokenId 2` (Brainpedia protocol Brain) | mint [tx `0xf691a113…`](https://chainscan.0g.ai/tx/0xf691a1136214cca48109e373ca1a4632124d5ada6e0547117770029d9f455be9) |
 | `tokenId 3` (0G Expert Brain) | mint [tx `0x805a748d…`](https://chainscan.0g.ai/tx/0x805a748dd4d0e811219145e4b6dd85e9e2836a1d256af626c79dac699120e3b4) — 428 articles compiled from docs.0g.ai/llms-full.txt |
 | Hero 3-brain mixture settlement | [tx `0x9a503d7c…`](https://chainscan.0g.ai/tx/0x9a503d7c48787d423883c0b05b690c873af1389ee75e27a315ab232e8a57230c) — `RoyaltyDistributor.distribute([1, 2, 3], [0.002, 0.0015, 0.0035], reason)`, 3 `Distributed` events |
-| 0G Compute provider | `0x25F8f01cA76060ea40895472b1b79f76613Ca497` (gpt-5.4-mini on Phala dstack TEE, mainnet 0G Compute) |
+| 0G Compute provider | `0xa48f01287233509FD694a22Bf840225062E67836` (Qwen 2.5 7B Instruct on Phala dstack TEE, mainnet 0G Compute) |
 
 Verify intelligence is embedded:
 
@@ -74,8 +74,8 @@ cast call 0x8C2BE2D73876ec7BD8A190f3317f3C6cA91d66D6 \
 - [x] GitHub repo with README
 - [x] Live demo URL: https://brainpedia.up.railway.app (web mint flow at /create)
 - [x] MCP server published: [`brainpedia-mcp` on npm](https://www.npmjs.com/package/brainpedia-mcp)
-- [ ] 3-minute demo video (script in [submission-kit.md](submission-kit.md))
-- [ ] Public X post with `#0GHackathon #BuildOn0G` and tags `@0G_labs @0g_CN @0g_Eco @HackQuest_` (draft in [submission-kit.md](submission-kit.md))
+- [ ] 3-minute demo video
+- [ ] Public X post with `#0GHackathon #BuildOn0G` and tags `@0G_labs @0g_CN @0g_Eco @HackQuest_`
 - [x] Architecture diagram, see [architecture.md](architecture.md)
 - [x] Automatic royalty splits on usage, see "Royalty splits" section below
 

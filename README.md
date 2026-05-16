@@ -34,7 +34,7 @@ Two ways to mint:
 | 0G component | How Brainpedia uses it | Where |
 |---|---|---|
 | **0G Storage** | KV layer for live wiki edits; Log layer for immutable merkle-rooted snapshots that the iNFT carries | `packages/storage-0g` |
-| **0G Compute** | Per-query inference + Mixture-of-Brains synthesis on TEE-attested gpt-5.4-mini on a Phala dstack TEE node via `broker.ledger` metering | `packages/compute-0g` |
+| **0G Compute** | Per-query inference + Mixture-of-Brains synthesis on TEE-attested Qwen 2.5 7B Instruct on a Phala dstack TEE node via `broker.ledger` metering | `packages/compute-0g` |
 | **0G Chain** | All Brain iNFT custody, royalty distribution, and minter wrappers deployed on Aristotle (chainId 16661) | `contracts/` |
 | **Agent ID (ERC-7857)** | Each Brain is a canonical ERC-7857 iNFT: encrypted manifest sealed for owner, oracle-attested transfers via `BrainOracle`, append-only IntelligentData lineage | `contracts/src/Brain.sol` + `contracts/src/BrainOracle.sol` |
 | **Privacy & Security (TEE)** | Every inference response carries a TEE attestation flag (`verified: true`). The TEE attestor is also the upgrade path for the BrainOracle, binding ownership transfer to verifiable key re-sealing | `packages/compute-0g` + `contracts/src/BrainOracle.sol` |
@@ -86,7 +86,7 @@ Two ways to mint:
 │  Encrypted Yggdrasil mesh, MCP / A2A envelopes                  │
 ├─────────────────────────────────────────────────────────────────┤
 │  Intelligence (0G Compute, core)                                │
-│  TEE-attested gpt-5.4-mini on a Phala dstack TEE node inference + Mixture-of-Brains synth   │
+│  TEE-attested Qwen 2.5 7B Instruct (Phala dstack TEE) + Mixture-of-Brains synth  │
 ├─────────────────────────────────────────────────────────────────┤
 │  Persistence & Ownership (0G Storage + 0G Chain, core)          │
 │  Storage KV (live wiki) + Log (snapshots) + ERC-7857 iNFT       │
@@ -106,7 +106,7 @@ File (md, txt, pdf, docx, ... )
 RawDocument { text, structureHints, sourceMeta, format }
    ↓ Segmenter (heading-aware, page-aware, size-bounded)
 ArticleCandidate[]
-   ↓ Compiler (v1 deterministic; v2 swappable for 0G Compute TEE inference)
+   ↓ Compiler (deterministic by default; opt-in 0G Compute TEE backend)
 CompiledArticle[]
    ↓ buildGraph
 ArticleGraph (articles + adjacency + backlinks)
@@ -116,7 +116,7 @@ ArticleGraph (articles + adjacency + backlinks)
 ERC-7857 iNFT
 ```
 
-Today's extractors: `markdown` (.md), `text` (.txt), `pdf` (.pdf via `pdf-parse`), `docx` (.docx via `mammoth`). Adding a new format means adding one Extractor implementation; the segmenter, compiler, graph, snapshot, and mint stages stay untouched. The v1 compiler is deterministic (kebab-slug + substring cross-references). v2 swaps in a 0G Compute backend that uses the same TEE-attested model as the query path, so 0G Compute appears at both ends: creation and inference.
+Today's extractors: `markdown` (.md), `text` (.txt), `pdf` (.pdf via `pdf-parse`), `docx` (.docx via `mammoth`). Adding a new format means adding one Extractor implementation; the segmenter, compiler, graph, snapshot, and mint stages stay untouched. The default compiler is deterministic (kebab-slug + substring cross-references) for fast, cheap mints. An opt-in `createComputeCompiler()` backend — shipped and wired into `/api/create` — rewrites each article through 0G Compute's TEE-attested model, the same one the query path uses, so 0G Compute appears at both ends: creation and inference.
 
 ## How a query works
 
@@ -147,15 +147,15 @@ brainpedia/
 │                               SubnameRegistrar, AccessTokenRegistrar + lib/Errors
 ├── scripts/setup/              prep-deploy, register-parent, wire-ens, setup-compute,
 │                               seed-from-vault, settle-royalties, push-segments
-└── docs/                       0g-integration.md + architecture.md + submission-kit.md
+└── docs/                       0g-integration.md + architecture.md
 ```
 
 ## For reviewers (60-second onboarding)
 
 The fastest path to verify Brainpedia works end-to-end on 0G mainnet.
 
-1. **Verify the contracts**. Open any of the four mainnet addresses in the table above and click "verified source ↗" to see the Solidity source on `explorer.0g.ai`. All four pass.
-2. **See the hero settlement on chain**. [chainscan.0g.ai tx `0x50bbb323…`](https://chainscan.0g.ai/tx/0x50bbb323eacb42e59b4bd617f6e2486d4cc402cd6f9aaf11fc71b16af8e506ba) settled 2 brains in one transaction. Two `Distributed` events emitted in one block.
+1. **Verify the contracts**. Open any of the four mainnet addresses in the table above and click "verified source ↗" to see the Solidity source on `chainscan.0g.ai`. All four pass.
+2. **See the hero settlement on chain**. [chainscan.0g.ai tx `0x9a503d7c…`](https://chainscan.0g.ai/tx/0x9a503d7c48787d423883c0b05b690c873af1389ee75e27a315ab232e8a57230c) settled 3 brains in one transaction via `RoyaltyDistributor.distribute([1,2,3], [0.002, 0.0015, 0.0035], reason)`. Three `Distributed` events emitted in one block.
 3. **Try the web mint flow**. Open [brainpedia.up.railway.app/create](https://brainpedia.up.railway.app/create), connect a wallet with 0G mainnet (Aristotle, chainId 16661), drop a folder containing any `.md`, `.pdf`, `.docx`, or `.txt` files, and sign the mint. The Brain is yours.
 4. **Query a Brain**. Visit any Brain page via `brainpedia.up.railway.app/<name>` (start at [yudhi](https://brainpedia.up.railway.app/yudhi)) and run a mixture query through the demo widget.
 5. **Read the code**. Start with [`contracts/src/Brain.sol`](contracts/src/Brain.sol), [`packages/knowledge-compiler/src/pipeline.ts`](packages/knowledge-compiler/src/pipeline.ts), and [`apps/web/src/app/api/create/route.ts`](apps/web/src/app/api/create/route.ts) to see the three layers connect.
@@ -170,7 +170,7 @@ If a test wallet was provided in HackQuest reviewer notes, import that key and s
 | Web | Next.js 15 (App Router), Tailwind, wagmi v2 + viem v2, D3.js |
 | MCP server | `@modelcontextprotocol/sdk` over stdio, bundled to a single file via `bun build`, published as `brainpedia-mcp` |
 | Storage | `@0glabs/0g-ts-sdk` with a hand-rolled `Flow.submit` workaround (the SDK encodes the wrong ABI selector; see [docs/0g-integration.md](docs/0g-integration.md)) |
-| Compute | `@0glabs/0g-serving-broker@0.7.5` (TEE-attested gpt-5.4-mini on a Phala dstack TEE node) |
+| Compute | `@0glabs/0g-serving-broker@0.7.5` (TEE-attested Qwen 2.5 7B Instruct on a Phala dstack TEE node) |
 | Contracts | Foundry, Solidity 0.8.34, OpenZeppelin v5 (Ownable2Step + ReentrancyGuard), canonical ERC-7857 |
 | ENS | `@ensdomains/ensjs` + `viem` (no hardcoded addresses) |
 | AXL | `axl` daemon HTTP API + `mcp_router.py` from `gensyn-ai/axl/integrations/mcp_routing` |
