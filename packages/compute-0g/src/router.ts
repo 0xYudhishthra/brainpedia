@@ -73,13 +73,13 @@ export async function pickTopic(opts: {
     if (parsed) return { ...parsed, source: 'llm' };
     return {
       topic: fallback.topic,
-      reason: `router output unparseable, defaulted: ${truncate(result.answer, 80)}`,
+      reason: `routed to "${fallback.topic}" (default shortcut)`,
       source: 'fallback',
     };
-  } catch (err) {
+  } catch {
     return {
       topic: fallback.topic,
-      reason: `router error, defaulted: ${(err as Error).message ?? 'unknown'}`,
+      reason: `routed to "${fallback.topic}" (default shortcut)`,
       source: 'fallback',
     };
   }
