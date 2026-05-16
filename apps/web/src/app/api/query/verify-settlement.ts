@@ -82,11 +82,17 @@ export async function verifySettlement(args: VerifyArgs): Promise<VerifyResult> 
         } catch {
           /* still unknown to this node */
         }
+        let verifierChainId: number | string = 'unknown';
+        try {
+          verifierChainId = await client.getChainId();
+        } catch {
+          /* ignore */
+        }
         return {
           ok: false,
           reason: txKnown
-            ? 'settlement tx is on chain but its receipt has not propagated to the verifier RPC node yet — retry the unlock (no re-payment needed)'
-            : 'settlement tx not visible on the verifier RPC node — confirm the tx hash, then retry the unlock (no re-payment needed)',
+            ? `settlement tx is on chain ${verifierChainId} but its receipt has not propagated to the verifier RPC node yet — retry the unlock (no re-payment needed)`
+            : `settlement tx not found on the verifier's chain (chainId ${verifierChainId}, RPC ${zg.rpcUrl}). If your settler used a different ZG_RPC_URL/ZG_CHAIN_ID the payment went to another network. Confirm the tx exists on chainId ${verifierChainId}, then retry the unlock (no re-payment needed).`,
         };
       }
       await sleep(2_000);

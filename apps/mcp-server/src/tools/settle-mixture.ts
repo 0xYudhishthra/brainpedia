@@ -166,6 +166,32 @@ export async function handleSettleMixture(args: Record<string, unknown>) {
     const reasonHash = ethersId(parsed.data.reason ?? `mixture-settle:${sessionId}`);
     try {
       const provider = new JsonRpcProvider(zg.rpcUrl);
+
+      // HARD CHAIN GUARD. The verifier checks the configured 0G mainnet RPC.
+      // If THIS provider is a different network (stale/testnet ZG_RPC_URL,
+      // wrong ZG_CHAIN_ID), a settlement here pays real value on a chain the
+      // verifier never inspects → silent unrecoverable burn. Refuse to
+      // broadcast and say exactly which RPC/chain is wrong, BEFORE any spend.
+      const net = await provider.getNetwork();
+      const liveChainId = Number(net.chainId);
+      if (liveChainId !== zg.chainId) {
+        return errorResp(
+          `settle_mixture: REFUSING to pay — RPC/chain mismatch. ZG_RPC_URL ${zg.rpcUrl} ` +
+            `is chainId ${liveChainId}, but ZG_CHAIN_ID is ${zg.chainId}. The unlock ` +
+            `verifier only checks chainId ${zg.chainId}, so a payment here would be ` +
+            `lost. Fix ZG_RPC_URL to a chainId-${zg.chainId} 0G endpoint (mainnet: ` +
+            `https://evmrpc.0g.ai, ZG_CHAIN_ID=16661) and retry. No funds were spent.`,
+        );
+      }
+      if (zg.chainId !== 16661) {
+        return errorResp(
+          `settle_mixture: REFUSING to pay — ZG_CHAIN_ID is ${zg.chainId}, not 0G ` +
+            `mainnet (16661). The Brains, RoyaltyDistributor, and the web verifier all ` +
+            `live on 16661. Set ZG_CHAIN_ID=16661 and ZG_RPC_URL=https://evmrpc.0g.ai. ` +
+            `No funds were spent.`,
+        );
+      }
+
       const signer = new Wallet(wallet, provider);
       const contract = new Contract(parsed.data.distributor, ROYALTY_DISTRIBUTOR_ABI, signer) as unknown as {
         distribute: (
@@ -173,10 +199,19 @@ export async function handleSettleMixture(args: Record<string, unknown>) {
           amounts: bigint[],
           reason: string,
           overrides: { value: bigint },
-        ) => Promise<{ wait: () => Promise<{ hash: string; blockNumber: number; logs: Log[] }> }>;
+        ) => Promise<{ wait: () => Promise<{ hash: string; blockNumber: number; status: number | null; logs: Log[] }> }>;
       };
       const tx = await contract.distribute(tokenIds, amounts, reasonHash, { value: total });
       const rcpt = await tx.wait();
+      // ethers v6 tx.wait() resolves even on revert (status 0) — guard it,
+      // otherwise we'd post a reverted hash to unlock and 402 forever.
+      if (rcpt.status === 0) {
+        return errorResp(
+          `settle_mixture: settlement tx ${rcpt.hash} REVERTED on chain ${liveChainId}. ` +
+            `No royalties were paid. Re-check the payments[]/distributor from the ` +
+            `query_mixture response and retry.`,
+        );
+      }
       txHash = rcpt.hash;
       settlementBlock = rcpt.blockNumber;
       distributedEvents = rcpt.logs
@@ -227,6 +262,8 @@ export async function handleSettleMixture(args: Record<string, unknown>) {
             settlement: {
               txHash,
               mode: verifyOnly ? 'verify-only (no new payment broadcast)' : 'paid',
+              rpc: zg.rpcUrl,
+              chainId: zg.chainId,
               explorer: `${zg.explorerUrl}/tx/${txHash}`,
               totalWei: total.toString(),
               totalOg: weiToOg(total),
