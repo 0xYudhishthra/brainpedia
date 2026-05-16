@@ -52,8 +52,8 @@ No private state lives in the orchestrator; it's transparent and can be replaced
 | Storage indexer | `https://indexer-storage-turbo.0g.ai` |
 | `tokenId 1` (Yudhi's Brain) | mint [tx `0x24e7ed5f…`](https://chainscan.0g.ai/tx/0x24e7ed5f408891ee16c538b9ba7f6b57abe6009d89b640baae38a02ac06d5584) |
 | `tokenId 2` (Brainpedia protocol Brain) | mint [tx `0xf691a113…`](https://chainscan.0g.ai/tx/0xf691a1136214cca48109e373ca1a4632124d5ada6e0547117770029d9f455be9) |
-| `tokenId 3` (0G Expert Brain) | mint [tx `0x805a748d…`](https://chainscan.0g.ai/tx/0x805a748dd4d0e811219145e4b6dd85e9e2836a1d256af626c79dac699120e3b4) — 428 articles compiled from docs.0g.ai/llms-full.txt |
-| Hero 3-brain mixture settlement | [tx `0x9a503d7c…`](https://chainscan.0g.ai/tx/0x9a503d7c48787d423883c0b05b690c873af1389ee75e27a315ab232e8a57230c) — `RoyaltyDistributor.distribute([1, 2, 3], [0.002, 0.0015, 0.0035], reason)`, 3 `Distributed` events |
+| `tokenId 3` (0G Expert Brain) | mint [tx `0x805a748d…`](https://chainscan.0g.ai/tx/0x805a748dd4d0e811219145e4b6dd85e9e2836a1d256af626c79dac699120e3b4). 428 articles compiled from docs.0g.ai/llms-full.txt |
+| Hero 3-brain mixture settlement | [tx `0x9a503d7c…`](https://chainscan.0g.ai/tx/0x9a503d7c48787d423883c0b05b690c873af1389ee75e27a315ab232e8a57230c). `RoyaltyDistributor.distribute([1, 2, 3], [0.002, 0.0015, 0.0035], reason)`, 3 `Distributed` events |
 | 0G Compute provider | `0xa48f01287233509FD694a22Bf840225062E67836` (Qwen 2.5 7B Instruct on Phala dstack TEE, mainnet 0G Compute) |
 
 Verify intelligence is embedded:

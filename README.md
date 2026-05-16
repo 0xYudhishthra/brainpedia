@@ -29,7 +29,7 @@ Two ways to mint:
 1. **Web** at [brainpedia.up.railway.app/create](https://brainpedia.up.railway.app/create). Drag a folder, connect a wallet, sign the mint. No CLI.
 2. **Claude Code** via `npx -y brainpedia-mcp`. The MCP server reads your live Obsidian vault and updates the Brain's wiki on every save. Power-user path.
 
-## 0G integration depth — 5 of 5 components
+## 0G integration depth: 5 of 5 components
 
 | 0G component | How Brainpedia uses it | Where |
 |---|---|---|
@@ -39,7 +39,7 @@ Two ways to mint:
 | **Agent ID (ERC-7857)** | Each Brain is a canonical ERC-7857 iNFT: encrypted manifest sealed for owner, oracle-attested transfers via `BrainOracle`, append-only IntelligentData lineage | `contracts/src/Brain.sol` + `contracts/src/BrainOracle.sol` |
 | **Privacy & Security (TEE)** | Every inference response carries a TEE attestation flag (`verified: true`). The TEE attestor is also the upgrade path for the BrainOracle, binding ownership transfer to verifiable key re-sealing | `packages/compute-0g` + `contracts/src/BrainOracle.sol` |
 
-## Roadmap — how the supply side scales
+## Roadmap: how the supply side scales
 
 | Stage | Who | What they publish | Why now |
 |---|---|---|---|
@@ -61,11 +61,11 @@ Two ways to mint:
 | **`SubnameRegistrar`** + **`AccessTokenRegistrar`** (Sepolia) | ENS-based discovery and TTL-bounded capability tokens (supporting infrastructure) | [sepolia.app.ens.domains/bpedia.eth](https://sepolia.app.ens.domains/bpedia.eth) |
 | **Brain #1** | Yudhi's Brain, tokenId 1 on 0G mainnet | [chainscan tx `0x24e7ed5f…`](https://chainscan.0g.ai/tx/0x24e7ed5f408891ee16c538b9ba7f6b57abe6009d89b640baae38a02ac06d5584) |
 | **Brain #2** | Brainpedia protocol Brain, tokenId 2 | [chainscan tx `0xf691a113…`](https://chainscan.0g.ai/tx/0xf691a1136214cca48109e373ca1a4632124d5ada6e0547117770029d9f455be9) |
-| **Brain #3 — 0G Expert** | tokenId 3, populated by running 0G's own docs (`docs.0g.ai/llms-full.txt`) through `@brainpedia/knowledge-compiler`. 428 articles, sticker price 0.001 OG. Brainpedia hosting 0G's knowledge on 0G itself. Mint script: [`scripts/setup/mint-0g-expert-brain.ts`](scripts/setup/mint-0g-expert-brain.ts) | [chainscan tx `0x805a748d…`](https://chainscan.0g.ai/tx/0x805a748dd4d0e811219145e4b6dd85e9e2836a1d256af626c79dac699120e3b4) |
-| **3-brain mixture royalty settlement** | Single tx paid all 3 Brains via `RoyaltyDistributor.distribute([1,2,3], [0.002, 0.0015, 0.0035], reason)` — 3 `Distributed` events in one block | [chainscan tx `0x9a503d7c…`](https://chainscan.0g.ai/tx/0x9a503d7c48787d423883c0b05b690c873af1389ee75e27a315ab232e8a57230c) |
+| **Brain #3: 0G Expert** | tokenId 3, populated by running 0G's own docs (`docs.0g.ai/llms-full.txt`) through `@brainpedia/knowledge-compiler`. 428 articles, sticker price 0.001 OG. Brainpedia hosting 0G's knowledge on 0G itself. Mint script: [`scripts/setup/mint-0g-expert-brain.ts`](scripts/setup/mint-0g-expert-brain.ts) | [chainscan tx `0x805a748d…`](https://chainscan.0g.ai/tx/0x805a748dd4d0e811219145e4b6dd85e9e2836a1d256af626c79dac699120e3b4) |
+| **3-brain mixture royalty settlement** | Single tx paid all 3 Brains via `RoyaltyDistributor.distribute([1,2,3], [0.002, 0.0015, 0.0035], reason)`. 3 `Distributed` events in one block | [chainscan tx `0x9a503d7c…`](https://chainscan.0g.ai/tx/0x9a503d7c48787d423883c0b05b690c873af1389ee75e27a315ab232e8a57230c) |
 | **Sealed-key Brain (ERC-7857 differentiator)** | tokenId 5, minted with non-empty `encryptedURI` + `metadataHash` + `sealedKey`. AES-256-GCM ciphertext lives on 0G Storage; only the holder of the sealed symmetric key can decrypt. Mint script: [`scripts/setup/sealed-key-demo.ts`](scripts/setup/sealed-key-demo.ts) | [chainscan tx `0xde44dcd1…`](https://chainscan.0g.ai/tx/0xde44dcd1078f611d3805b8614b2a742284d58c0ea8ad08106e5dc47a2b4da48c) |
 | **Oracle-attested secureTransfer** | Brain tokenId 5 transferred via `Brain.secureTransfer` with an EIP-712 `TransferAttestation` signed by the BrainOracle attestor. Context-bound to `(tokenId, from, to, sealedKeyHash, deadline)` so a valid proof can't replay across transfers. Demo script: [`scripts/setup/secure-transfer-demo.ts`](scripts/setup/secure-transfer-demo.ts) | [chainscan tx `0x63de6e22…`](https://chainscan.0g.ai/tx/0x63de6e228f17d86915728ce3933c98a1a919c79d3fa0c3f89ffac64b4aeb6248) |
-| **Brain #6 — Brainpedia Security Brain** | tokenId 6, minted end-to-end through the production `/api/create` flow (preview → finalize → mint). Corpus is the project's own `contracts/SECURITY.md` + `contracts/KNOWN_ISSUES.md`. 13 articles, 0.001 OG/query. Validates the web mint path works on mainnet with no CLI. | [chainscan tx `0x83c7abf6…`](https://chainscan.0g.ai/tx/0x83c7abf61713291620b53f13924d7d506ada320d4430e0ed2ffa1d9620850c09) |
+| **Brain #6: Brainpedia Security Brain** | tokenId 6, minted end-to-end through the production `/api/create` flow (preview → finalize → mint). Corpus is the project's own `contracts/SECURITY.md` + `contracts/KNOWN_ISSUES.md`. 13 articles, 0.001 OG/query. Validates the web mint path works on mainnet with no CLI. | [chainscan tx `0x83c7abf6…`](https://chainscan.0g.ai/tx/0x83c7abf61713291620b53f13924d7d506ada320d4430e0ed2ffa1d9620850c09) |
 
 > All four Solidity contracts have verified source on `chainscan.0g.ai` with `exactMatch=true`. Confirm in one command:
 >
@@ -116,7 +116,7 @@ ArticleGraph (articles + adjacency + backlinks)
 ERC-7857 iNFT
 ```
 
-Today's extractors: `markdown` (.md), `text` (.txt), `pdf` (.pdf via `pdf-parse`), `docx` (.docx via `mammoth`). Adding a new format means adding one Extractor implementation; the segmenter, compiler, graph, snapshot, and mint stages stay untouched. The default compiler is deterministic (kebab-slug + substring cross-references) for fast, cheap mints. An opt-in `createComputeCompiler()` backend — shipped and wired into `/api/create` — rewrites each article through 0G Compute's TEE-attested model, the same one the query path uses, so 0G Compute appears at both ends: creation and inference.
+Today's extractors: `markdown` (.md), `text` (.txt), `pdf` (.pdf via `pdf-parse`), `docx` (.docx via `mammoth`). Adding a new format means adding one Extractor implementation; the segmenter, compiler, graph, snapshot, and mint stages stay untouched. The default compiler is deterministic (kebab-slug + substring cross-references) for fast, cheap mints. An opt-in `createComputeCompiler()` backend (shipped and wired into `/api/create`) rewrites each article through 0G Compute's TEE-attested model, the same one the query path uses, so 0G Compute appears at both ends: creation and inference.
 
 ## How a query works
 
