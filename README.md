@@ -34,7 +34,7 @@ Two ways to mint:
 | 0G component | How Brainpedia uses it | Where |
 |---|---|---|
 | **0G Storage** | KV layer for live wiki edits; Log layer for immutable merkle-rooted snapshots that the iNFT carries | `packages/storage-0g` |
-| **0G Compute** | Per-query inference + Mixture-of-Brains synthesis on TEE-attested Qwen 2.5 7B via `broker.ledger` metering | `packages/compute-0g` |
+| **0G Compute** | Per-query inference + Mixture-of-Brains synthesis on TEE-attested gpt-5.4-mini on a Phala dstack TEE node via `broker.ledger` metering | `packages/compute-0g` |
 | **0G Chain** | All Brain iNFT custody, royalty distribution, and minter wrappers deployed on Aristotle (chainId 16661) | `contracts/` |
 | **Agent ID (ERC-7857)** | Each Brain is a canonical ERC-7857 iNFT: encrypted manifest sealed for owner, oracle-attested transfers via `BrainOracle`, append-only IntelligentData lineage | `contracts/src/Brain.sol` + `contracts/src/BrainOracle.sol` |
 | **Privacy & Security (TEE)** | Every inference response carries a TEE attestation flag (`verified: true`). The TEE attestor is also the upgrade path for the BrainOracle, binding ownership transfer to verifiable key re-sealing | `packages/compute-0g` + `contracts/src/BrainOracle.sol` |
@@ -86,7 +86,7 @@ Two ways to mint:
 │  Encrypted Yggdrasil mesh, MCP / A2A envelopes                  │
 ├─────────────────────────────────────────────────────────────────┤
 │  Intelligence (0G Compute, core)                                │
-│  TEE-attested Qwen 2.5 7B inference + Mixture-of-Brains synth   │
+│  TEE-attested gpt-5.4-mini on a Phala dstack TEE node inference + Mixture-of-Brains synth   │
 ├─────────────────────────────────────────────────────────────────┤
 │  Persistence & Ownership (0G Storage + 0G Chain, core)          │
 │  Storage KV (live wiki) + Log (snapshots) + ERC-7857 iNFT       │
@@ -116,7 +116,7 @@ ArticleGraph (articles + adjacency + backlinks)
 ERC-7857 iNFT
 ```
 
-Today's extractors: `markdown` (.md), `text` (.txt), `pdf` (.pdf via `pdf-parse`), `docx` (.docx via `mammoth`). Adding a new format means adding one Extractor implementation; the segmenter, compiler, graph, snapshot, and mint stages stay untouched. The v1 compiler is deterministic (kebab-slug + substring cross-references). v2 swaps in a 0G Compute backend that uses the same TEE-attested Qwen 2.5 model as the query path, so 0G Compute appears at both ends: creation and inference.
+Today's extractors: `markdown` (.md), `text` (.txt), `pdf` (.pdf via `pdf-parse`), `docx` (.docx via `mammoth`). Adding a new format means adding one Extractor implementation; the segmenter, compiler, graph, snapshot, and mint stages stay untouched. The v1 compiler is deterministic (kebab-slug + substring cross-references). v2 swaps in a 0G Compute backend that uses the same TEE-attested model as the query path, so 0G Compute appears at both ends: creation and inference.
 
 ## How a query works
 
@@ -170,7 +170,7 @@ If a test wallet was provided in HackQuest reviewer notes, import that key and s
 | Web | Next.js 15 (App Router), Tailwind, wagmi v2 + viem v2, D3.js |
 | MCP server | `@modelcontextprotocol/sdk` over stdio, bundled to a single file via `bun build`, published as `brainpedia-mcp` |
 | Storage | `@0glabs/0g-ts-sdk` with a hand-rolled `Flow.submit` workaround (the SDK encodes the wrong ABI selector; see [docs/0g-integration.md](docs/0g-integration.md)) |
-| Compute | `@0glabs/0g-serving-broker@0.7.5` (TEE-attested Qwen 2.5 7B) |
+| Compute | `@0glabs/0g-serving-broker@0.7.5` (TEE-attested gpt-5.4-mini on a Phala dstack TEE node) |
 | Contracts | Foundry, Solidity 0.8.34, OpenZeppelin v5 (Ownable2Step + ReentrancyGuard), canonical ERC-7857 |
 | ENS | `@ensdomains/ensjs` + `viem` (no hardcoded addresses) |
 | AXL | `axl` daemon HTTP API + `mcp_router.py` from `gensyn-ai/axl/integrations/mcp_routing` |

@@ -61,7 +61,7 @@ Restart Claude Code after running. The 7 Brainpedia tools appear in the `/mcp` m
 | `upload_articles` | Pushes the compiled wiki snapshot to 0G Storage Log, returns the merkle rootHash |
 | `finalize_brain` | Calls `BrainMinter.mintToSender(rootHash, ...)`, then writes all `brain.*` text records to your ENS subname |
 | `sync_vault` | Re-parses the vault, re-compiles changed articles, appends a new storage root via `Brain.appendStorageRoot` |
-| `query_brain` | Run inference against a single Brain (yours or someone else's) via 0G Compute (TEE-attested Qwen 2.5 7B) |
+| `query_brain` | Run inference against a single Brain (yours or someone else's) via 0G Compute (TEE-attested gpt-5.4-mini on a Phala dstack TEE node) |
 | `query_mixture` | Fan out a query to N Brains under a discovery topic; returns redacted citations + the on-chain payment plan |
 | `settle_mixture` | Build + send the `RoyaltyDistributor.distribute(tokenIds[], amounts[], reason)` tx that unlocks the synthesized answer |
 

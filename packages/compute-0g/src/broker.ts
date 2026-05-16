@@ -37,6 +37,12 @@ export interface BrokerHandle {
    *   3. transferFund       — units: neuron (bigint, e.g. parseEther("5"))
    */
   ensureFunded(provider: string, depositOg: number, transferNeuron: bigint): Promise<void>;
+  /**
+   * Move funds from an EXISTING ledger into a provider's inference
+   * sub-account. Does NOT addLedger or depositFund. Use when the ledger is
+   * already created and you only need to (re)fund a specific provider.
+   */
+  topUpProvider(provider: string, transferNeuron: bigint): Promise<void>;
   /** Acknowledge a provider's TEE signer once per (user, provider). */
   acknowledgeProvider(provider: string): Promise<void>;
   /** Return a callable handle that produces fresh per-request headers. */
@@ -70,15 +76,27 @@ export function createBroker(cfg: ComputeConfig, signerPrivateKey: string): Brok
 
     async ensureFunded(providerAddr, depositOg, transferNeuron) {
       const b = await broker();
-      // addLedger creates a signing keypair on chain — first call only;
-      // subsequent calls revert. We swallow that revert to keep this idempotent.
+      // addLedger(depositOg) BOTH creates the ledger AND deposits depositOg.
+      // depositFund is only for topping up an EXISTING ledger. Calling both
+      // double-deposits (addLedger 3 + depositFund 3 = 6 OG). So: try to
+      // create; only fall back to depositFund if the ledger already exists.
+      let ledgerExists = false;
       try {
-        await b.ledger.addLedger(depositOg);
-      } catch (err) {
-        const msg = (err as Error).message ?? '';
-        if (!/already|exists|registered/i.test(msg)) throw err;
+        await b.ledger.getLedger();
+        ledgerExists = true;
+      } catch {
+        ledgerExists = false;
       }
-      await b.ledger.depositFund(depositOg);
+      if (!ledgerExists) {
+        await b.ledger.addLedger(depositOg);
+      } else {
+        await b.ledger.depositFund(depositOg);
+      }
+      await b.ledger.transferFund(providerAddr, 'inference', transferNeuron);
+    },
+
+    async topUpProvider(providerAddr, transferNeuron) {
+      const b = await broker();
       await b.ledger.transferFund(providerAddr, 'inference', transferNeuron);
     },
 
