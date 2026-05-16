@@ -26,7 +26,7 @@ Pills: `winner — 0G Best Autonomous Agents @ ETHGlobal Open Agents` · `live o
 **Say:**
 > Most human expertise is sitting in someone's notes folder right now, and AI agents have no way to pay to use it. So agents keep burning tokens on the same handful of general models, while the expert who could actually answer the question never sees a cent. Brainpedia exists to rewrite that supply side of the agent economy.
 
-### Slide 2 — Problem (0:20 to 0:45)
+### Slide 2 — Problem (0:20 to 0:42)
 **On screen:** `The agent economy has no supply side.`
 - Autonomous agents do more research, trading, and ops every week.
 - They all ask the same handful of general models.
@@ -35,14 +35,14 @@ Pills: `winner — 0G Best Autonomous Agents @ ETHGlobal Open Agents` · `live o
 **Say:**
 > Every autonomous agent in the field is doing more research, trading, and operations every week, and all of that work routes to the same handful of general-purpose models. The domain expert whose notes would have answered the question precisely captures none of the value they created. There is no marketplace for specialty knowledge today, and there is no rail to pay for it even if there were.
 
-### Slide 3 — Solution (0:45 to 1:15)
+### Slide 3 — Solution (0:42 to 1:06)
 **On screen:** `Drop a folder. Mint an AI agent. Get paid per query.`
 Flow: drop (md, pdf, word, txt) -> compile (Karpathy wiki) -> snapshot (0G Storage) -> mint (ERC-7857 iNFT)
 
 **Say:**
 > Brainpedia changes that completely. You drop in any folder of markdown, PDF, Word, or plain text, and our compiler turns it into a Karpathy-style wiki, snapshots that onto 0G Storage, and mints it as a canonical ERC-7857 iNFT on 0G mainnet. From then on, other agents can discover your Brain and pay a per-query price in 0G, so you earn every single time your knowledge is used.
 
-### Slide 4 — Architecture (1:15 to 1:40)
+### Slide 4 — Architecture (1:06 to 1:26)
 **On screen:** `Two surfaces, one network.`
 Write path: File -> Extractor -> Compiler -> 0G Storage root -> BrainMinter -> iNFT
 Read path: Agent -> Orchestrator -> Mixture fan-out -> 0G Compute TEE inference -> RoyaltyDistributor (N owners paid in 1 tx)
@@ -51,26 +51,28 @@ Footer band: `0G Storage · 0G Compute · 0G Chain · Agent ID (ERC-7857) · TEE
 **Say:**
 > The system splits into two surfaces by intent. The write path is how a Brain gets minted. The read path is what we call Mixture-of-Brains, where a single query fans out across many Brains, each one runs attested inference on 0G Compute, and the royalties settle to every owner in one on-chain transaction. There is no central API and no off-chain auth service anywhere in that loop.
 
-### Slide 5 — USP / 0G depth (1:40 to 2:10)
-**On screen:** `0G Compute on both ends. ERC-7857 done right.`
+### Slide 5 — USP / 0G depth — THE WEDGE, the most important slide (1:26 to 2:14)
+**On screen:** `Everyone is optimizing agents. Nobody is paying the humans.`
+Sub: *Brainpedia is the only one turning decades of expertise into an asset that earns.*
+Proof band:
 - 5 of 5 0G components in production
 - TEE attestation at creation AND query, on a real Phala dstack TEE node
-- Canonical ERC-7857: encrypted metadata sealed for owner, oracle-attested transfers, no replay across transfers
+- Canonical ERC-7857: encrypted metadata sealed for owner, oracle-attested transfers, no replay
 
 **Say:**
-> Here is what actually makes this different. Most submissions touch one 0G component, whereas we use all five of them on mainnet. Our inference runs on a real Phala TEE node through 0G Compute, which means every single response is genuinely attested rather than just claimed. And the iNFT itself is canonical ERC-7857, with the metadata sealed for the owner and transfers gated by an oracle attestation, so this is genuinely not a rebranded ERC-721.
+> Here is the part that actually matters. The whole industry is racing to optimize agents, but almost nobody is asking who pays the human who spent fifteen years building the knowledge those agents answer from. Brainpedia is pointed at that person. A lawyer with two decades of case notes, or an engineer with years of hard-won documentation, can finally turn it into an asset that earns every time an agent uses it. And we built it for real, not as a slide: five of five 0G components on mainnet, inference on a genuine Phala TEE node through 0G Compute so every response is truly attested, and a canonical ERC-7857 iNFT with metadata sealed for the owner. This is the supply side, and it pays the people everyone else left out.
 
-### Slide 6 — Market & why now (2:10 to 2:35)
+### Slide 6 — Market & why now (2:14 to 2:38)
 **On screen:** `Every expert folder is latent supply. Brainpedia turns it liquid.`
 - Today: solo experts mint from notes (live)
 - Next: firms publish case-law, research, compliance as paid Brains
 - Then: cross-firm agent workflows compose Brains the way Stripe composes payments
-Tagline: *Track 3: financial rails, AI commerce, self-custodial agents — all three.*
+Tagline: *Track 3: financial rails, AI commerce, self-custodial agents, all three.*
 
 **Say:**
 > Here is why this matters now. Agent spending is exploding, and almost all of it routes to a few model APIs. Brainpedia is the supply layer that sits underneath that spend. Solo experts can mint a Brain from their notes today, and the natural next step is firms publishing their case-law, research, and compliance knowledge as Brains that actually generate revenue. Because the Mixture-of-Brains settlement is already cross-firm settlement, this scales the same way Stripe scaled payments, and it lands squarely on Track 3 across all three of its Key Directions at once.
 
-### Slide 7 — Validation + team + ask (2:35 to 3:00)
+### Slide 7 — Validation + team + ask (2:38 to 3:00)
 **On screen:** `Every claim has a transaction.`
 6 Brains on mainnet · 4/4 contracts verified · multi-brain royalty settled in one tx · sealed-key mint + secureTransfer demoed
 Team line: `EF Devcon Scholar · ex-Etherscan + Nethermind · 30+ prizes / 40+ hackathons`
