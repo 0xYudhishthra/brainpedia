@@ -24,7 +24,7 @@ Sub: *Any human turns any folder of knowledge into a paid AI agent on 0G.*
 Pills: `winner — 0G Best Autonomous Agents @ ETHGlobal Open Agents` · `live on 0G mainnet · 16661`
 
 **Say:**
-> Most human expertise sits in someone's notes folder. AI agents can't pay to use it. They burn tokens on the same generic models while the expert who could actually answer sees nothing. Brainpedia rewrites that supply side.
+> Most human expertise is sitting in someone's notes folder right now, and AI agents have no way to pay to use it. So agents keep burning tokens on the same handful of general models, while the expert who could actually answer the question never sees a cent. Brainpedia exists to rewrite that supply side of the agent economy.
 
 ### Slide 2 — Problem (0:20 to 0:45)
 **On screen:** `The agent economy has no supply side.`
@@ -33,14 +33,14 @@ Pills: `winner — 0G Best Autonomous Agents @ ETHGlobal Open Agents` · `live o
 - The human expert whose notes would answer captures none of the value.
 
 **Say:**
-> Every autonomous agent in the field does more work every week, and they all ask the same handful of general models. The domain expert whose notes would actually answer the question captures none of the value. There is no marketplace for specialty knowledge, and no rail to pay for it.
+> Every autonomous agent in the field is doing more research, trading, and operations every week, and all of that work routes to the same handful of general-purpose models. The domain expert whose notes would have answered the question precisely captures none of the value they created. There is no marketplace for specialty knowledge today, and there is no rail to pay for it even if there were.
 
 ### Slide 3 — Solution (0:45 to 1:15)
 **On screen:** `Drop a folder. Mint an AI agent. Get paid per query.`
 Flow: drop (md, pdf, word, txt) -> compile (Karpathy wiki) -> snapshot (0G Storage) -> mint (ERC-7857 iNFT)
 
 **Say:**
-> Brainpedia changes that. Drop any folder of markdown, PDF, Word, or plain text. Our compiler turns it into a Karpathy-style wiki, snapshots it onto 0G Storage, and mints it as a canonical ERC-7857 iNFT on 0G mainnet. Other agents discover it, pay a per-query price in 0G, and you earn every time your knowledge is used.
+> Brainpedia changes that completely. You drop in any folder of markdown, PDF, Word, or plain text, and our compiler turns it into a Karpathy-style wiki, snapshots that onto 0G Storage, and mints it as a canonical ERC-7857 iNFT on 0G mainnet. From then on, other agents can discover your Brain and pay a per-query price in 0G, so you earn every single time your knowledge is used.
 
 ### Slide 4 — Architecture (1:15 to 1:40)
 **On screen:** `Two surfaces, one network.`
@@ -49,7 +49,7 @@ Read path: Agent -> Orchestrator -> Mixture fan-out -> 0G Compute TEE inference 
 Footer band: `0G Storage · 0G Compute · 0G Chain · Agent ID (ERC-7857) · TEE Privacy`
 
 **Say:**
-> Two surfaces split by intent. The write path mints a Brain. The read path is Mixture-of-Brains: a query fans out across many Brains, each runs attested inference on 0G Compute, and royalties settle to every owner in a single on-chain transaction. No central API, no off-chain auth.
+> The system splits into two surfaces by intent. The write path is how a Brain gets minted. The read path is what we call Mixture-of-Brains, where a single query fans out across many Brains, each one runs attested inference on 0G Compute, and the royalties settle to every owner in one on-chain transaction. There is no central API and no off-chain auth service anywhere in that loop.
 
 ### Slide 5 — USP / 0G depth (1:40 to 2:10)
 **On screen:** `0G Compute on both ends. ERC-7857 done right.`
@@ -58,7 +58,7 @@ Footer band: `0G Storage · 0G Compute · 0G Chain · Agent ID (ERC-7857) · TEE
 - Canonical ERC-7857: encrypted metadata sealed for owner, oracle-attested transfers, no replay across transfers
 
 **Say:**
-> What makes this different. Most submissions touch one 0G component. We use all five on mainnet. Inference runs on a real Phala TEE node through 0G Compute, so every response is genuinely attested. The iNFT is canonical ERC-7857 with metadata sealed for the owner and oracle-attested transfers. This is not a rebranded ERC-721.
+> Here is what actually makes this different. Most submissions touch one 0G component, whereas we use all five of them on mainnet. Our inference runs on a real Phala TEE node through 0G Compute, which means every single response is genuinely attested rather than just claimed. And the iNFT itself is canonical ERC-7857, with the metadata sealed for the owner and transfers gated by an oracle attestation, so this is genuinely not a rebranded ERC-721.
 
 ### Slide 6 — Market & why now (2:10 to 2:35)
 **On screen:** `Every expert folder is latent supply. Brainpedia turns it liquid.`
@@ -68,7 +68,7 @@ Footer band: `0G Storage · 0G Compute · 0G Chain · Agent ID (ERC-7857) · TEE
 Tagline: *Track 3: financial rails, AI commerce, self-custodial agents — all three.*
 
 **Say:**
-> Why now. Agent spend is exploding and all of it routes to a few model APIs. Brainpedia is the supply layer underneath that. Solo experts mint today. Firms publish case-law, research, and compliance knowledge as revenue-generating Brains next. The Mixture-of-Brains settlement is already cross-firm settlement. It scales the way Stripe scaled payments. This is Track 3, all three Key Directions at once.
+> Here is why this matters now. Agent spending is exploding, and almost all of it routes to a few model APIs. Brainpedia is the supply layer that sits underneath that spend. Solo experts can mint a Brain from their notes today, and the natural next step is firms publishing their case-law, research, and compliance knowledge as Brains that actually generate revenue. Because the Mixture-of-Brains settlement is already cross-firm settlement, this scales the same way Stripe scaled payments, and it lands squarely on Track 3 across all three of its Key Directions at once.
 
 ### Slide 7 — Validation + team + ask (2:35 to 3:00)
 **On screen:** `Every claim has a transaction.`
@@ -77,7 +77,7 @@ Team line: `EF Devcon Scholar · ex-Etherscan + Nethermind · 30+ prizes / 40+ h
 Closing line, large: `Brains outlive Brainpedia. The network is the infrastructure.`
 
 **Say:**
-> Every claim has a chainscan transaction. Six Brains on mainnet, four of four contracts verified, multi-brain royalties settled in one block, plus a sealed-key mint and an oracle-attested transfer. We won 0G's iNFT prize at ETHGlobal Open Agents. Built by an Ethereum Foundation Devcon Scholar who ran production engineering at Etherscan and Nethermind, with 30-plus prizes across 40-plus hackathons. Full docs and reproduction steps are in the repo. The brain outlives Brainpedia. The network is the infrastructure.
+> Every claim I just made has a transaction on chainscan to back it. There are six Brains live on mainnet, all four contracts are verified, a multi-brain royalty has been settled in a single block, and we have demonstrated both a sealed-key mint and an oracle-attested transfer end to end. We also won 0G's iNFT prize at ETHGlobal Open Agents. This was built by an Ethereum Foundation Devcon Scholar who ran production engineering at Etherscan and Nethermind, and who has won more than 30 prizes across more than 40 hackathons. The full documentation and reproduction steps are in the repo. The Brain outlives Brainpedia, because the network itself is the infrastructure.
 
 > **Criteria coverage:** S1-S2 problem + product value, S3-S4 technical implementation, S5 0G integration depth, S6 market potential, S7 validation + team capability + documentation. All 5 judging criteria voiced. Total lands ~2:55.
 
@@ -92,39 +92,39 @@ Pure product. No pitch narration, no market talk — that lives in the pitch vid
 ### Beat 1 — Hook + create (0:00 to 1:05) — exercises 0G Storage + 0G Chain + Agent ID
 **Screen:** `brainpedia.up.railway.app`, cursor on the prize pill, click `/create`. Connect wallet. Drag a folder of md/pdf files.
 **Say:**
-> Brainpedia turns any folder of knowledge into a paid AI agent on 0G. I connect a wallet, drop a folder. Markdown, PDF, Word, plain text.
+> Brainpedia turns any folder of knowledge into a paid AI agent on 0G. I am going to connect a wallet and drop in a folder, and it accepts markdown, PDF, Word, and plain text all the same way.
 
 **Screen:** Click `1. preview compilation`. Article list renders.
 **Say:**
-> It compiles a Karpathy-style wiki. Nothing is on chain yet. I review the articles first.
+> It compiles the folder into a Karpathy-style wiki, and nothing has touched the chain yet, so I get to review the articles before I commit to anything.
 
 **Screen:** Click `2. upload to 0G Storage`. Wait for rootHash + storage tx link. Click the storage tx, show it on chainscan.
 **Say:**
-> This is **0G Storage**. The snapshot goes to the Log layer, here is the on-chain storage transaction, and the merkle root is what the iNFT will carry.
+> Now this is **0G Storage** in action. The snapshot is written to the Log layer, here is the on-chain storage transaction that proves it, and the merkle root it returns is exactly what the iNFT will carry.
 
 **Screen:** Click `3. sign mint`. MetaMask confirm. Success state, click the chainscan link to the mint tx + the verified contract.
 **Say:**
-> My wallet signs the mint on **0G Chain**. This is the **Agent ID**, a canonical ERC-7857 iNFT, owned by me, not the server. Contract is verified on chainscan.
+> My own wallet signs the mint on **0G Chain**, and what gets minted is the **Agent ID**, a canonical ERC-7857 iNFT that is owned by me and never by the server. You can see the contract is verified right here on chainscan.
 
 ### Beat 2 — Query from Claude Code (1:05 to 2:10) — exercises 0G Compute + TEE Privacy
 **Screen:** Claude Code with `brainpedia-mcp` installed. Type a natural prompt.
 **Say:**
-> Now I switch hats. I'm an agent. From Claude Code, the brainpedia MCP server fans my question across the network.
+> Now I am going to switch hats and act as the agent. From inside Claude Code, the brainpedia MCP server takes my question and fans it out across the whole network of Brains.
 
 **Screen:** Run the mixture query (prompt: "What is 0G Storage and how does the Log layer differ from the KV layer?"). Show the response: brains responding, `verified: true`, citations, the payment plan with the mainnet distributor `0x7AF89556…`.
 **Say:**
-> Each brain runs inference on **0G Compute**, on a real Phala TEE node. See `verified: true` on every response, that is the **TEE attestation**. The orchestrator returns citations and an on-chain payment plan that pays every brain owner. The synthesized answer is gated until the agent pays.
+> Each Brain runs its inference on **0G Compute**, specifically on a real Phala TEE node, and you can see `verified: true` on every response, which is the **TEE attestation** itself. The orchestrator comes back with citations and an on-chain payment plan that pays every Brain owner, and the synthesized answer stays gated until the agent actually pays.
 
 > This is the reliable stopping point for the live query. Do NOT trigger settle live (0G mainnet confirmation timing is variable and can race the unlock). Instead, go straight to Beat 3 and prove settlement with a real confirmed tx on chainscan.
 
 ### Beat 3 — Settlement proof + close (2:10 to 3:00) — exercises 0G Chain + RoyaltyDistributor
 **Screen:** Cut to a pre-opened chainscan tab on a real, confirmed settlement tx — `0x73448bd6c0f7acbe564969c3a343f7209618a6fb1a41947bee893cdb77d8064f` (live mainnet settle from this build, 0.002 OG to brain owners) OR the hero `0x9a503d7c48787d423883c0b05b690c873af1389ee75e27a315ab232e8a57230c` (3 brains, 3 Distributed events in one block). Hover the Distributed events.
 **Say:**
-> When the agent settles, one transaction pays every brain owner their royalty. Here it is on **0G mainnet**: the RoyaltyDistributor, the Distributed events, real OG moved. This is pay-to-read knowledge settled on chain, not a webhook.
+> When the agent settles, a single transaction pays every Brain owner their royalty at once. Here is that settlement on **0G mainnet**, where you can see the RoyaltyDistributor, the Distributed events, and real OG that actually moved. This is pay-to-read knowledge being settled on chain, and it is not a webhook pretending to be one.
 
 **Screen:** Landing "0G integration depth" section, then the sealed-key mint + secureTransfer txs.
 **Say:**
-> Five of five 0G components, all on mainnet. Canonical ERC-7857 with metadata sealed for the owner and oracle-attested transfers. Full docs and reproduction steps are in the repo. The brain outlives Brainpedia. Mint your own at brainpedia dot up dot railway dot app slash create.
+> That is five of five 0G components, all running on mainnet, with a canonical ERC-7857 iNFT whose metadata is sealed for the owner and whose transfers are oracle-attested. The full documentation and reproduction steps are in the repo. The Brain outlives Brainpedia, and you can mint your own right now at brainpedia dot up dot railway dot app slash create.
 
 **End card:** logo · brainpedia.up.railway.app · the 4 tags + 2 hashtags.
 
