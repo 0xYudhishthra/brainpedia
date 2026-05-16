@@ -33,7 +33,7 @@ const DISCOVERY_REGISTRY: Array<{ topic: string; description: string }> = [
   {
     topic: 'research',
     description:
-      'Long-form research notes by an individual: DeFi yield strategies, RWA analysis, market structure, on-chain finance. Currently: yudhi.bpedia.eth.',
+      'Senior EVM smart-contract security engineer: reentrancy (single/cross-function/read-only), checks-effects-interactions, access control and ownership, price oracle and flash-loan manipulation, ERC standard pitfalls, ERC-4626 first-depositor inflation, signature replay, audit methodology, real incident post-mortems. Currently: yudhi.bpedia.eth.',
   },
   {
     topic: 'frameworks',

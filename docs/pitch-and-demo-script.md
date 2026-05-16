@@ -111,11 +111,11 @@ Pure product, no pitch narration. The demo's only job: show core functionality, 
 ### Beat 2 — Query from Claude Code (1:05 to 2:10) — exercises 0G Compute + TEE Privacy
 **Screen:** Claude Code with `brainpedia-mcp` installed. Type a natural prompt.
 **Say:**
-> Now I am going to switch hats and act as the agent. From inside Claude Code, the brainpedia MCP server takes my question and fans it out across the whole network of Brains.
+> Now I am going to switch hats and act as the agent. The Brain I just minted is smart-contract security expertise, so I am going to ask the network a real security question. From inside Claude Code, the brainpedia MCP server takes my question and fans it out across the network of Brains.
 
-**Screen:** Run the mixture query (prompt: "What is 0G Storage and how does the Log layer differ from the KV layer?"). Show the response: brains responding, `verified: true`, citations, the payment plan with the mainnet distributor `0x7AF89556…`.
+**Screen:** Run the mixture query (prompt: "How does a flash loan turn a spot price oracle into a drain, and what actually defends against it?"). Show the response: the security Brain responding, `verified: true`, and citations like `price-oracle-manipulation`, `oracle-manipulation-via-flash-loan`, `twap-and-its-limits` — the same security domain as the vault just minted. Show the payment plan with the mainnet distributor `0x7AF89556…`.
 **Say:**
-> Each Brain runs its inference on **0G Compute**, specifically on a real Phala TEE node, and you can see `verified: true` on every response, which is the **TEE attestation** itself. The orchestrator comes back with citations and an on-chain payment plan that pays every Brain owner, and the synthesized answer stays gated until the agent actually pays.
+> The question routes to the security specialty Brain, and it answers from its own articles, you can see it citing price oracle manipulation and the flash-loan variant by name. The inference runs on **0G Compute** on a real Phala TEE node, and `verified: true` on the response is the **TEE attestation** itself. The orchestrator comes back with those citations and an on-chain payment plan that pays the Brain owner, and the synthesized answer stays gated until the agent actually pays.
 
 **Screen:** Approve the settlement in the agent. The settle tx broadcasts and the call waits for 0G mainnet confirmation. **EDIT NOTE: cut the confirmation wait here in post.** When it returns, the synthesis unlocks and the full answer renders.
 **Say (recorded over the settle action, before the cut):**
