@@ -35,7 +35,7 @@ export async function verifySettlement(args: VerifyArgs): Promise<VerifyResult> 
   // races the chain and 402s even though the payment landed. Poll for up
   // to ~45s before giving up so the unlock succeeds on the first settle.
   let receipt;
-  const deadline = Date.now() + 45_000;
+  const deadline = Date.now() + 150_000;
   while (true) {
     try {
       receipt = await client.getTransactionReceipt({ hash: args.txHash as Hex });
