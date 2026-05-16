@@ -75,17 +75,22 @@ export function CreateBrainClient({ minterAddress }: { minterAddress: `0x${strin
   useEffect(() => setHydrated(true), []);
 
   const onChainCorrect = chainId === ZG_MAINNET_ID;
-  // wagmi v2 surfaces the base injected connector PLUS any EIP-6963
-  // discovered wallets (MetaMask, Rabby, Brave...) as separate connectors.
-  // De-dupe by id and let wagmi own detection — never gate on
-  // window.ethereum, which races extension injection and misses EIP-6963.
-  const walletConnectors = useMemo(() => {
-    const seen = new Set<string>();
-    return connectors.filter((c) => {
-      if (seen.has(c.id)) return false;
-      seen.add(c.id);
-      return true;
-    });
+  // wagmi v2 EIP-6963 discovery surfaces every injected wallet (MetaMask,
+  // Phantom's EVM shim, the generic "Injected", etc). This flow is
+  // MetaMask-only, so show exactly one button: the EIP-6963 MetaMask
+  // connector if it announced (id "io.metamask" / name contains
+  // "metamask"), otherwise fall back to the base injected connector
+  // (covers the case where MetaMask is the only wallet but did not
+  // announce via EIP-6963). Never show Phantom or the bare Injected
+  // when MetaMask is present.
+  const metaMaskConnector = useMemo(() => {
+    const isMetaMask = (c: (typeof connectors)[number]) =>
+      c.id.toLowerCase() === 'io.metamask' || /meta\s*mask/i.test(c.name);
+    return (
+      connectors.find(isMetaMask) ??
+      connectors.find((c) => c.id === 'injected') ??
+      null
+    );
   }, [connectors]);
 
   const onAddOrSwitchChain = useCallback(async () => {
@@ -237,18 +242,16 @@ export function CreateBrainClient({ minterAddress }: { minterAddress: `0x${strin
           </div>
           {hydrated && !isConnected ? (
             <div className="flex flex-wrap justify-end gap-2">
-              {walletConnectors.map((c) => (
+              {metaMaskConnector ? (
                 <button
-                  key={c.uid}
                   className="rounded border border-current/20 px-3 py-1 text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-50"
                   disabled={isConnecting}
-                  onClick={() => connect({ connector: c })}
+                  onClick={() => connect({ connector: metaMaskConnector })}
                 >
-                  {isConnecting ? 'connecting…' : `connect ${c.name}`}
+                  {isConnecting ? 'connecting…' : 'connect MetaMask'}
                 </button>
-              ))}
-              {walletConnectors.length === 0 && (
-                <span className="text-xs text-[var(--muted)]">no wallet connectors available</span>
+              ) : (
+                <span className="text-xs text-[var(--muted)]">MetaMask not detected</span>
               )}
             </div>
           ) : hydrated ? (
@@ -261,10 +264,10 @@ export function CreateBrainClient({ minterAddress }: { minterAddress: `0x${strin
           ) : null}
         </div>
 
-        {/* No-connector hint (only if wagmi truly has none) */}
-        {hydrated && walletConnectors.length === 0 && !isConnected && (
+        {/* No-MetaMask hint */}
+        {hydrated && !metaMaskConnector && !isConnected && (
           <div className="mt-3 text-xs text-[var(--muted)]">
-            No browser wallet detected. Install MetaMask, Rabby, or Brave and refresh, or use the{' '}
+            MetaMask not detected. Install the MetaMask extension and refresh, or use the{' '}
             <a className="underline" href="https://www.npmjs.com/package/brainpedia-mcp" target="_blank" rel="noreferrer">
               brainpedia-mcp
             </a>{' '}
