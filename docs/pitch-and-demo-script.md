@@ -87,7 +87,7 @@ Closing line, large: `Brains outlive Brainpedia. The network is the infrastructu
 
 # PART 2 — DEMO VIDEO (≤3:00, screen + voice, zero slides)
 
-Pure product. No pitch narration, no market talk — that lives in the pitch video. The demo's only job: show core functionality, the user flow, and how each 0G component is actually used, live on mainnet. Two surfaces: create on the web app, query from Claude Code. One continuous take is best. Pre-open chainscan tabs in the background so they snap instantly. Land by 2:55, hard stop at 3:00 (stated hackathon requirement).
+Pure product, no pitch narration. The demo's only job: show core functionality, the user flow, and how each 0G component is actually used, live on mainnet. Two surfaces: create on the web app, query then settle from Claude Code. The full create-query-settle loop runs live; the only edit is cutting the 0G confirmation wait during settle (dead air, not a fake). Pre-open chainscan tabs so they snap instantly. Final video lands by 2:55, hard stop at 3:00 (stated hackathon requirement).
 
 > Demo-requirement note: judges explicitly want "how the 0G component is actually used" shown, not just stated. Each beat below names the 0G component on screen as it is exercised. Say the component name out loud when its tx/proof appears.
 
@@ -117,12 +117,16 @@ Pure product. No pitch narration, no market talk — that lives in the pitch vid
 **Say:**
 > Each Brain runs its inference on **0G Compute**, specifically on a real Phala TEE node, and you can see `verified: true` on every response, which is the **TEE attestation** itself. The orchestrator comes back with citations and an on-chain payment plan that pays every Brain owner, and the synthesized answer stays gated until the agent actually pays.
 
-> This is the reliable stopping point for the live query. Do NOT trigger settle live (0G mainnet confirmation timing is variable and can race the unlock). Instead, go straight to Beat 3 and prove settlement with a real confirmed tx on chainscan.
+**Screen:** Approve the settlement in the agent. The settle tx broadcasts and the call waits for 0G mainnet confirmation. **EDIT NOTE: cut the confirmation wait here in post.** When it returns, the synthesis unlocks and the full answer renders.
+**Say (recorded over the settle action, before the cut):**
+> The agent decides the knowledge is worth it and settles the payment plan.
+**Say (resumes after the edit, over the unlocked answer):**
+> One transaction just paid every Brain owner their royalty, and the synthesis is now unlocked. This is the full pay-to-read loop, settled on 0G mainnet, end to end.
 
-### Beat 3 — Settlement proof + close (2:10 to 3:00) — exercises 0G Chain + RoyaltyDistributor
-**Screen:** Cut to a pre-opened chainscan tab on a real, confirmed settlement tx — `0x73448bd6c0f7acbe564969c3a343f7209618a6fb1a41947bee893cdb77d8064f` (live mainnet settle from this build, 0.002 OG to brain owners) OR the hero `0x9a503d7c48787d423883c0b05b690c873af1389ee75e27a315ab232e8a57230c` (3 brains, 3 Distributed events in one block). Hover the Distributed events.
+### Beat 3 — On-chain proof + close (2:10 to 3:00) — exercises 0G Chain + RoyaltyDistributor
+**Screen:** Open the settlement tx that just fired, on a pre-loaded chainscan tab. Hover the RoyaltyDistributor address and the Distributed events.
 **Say:**
-> When the agent settles, a single transaction pays every Brain owner their royalty at once. Here is that settlement on **0G mainnet**, where you can see the RoyaltyDistributor, the Distributed events, and real OG that actually moved. This is pay-to-read knowledge being settled on chain, and it is not a webhook pretending to be one.
+> And here is that exact settlement on **0G mainnet**: the RoyaltyDistributor, one Distributed event per Brain, and real OG that actually moved. This is not a webhook pretending to be a payment.
 
 **Screen:** Landing "0G integration depth" section, then the sealed-key mint + secureTransfer txs.
 **Say:**
@@ -130,7 +134,7 @@ Pure product. No pitch narration, no market talk — that lives in the pitch vid
 
 **End card:** logo · brainpedia.up.railway.app · the 4 tags + 2 hashtags.
 
-> Why settlement is shown via chainscan, not live: the payment is 100% real and on mainnet (multiple confirmed settle txs exist). Only the synchronous in-call unlock races 0G's variable confirmation latency, which is outside our control. Showing a confirmed settlement tx is the same proof with zero camera risk. This is the locked approach, not a fallback.
+> **Live settle, edited:** the payment + unlock both work on mainnet; the only weak point was the wall-clock wait for 0G confirmation, which is dead air on camera. Record the real settle, cut the wait in post, keep the genuine unlocked synthesis. If a take's unlock 402s (confirmation outran the 150s poll), do not panic on camera: stop, re-run query + settle for a fresh take. Funds cover 200+ takes. As a safety net, the confirmed settle tx `0x73448bd6c0f7acbe564969c3a343f7209618a6fb1a41947bee893cdb77d8064f` and hero `0x9a503d7c48787d423883c0b05b690c873af1389ee75e27a315ab232e8a57230c` exist on chain if you ever need to show settlement without a fresh run.
 
 ---
 
@@ -140,6 +144,8 @@ Pure product. No pitch narration, no market talk — that lives in the pitch vid
 - Real mic. Speak slightly slower than feels natural.
 - Pre-open chainscan tabs so they load instantly.
 - Record the demo first (mechanical), then the pitch (narrative).
+- Demo edit: the ONLY cut is the 0G settle-confirmation wait in Beat 2. Keep one clean continuous segment before and after; trim only the dead wall-clock wait. Everything shown is real.
+- Demo wallet is fully funded for 200+ takes (deployer 1.9 OG + ~1.9 OG Phala compute sub-account). Re-run freely until a take is clean.
 - Submit both video links on HackQuest. Public (YouTube unlisted or Loom).
 
 ## X post (mandatory) — already drafted in docs/submission-kit.md
