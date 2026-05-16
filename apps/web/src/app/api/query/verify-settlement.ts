@@ -30,15 +30,27 @@ export async function verifySettlement(args: VerifyArgs): Promise<VerifyResult> 
   const zg = loadZgConfig();
   const client = createPublicClient({ transport: http(zg.rpcUrl) });
 
+  // 0G mainnet has a noticeable submit→receipt latency. A single
+  // getTransactionReceipt right after settle_mixture broadcasts the tx
+  // races the chain and 402s even though the payment landed. Poll for up
+  // to ~45s before giving up so the unlock succeeds on the first settle.
   let receipt;
-  try {
-    receipt = await client.getTransactionReceipt({ hash: args.txHash as Hex });
-  } catch (err) {
-    const msg = (err as Error).message ?? '';
-    if (/not found|not be found/i.test(msg)) {
-      return { ok: false, reason: 'tx not yet confirmed (or unknown)' };
+  const deadline = Date.now() + 45_000;
+  while (true) {
+    try {
+      receipt = await client.getTransactionReceipt({ hash: args.txHash as Hex });
+      break;
+    } catch (err) {
+      const msg = (err as Error).message ?? '';
+      if (/not found|not be found/i.test(msg)) {
+        if (Date.now() < deadline) {
+          await new Promise((r) => setTimeout(r, 3_000));
+          continue;
+        }
+        return { ok: false, reason: 'tx not yet confirmed (or unknown)' };
+      }
+      return { ok: false, reason: `rpc error: ${msg}` };
     }
-    return { ok: false, reason: `rpc error: ${msg}` };
   }
   if (receipt.status !== 'success') {
     return { ok: false, reason: `tx reverted (status=${receipt.status})` };
