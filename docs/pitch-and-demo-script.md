@@ -1,8 +1,10 @@
 # Brainpedia — Pitch + Demo Script
 
-> 0G APAC Hackathon. Pitch video 2:00, demo video 3:00. Submit both on HackQuest.
+> 0G APAC Hackathon. **Two separate videos, each MAX 3:00.** Submit both on HackQuest.
+> Pitch video = the story + why it matters + team (≤3:00). Demo video = pure product, live, hitting the judging criteria (≤3:00).
 > Storytelling order: setup, tension, discovery, resolution. No em-dashes when spoken.
 > Provider note: inference runs on a Phala dstack TEE node (gpt-5.4-mini) via 0G Compute mainnet. Do NOT say "Qwen".
+> Hard rule: neither video exceeds 3:00. The demo 3:00 cap is a stated hackathon requirement; keep the pitch under 3:00 too for symmetry and safety.
 
 ---
 
@@ -12,68 +14,78 @@ EF Devcon Scholar (1 of 50 globally). Production engineering at Etherscan and Ne
 
 ---
 
-# PART 1 — PITCH VIDEO (2:00, 6 slides)
+# PART 1 — PITCH VIDEO (≤3:00, 7 slides, narrative)
 
-Aesthetic: near-black canvas, lavender accent, sans-serif display, mono for hashes. Each slide skimmable in 5 seconds, voice fills the rest.
+The pitch sells WHY. It is separate from the demo. It must land all 5 judging criteria, with extra weight on the two the demo cannot show: Product Value & Market Potential, and Team Capability. Aesthetic: near-black canvas, lavender accent, sans-serif display, mono for hashes. Each slide skimmable in 5 seconds, voice fills the rest. Pace ~135 wpm. Land at 2:55, never past 3:00.
 
-### Slide 1 — Hook (0:00 to 0:15)
+### Slide 1 — Hook (0:00 to 0:20)
 **On screen:** `Brainpedia is the supply side of the agent economy.`
 Sub: *Any human turns any folder of knowledge into a paid AI agent on 0G.*
 Pills: `winner — 0G Best Autonomous Agents @ ETHGlobal Open Agents` · `live on 0G mainnet · 16661`
 
 **Say:**
-> Most human expertise sits in someone's notes folder. AI agents can't pay to use it. Brainpedia rewrites the supply side.
+> Most human expertise sits in someone's notes folder. AI agents can't pay to use it. They burn tokens on the same generic models while the expert who could actually answer sees nothing. Brainpedia rewrites that supply side.
 
-### Slide 2 — Problem (0:15 to 0:40)
+### Slide 2 — Problem (0:20 to 0:45)
 **On screen:** `The agent economy has no supply side.`
 - Autonomous agents do more research, trading, and ops every week.
 - They all ask the same handful of general models.
-- The human expert whose notes would answer sees nothing.
+- The human expert whose notes would answer captures none of the value.
 
 **Say:**
-> Every autonomous agent in the field is doing more work every week. They all ask the same generic models. The human whose notes would actually answer the question never gets paid. There is no marketplace for specialty knowledge.
+> Every autonomous agent in the field does more work every week, and they all ask the same handful of general models. The domain expert whose notes would actually answer the question captures none of the value. There is no marketplace for specialty knowledge, and no rail to pay for it.
 
-### Slide 3 — Solution (0:40 to 1:05)
+### Slide 3 — Solution (0:45 to 1:15)
 **On screen:** `Drop a folder. Mint an AI agent. Get paid per query.`
 Flow: drop (md, pdf, word, txt) -> compile (Karpathy wiki) -> snapshot (0G Storage) -> mint (ERC-7857 iNFT)
 
 **Say:**
-> Brainpedia changes that. Drop any folder of markdown, PDF, Word, or plain text. Our compiler builds a Karpathy-style wiki, snapshots it onto 0G Storage, and mints it as an ERC-7857 iNFT on 0G mainnet. Other agents pay you in 0G when they query.
+> Brainpedia changes that. Drop any folder of markdown, PDF, Word, or plain text. Our compiler turns it into a Karpathy-style wiki, snapshots it onto 0G Storage, and mints it as a canonical ERC-7857 iNFT on 0G mainnet. Other agents discover it, pay a per-query price in 0G, and you earn every time your knowledge is used.
 
-### Slide 4 — Architecture (1:05 to 1:25)
+### Slide 4 — Architecture (1:15 to 1:40)
 **On screen:** `Two surfaces, one network.`
 Write path: File -> Extractor -> Compiler -> 0G Storage root -> BrainMinter -> iNFT
 Read path: Agent -> Orchestrator -> Mixture fan-out -> 0G Compute TEE inference -> RoyaltyDistributor (N owners paid in 1 tx)
 Footer band: `0G Storage · 0G Compute · 0G Chain · Agent ID (ERC-7857) · TEE Privacy`
 
 **Say:**
-> Two surfaces split by intent. The write path mints. The read path queries and settles royalties to every brain owner in a single transaction.
+> Two surfaces split by intent. The write path mints a Brain. The read path is Mixture-of-Brains: a query fans out across many Brains, each runs attested inference on 0G Compute, and royalties settle to every owner in a single on-chain transaction. No central API, no off-chain auth.
 
-### Slide 5 — USP (1:25 to 1:50)
+### Slide 5 — USP / 0G depth (1:40 to 2:10)
 **On screen:** `0G Compute on both ends. ERC-7857 done right.`
 - 5 of 5 0G components in production
 - TEE attestation at creation AND query, on a real Phala dstack TEE node
 - Canonical ERC-7857: encrypted metadata sealed for owner, oracle-attested transfers, no replay across transfers
 
 **Say:**
-> What makes this different. Most submissions touch one 0G component. We use all five on mainnet. Inference runs on a real Phala TEE node through 0G Compute, so every response is genuinely attested. The iNFT is canonical ERC-7857 with encrypted metadata sealed for the owner and oracle-attested transfers. Not a rebranded ERC-721.
+> What makes this different. Most submissions touch one 0G component. We use all five on mainnet. Inference runs on a real Phala TEE node through 0G Compute, so every response is genuinely attested. The iNFT is canonical ERC-7857 with metadata sealed for the owner and oracle-attested transfers. This is not a rebranded ERC-721.
 
-### Slide 6 — Validation + team + ask (1:50 to 2:00)
+### Slide 6 — Market & why now (2:10 to 2:35)
+**On screen:** `Every expert folder is latent supply. Brainpedia turns it liquid.`
+- Today: solo experts mint from notes (live)
+- Next: firms publish case-law, research, compliance as paid Brains
+- Then: cross-firm agent workflows compose Brains the way Stripe composes payments
+Tagline: *Track 3: financial rails, AI commerce, self-custodial agents — all three.*
+
+**Say:**
+> Why now. Agent spend is exploding and all of it routes to a few model APIs. Brainpedia is the supply layer underneath that. Solo experts mint today. Firms publish case-law, research, and compliance knowledge as revenue-generating Brains next. The Mixture-of-Brains settlement is already cross-firm settlement. It scales the way Stripe scaled payments. This is Track 3, all three Key Directions at once.
+
+### Slide 7 — Validation + team + ask (2:35 to 3:00)
 **On screen:** `Every claim has a transaction.`
-6 Brains on mainnet · 4/4 contracts verified · multi-brain royalty settled in one tx · sealed-key mint + secureTransfer demoed · winner at ETHGlobal Open Agents
-Small team line: `Built by an EF Devcon Scholar, ex-Etherscan + Nethermind, 30+ hackathon wins`
+6 Brains on mainnet · 4/4 contracts verified · multi-brain royalty settled in one tx · sealed-key mint + secureTransfer demoed
+Team line: `EF Devcon Scholar · ex-Etherscan + Nethermind · 30+ prizes / 40+ hackathons`
 Closing line, large: `Brains outlive Brainpedia. The network is the infrastructure.`
 
 **Say:**
-> Every claim has a chainscan transaction. Six Brains on mainnet, all contracts verified, multi-brain royalties settled in one block. We won 0G's iNFT prize at ETHGlobal Open Agents. Built by an Ethereum Foundation Devcon Scholar who ran production engineering at Etherscan and Nethermind, with 30+ prizes across 40+ hackathons. Track 3, all three Key Directions. The brain outlives Brainpedia. The network is the infrastructure.
+> Every claim has a chainscan transaction. Six Brains on mainnet, four of four contracts verified, multi-brain royalties settled in one block, plus a sealed-key mint and an oracle-attested transfer. We won 0G's iNFT prize at ETHGlobal Open Agents. Built by an Ethereum Foundation Devcon Scholar who ran production engineering at Etherscan and Nethermind, with 30-plus prizes across 40-plus hackathons. Full docs and reproduction steps are in the repo. The brain outlives Brainpedia. The network is the infrastructure.
 
-> **Why the team line matters:** judging criterion 5 is "Team Capability & Documentation." Without this sentence, that criterion scores blind. One spoken sentence covers it. The documentation half is covered by the demo close ("full docs and reproduction steps in the repo").
+> **Criteria coverage:** S1-S2 problem + product value, S3-S4 technical implementation, S5 0G integration depth, S6 market potential, S7 validation + team capability + documentation. All 5 judging criteria voiced. Total lands ~2:55.
 
 ---
 
-# PART 2 — DEMO VIDEO (3:00, screen + voice, zero slides)
+# PART 2 — DEMO VIDEO (≤3:00, screen + voice, zero slides)
 
-Two surfaces: create on the web app, query from Claude Code. One continuous take is best. Pre-open chainscan tabs in the background so they snap instantly.
+Pure product. No pitch narration, no market talk — that lives in the pitch video. The demo's only job: show core functionality, the user flow, and how each 0G component is actually used, live on mainnet. Two surfaces: create on the web app, query from Claude Code. One continuous take is best. Pre-open chainscan tabs in the background so they snap instantly. Land by 2:55, hard stop at 3:00 (stated hackathon requirement).
 
 > Demo-requirement note: judges explicitly want "how the 0G component is actually used" shown, not just stated. Each beat below names the 0G component on screen as it is exercised. Say the component name out loud when its tx/proof appears.
 
