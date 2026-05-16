@@ -19,6 +19,7 @@ import {
   newSessionId,
   putSession,
   getSession,
+  markSettled,
   SESSION_TTL_MS,
 } from './sessions';
 import { verifySettlement } from './verify-settlement';
@@ -180,6 +181,11 @@ export async function POST(req: NextRequest) {
     /** Phase-2 unlock: RoyaltyDistributor.distribute tx hash to verify against
      *  the cached plan before releasing the synthesis. */
     txHash?: string;
+    /** Phase-2 unlock: block the settlement tx mined in (from the settler's
+     *  own receipt). Lets the verifier wait for its read RPC node to catch up
+     *  to that height before declaring the tx unknown — kills the public-LB
+     *  read-after-write race. */
+    settlementBlock?: number;
   };
   try {
     body = await req.json();
@@ -192,7 +198,7 @@ export async function POST(req: NextRequest) {
 
   // Phase-2 mixture unlock: agent has settled and is reclaiming the synthesis.
   if (wantsMixture && body.sessionId && body.txHash) {
-    return claimMixture(body.sessionId, body.txHash);
+    return claimMixture(body.sessionId, body.txHash, body.settlementBlock);
   }
 
   const prompt = (body?.prompt ?? '').toString().trim();
@@ -377,6 +383,7 @@ async function mixtureFanOut(
 async function claimMixture(
   sessionId: string,
   txHash: string,
+  settlementBlock?: number,
 ): Promise<NextResponse> {
   const cached = getSession(sessionId);
   if (!cached) {
@@ -385,6 +392,17 @@ async function claimMixture(
       { status: 404 },
     );
   }
+
+  // Idempotency: once a session is verified-paid, every subsequent claim
+  // (a retry after a flaky unlock, a different txHash, the same txHash)
+  // returns the cached unlocked response immediately. No re-verify, no
+  // re-pay. This is what makes a failed unlock cost 0 OG to recover.
+  if (cached.settled) {
+    return NextResponse.json(cached.settled.response as MixtureResponse, {
+      status: 200,
+    });
+  }
+
   if (!cached.plan.distributor) {
     return NextResponse.json(
       { error: 'mixture: cached plan has no distributor address; ROYALTY_DISTRIBUTOR_ADDRESS env was missing at fan-out time' },
@@ -396,10 +414,18 @@ async function claimMixture(
     txHash,
     expectedDistributor: cached.plan.distributor,
     expectedSplits: cached.plan.splits,
+    expectedBlockNumber: settlementBlock,
   });
   if (!verdict.ok) {
     return NextResponse.json(
-      { error: `mixture: settlement verification failed: ${verdict.reason}` },
+      {
+        error: `mixture: settlement verification failed: ${verdict.reason}`,
+        // Tell the agent recovery is free — do NOT re-broadcast a payment.
+        recovery:
+          'The payment may already be on chain. Re-call settle_mixture with the SAME sessionId and pass the prior txHash to re-verify at zero cost — do not pay again.',
+        sessionId,
+        txHash,
+      },
       { status: 402 },
     );
   }
@@ -416,6 +442,7 @@ async function claimMixture(
       explorer: `${explorerBase}/tx/${txHash}`,
     },
   };
+  markSettled(sessionId, txHash, settled);
   return NextResponse.json(settled, { status: 200 });
 }
 

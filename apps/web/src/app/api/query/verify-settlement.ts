@@ -17,39 +17,79 @@ export interface VerifyArgs {
   txHash: string;
   expectedDistributor: string;
   expectedSplits: Array<{ inft: string | null; amountWei: string }>;
+  /** Block the settler's own receipt reported. The verifier's read RPC may
+   *  be a *different node behind the same public LB* than the one the tx was
+   *  broadcast to (read-after-write inconsistency). If given, wait until this
+   *  read node's head reaches that height before declaring the tx unknown. */
+  expectedBlockNumber?: number;
 }
 
 export type VerifyResult =
   | { ok: true; payer: string; blockNumber: number }
   | { ok: false; reason: string };
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export async function verifySettlement(args: VerifyArgs): Promise<VerifyResult> {
   if (!/^0x[a-fA-F0-9]{64}$/.test(args.txHash)) {
     return { ok: false, reason: 'malformed txHash' };
   }
   const zg = loadZgConfig();
-  const client = createPublicClient({ transport: http(zg.rpcUrl) });
+  // Explicit per-request timeout + no transport retry inflation: each poll
+  // tick is one clean RPC call we fully control the cadence of.
+  const client = createPublicClient({
+    transport: http(zg.rpcUrl, { timeout: 15_000, retryCount: 0 }),
+  });
+  const hash = args.txHash as Hex;
+  const deadline = Date.now() + 210_000;
 
-  // 0G mainnet has a noticeable submit→receipt latency. A single
-  // getTransactionReceipt right after settle_mixture broadcasts the tx
-  // races the chain and 402s even though the payment landed. Poll for up
-  // to ~45s before giving up so the unlock succeeds on the first settle.
+  // Stage 1: defeat the public-LB read-after-write race. settle_mixture
+  // already mined the tx (it did tx.wait()), but THIS node may lag. Wait
+  // until our read node's head reaches the settlement block — once it has,
+  // the receipt is guaranteed visible on this node.
+  if (typeof args.expectedBlockNumber === 'number' && args.expectedBlockNumber > 0) {
+    while (Date.now() < deadline) {
+      try {
+        const head = await client.getBlockNumber();
+        if (Number(head) >= args.expectedBlockNumber) break;
+      } catch {
+        /* transient LB hiccup — keep polling */
+      }
+      await sleep(2_000);
+    }
+  }
+
+  // Stage 2: poll for the receipt. Probe getTransaction too: if the node
+  // knows the tx but the receipt is still pending it is definitively
+  // propagating (not "unknown"), so keep waiting through the full window.
   let receipt;
-  const deadline = Date.now() + 150_000;
   while (true) {
     try {
-      receipt = await client.getTransactionReceipt({ hash: args.txHash as Hex });
+      receipt = await client.getTransactionReceipt({ hash });
       break;
     } catch (err) {
       const msg = (err as Error).message ?? '';
-      if (/not found|not be found/i.test(msg)) {
-        if (Date.now() < deadline) {
-          await new Promise((r) => setTimeout(r, 3_000));
-          continue;
+      const transient =
+        /not found|not be found|could not be found|timed out|took too long|fetch failed|ECONNRESET|503|502/i.test(
+          msg,
+        );
+      if (!transient) return { ok: false, reason: `rpc error: ${msg}` };
+      if (Date.now() >= deadline) {
+        let txKnown = false;
+        try {
+          await client.getTransaction({ hash });
+          txKnown = true;
+        } catch {
+          /* still unknown to this node */
         }
-        return { ok: false, reason: 'tx not yet confirmed (or unknown)' };
+        return {
+          ok: false,
+          reason: txKnown
+            ? 'settlement tx is on chain but its receipt has not propagated to the verifier RPC node yet — retry the unlock (no re-payment needed)'
+            : 'settlement tx not visible on the verifier RPC node — confirm the tx hash, then retry the unlock (no re-payment needed)',
+        };
       }
-      return { ok: false, reason: `rpc error: ${msg}` };
+      await sleep(2_000);
     }
   }
   if (receipt.status !== 'success') {

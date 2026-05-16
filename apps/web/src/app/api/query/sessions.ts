@@ -26,9 +26,18 @@ export interface CachedMixture {
     splits: Array<{ inft: string | null; amountWei: string }>;
     totalAmountWei: string;
   };
+  /** Set once the plan has been verified-paid on chain. Makes subsequent
+   *  claims idempotent: a re-claim (any txHash, or none) returns the cached
+   *  unlocked response at zero cost instead of re-verifying or re-paying. */
+  settled?: {
+    txHash: string;
+    response: unknown;
+  };
 }
 
-const TTL_MS = 10 * 60 * 1000;
+// 30 min: long enough that a failed-unlock → verify-only retry (or a
+// re-record across recording takes) stays within the same session.
+const TTL_MS = 30 * 60 * 1000;
 const sessions = new Map<string, CachedMixture>();
 
 function gc(now = Date.now()): void {
@@ -55,6 +64,16 @@ export function getSession(sessionId: string): CachedMixture | null {
     return null;
   }
   return v;
+}
+
+/** Record a verified settlement so future claims are idempotent + free. */
+export function markSettled(
+  sessionId: string,
+  txHash: string,
+  response: unknown,
+): void {
+  const v = sessions.get(sessionId);
+  if (v) v.settled = { txHash, response };
 }
 
 export const SESSION_TTL_MS = TTL_MS;
