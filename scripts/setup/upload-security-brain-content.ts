@@ -20,13 +20,14 @@
  *   bun run scripts/setup/upload-security-brain-content.ts
  */
 import { readdir, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { compileKnowledge, deterministicCompiler } from '@brainpedia/knowledge-compiler';
 import { createBrainLogClient, loadZgConfig } from '@brainpedia/storage-0g';
 import { privateKeyToAccount } from 'viem/accounts';
 import type { Hex } from 'viem';
 
-const CONTENT_DIR = join(import.meta.dir, 'security-knowledge');
+const CONTENT_DIR = join(dirname(fileURLToPath(import.meta.url)), 'security-knowledge');
 
 async function main() {
   const cfg = loadZgConfig();
